@@ -1,0 +1,23 @@
+GET        /                               controllers.HomeController.index
+#FUNDMASTER-ESB REQUESTS
+# Disable csrf
+#+NOCSRF
+POST        /addinternaltransferpaymentdetailscoopbank              controllers.CbsEngine.addInternalTransferPaymentDetailsCoopBank
+POST        /addacctopesalinktransferpaymentdetailscoopbank              controllers.CbsEngine.addAccountToPesalinkTransferPaymentDetailsCoopBank
+POST        /addacctompesatransferpaymentdetailscoopbank              controllers.CbsEngine.addAccountToMpesaTransferPaymentDetailsCoopBank
+# Test IPSL APIs: ESB system will invoke these APIs by posting outgoing requests.
+POST        /iso20022/v1/verification-request              controllers.IpslEngine.getAccountVerificationResponseDetails
+POST        /getsinglecredittransferresponsedetails              controllers.IpslEngine.getSingleCreditTransferResponseDetails
+POST        /getbulkcredittransferresponsedetails              controllers.IpslEngine.getBulkCreditTransferResponseDetails
+# BANK APIs: e-Channels/ESB-CBS systems will invoke these APIs by posting requests.
+# The requests will be forwarded to IPLS for processing.
+# Account Verification Request will get immediate response from IPSL, others will require callback.
+POST        /v1/addaccountverificationdetails              controllers.CbsEngine.addAccountVerificationDetails
+POST        /v1/addsinglecredittransferpaymentdetails              controllers.CbsEngine.addSingleCreditTransferPaymentDetails
+POST        /v1/addbulkcredittransferpaymentdetails              controllers.CbsEngine.addBulkCreditTransferPaymentDetails
+# Test ESB-CBS APIs. Responses for IPSL are are posted to esb-cbs.
+POST        /addaccountverificationreesponsebcbs              controllers.IpslEngine.addAccountVerificationResponseEsbCbs
+# ESB-CBS APIs. Was meant for callback processing for esb-cbs.
+# These approach of callback has been abandoned.
+POST        /addaccountverificationrequestesbcbs              controllers.IpslEngine.addAccountVerificationRequestEsbCbs
+POST        /addcredittransferrequestesbcbs              controllers.IpslEngine.addCreditTransferRequestEsbCbs
