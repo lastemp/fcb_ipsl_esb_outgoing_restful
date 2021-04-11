@@ -165,6 +165,7 @@ class CbsEngine @Inject()
   }
 
   //AccountVerification Details i.e AccountVerification request to IPSL through ESB
+  //The request is initiated from ESB-CBS/Other CHannels
   case class AccountVerificationDetails_Request(transactionreference: Option[JsValue], accountnumber: Option[JsValue], schememode: Option[JsValue], bankcode: Option[JsValue])
   case class AccountVerificationDetails_BatchRequest(messagereference: Option[JsValue], accountdata: AccountVerificationDetails_Request)
   case class AccountVerificationDetailsResponse_Batch(transactionreference: String, accountnumber: String, accountname: String, bankcode: String)
@@ -172,6 +173,28 @@ class CbsEngine @Inject()
   case class AccountVerificationDetailsResponse(statuscode: Int, statusdescription: String)
   //AccountVerification Details i.e AccountVerification request from ESB
   case class AccountVerificationDetails(messagereference: String, creationdatetime: String, firstagentidentification: String, assigneragentidentification: String, assigneeagentidentification: String, transactionreference: String, accountnumber: String, schemename: String, bankcode: String)
+
+  //SingleCreditTransfer Details i.e SingleCreditTransfer request to IPSL through ESB
+  //The request is initiated from ESB-CBS/Other CHannels
+  case class ContactInformation(phonenumber: Option[JsValue], emailaddress: Option[JsValue])
+  case class DebitAccountInformation(debitaccountnumber: Option[JsValue], debitaccountname: Option[JsValue], debitcontactinformation: ContactInformation)
+  case class CreditAccountInformation(creditaccountnumber: Option[JsValue], creditaccountname: Option[JsValue], schemename: Option[JsValue], bankcode: Option[JsValue], creditcontactinformation: ContactInformation)
+  case class TransferPurposeInformation(purposecode: Option[JsValue], purposedescription: Option[JsValue])
+  case class TransferRemittanceInformation(unstructured: Option[JsValue], taxremittancereferencenumber: Option[JsValue])
+  case class TransferMandateInformation(mandateidentification: Option[JsValue], mandatedescription: Option[JsValue])
+  case class CreditTransferPaymentInformation(transactionreference: Option[JsValue], amount: Option[JsValue], debitaccountinformation: DebitAccountInformation, creditaccountinformation: CreditAccountInformation, mandateinformation: TransferMandateInformation, remittanceinformation: TransferRemittanceInformation, purposeinformation: TransferPurposeInformation)
+  case class SingleCreditTransferPaymentDetails_Request(messagereference: Option[JsValue], paymentdata: CreditTransferPaymentInformation)
+  case class SingleCreditTransferPaymentDetailsResponse(statuscode: Int, statusdescription: String)
+  //Below classes are used for mapping/holding data internally
+  case class TransferDefaultInfo(firstagentidentification: String, assigneeagentidentification: String, chargebearer: String, settlementmethod: String, clearingsystem: String, servicelevel: String, localinstrumentcode: String, categorypurpose: String)
+  case class ContactInfo(phonenumber: String)
+  case class DebitAccountInfo(debitaccountnumber: String, debitaccountname: String, debitcontactinformation: ContactInfo, schemename: String)
+  case class CreditAccountInfo(creditaccountnumber: String, creditaccountname: String, schemename: String, bankcode: String, creditcontactinformation: ContactInfo)
+  case class TransferPurposeInfo(purposecode: String)
+  case class TransferRemittanceInfo(unstructured: String, taxremittancereferencenumber: String)
+  case class TransferMandateInfo(mandateidentification: String)
+  case class CreditTransferPaymentInfo(transactionreference: String, amount: BigDecimal, debitaccountinformation: DebitAccountInfo, creditaccountinformation: CreditAccountInfo, mandateinformation: TransferMandateInfo, remittanceinformation: TransferRemittanceInfo, purposeinformation: TransferPurposeInfo, transferdefaultinformation: TransferDefaultInfo)
+  case class SingleCreditTransferPaymentInfo(messagereference: String, creationdatetime: String, numberoftransactions: Int, totalinterbanksettlementamount: BigDecimal, paymentdata: CreditTransferPaymentInfo)
 
   /*** Xml data ***/
   //val prettyPrinter = new scala.xml.PrettyPrinter(80, 2)
@@ -491,7 +514,7 @@ class CbsEngine @Inject()
   }
 
   //SingleCreditTransfer
-  class SingleCreditTransfer(var groupHeaderInformation: GroupHeaderInformation, var creditTransferTransactionInformation: CreditTransferTransactionInformation) {
+  class SingleCreditTransfer(val groupHeaderInformation: GroupHeaderInformation, val creditTransferTransactionInformation: CreditTransferTransactionInformation) {
 
     // (a) convert SingleCreditTransfer fields to XML
     def toXml = {
@@ -1022,15 +1045,23 @@ class CbsEngine @Inject()
   val firstAgentIdentification: String = "2031" //Request creator
   val assignerAgentIdentification: String = "2031" //party that deliveres request to IPSL
   val assigneeAgentIdentification: String = "009" //party that processes request i.e IPSL
+  //
+  val chargeBearer: String = "SLEV"
+  val settlementMethod: String = "CLRG"
+  val clearingSystem: String = "IPS"
+  val serviceLevel: String = "P2PT"
+  val localInstrumentCode: String = "INST"
+  val categoryPurpose: String = "IBNK"
+
   def addSingleCreditTransferPaymentDetails = Action.async { request =>
     Future {
-      val startDate : String =  new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new java.util.Date)
-      var isProcessed : Boolean = false
+      val startDate: String =  new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new java.util.Date)
       var entryID: Int = 0
-      var responseCode : Int = 1
-      var responseMessage : String = "Error occured during processing, please try again."
-      var myS2B_PaymentDetailsResponse_BatchData : Seq[S2B_PaymentDetailsResponse_Batch] = Seq.empty[S2B_PaymentDetailsResponse_Batch]
-      val strApifunction : String = "addS2BPaymentDetails"
+      var responseCode: Int = 1
+      var responseMessage: String = "Error occured during processing, please try again."
+      var myS2B_PaymentDetailsResponse_BatchData: Seq[S2B_PaymentDetailsResponse_Batch] = Seq.empty[S2B_PaymentDetailsResponse_Batch]
+      val strApifunction: String = "addsinglecredittransferpaymentdetails"
+      var myHttpStatusCode = HttpStatusCode.BadRequest
 
       try
       {
@@ -1045,7 +1076,7 @@ class CbsEngine @Inject()
         var strPassword : String = ""
         var strClientIP : String = ""
 
-        if (request.body.asJson.isEmpty == false) {
+        if (!request.body.asJson.isEmpty) {
           isDataFound = true
           strRequest = request.body.asJson.get.toString()
           if (request.remoteAddress != null){
@@ -1059,7 +1090,7 @@ class CbsEngine @Inject()
               if (strRequestHeader != null){
                 strRequestHeader = strRequestHeader.trim
                 if (strRequestHeader.length > 0){
-                  if (strRequestHeader.toLowerCase.contains("bearer") == true){
+                  if (strRequestHeader.toLowerCase.contains("bearer")){
                     val myArray = strRequestHeader.split(" ")
 
                     if (myArray.length == 2){
@@ -1098,7 +1129,7 @@ class CbsEngine @Inject()
         //Log_data(strApifunction + " : " + strRequest + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
         log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
 
-        if (isDataFound == true && isAuthTokenFound == true){
+        if (isDataFound && isAuthTokenFound){
 
           try{
             var myByteAuthToken = Base64.getDecoder.decode(strAuthToken)
@@ -1110,7 +1141,7 @@ class CbsEngine @Inject()
               myAuthToken = myAuthToken.trim
 
               if (myAuthToken.length > 0){
-                if (myAuthToken.contains(":") == true){
+                if (myAuthToken.contains(":")){
                   val myArray = myAuthToken.toString.split(":")
 
                   if (myArray.length == 2){
@@ -1140,15 +1171,13 @@ class CbsEngine @Inject()
           catch
             {
               case ex: Exception =>
-                isProcessed = false//strname = "no data"//println("Got some other kind of exception")
                 log_errors(strApifunction + " : " + ex.getMessage())
               case tr: Throwable =>
-                isProcessed = false//strname = "no data"//println("Got some other kind of exception")
                 log_errors(strApifunction + " : " + tr.getMessage())
             }
 
           try{
-            if (isCredentialsFound == true) {
+            if (isCredentialsFound) {
               myDB.withConnection { implicit  myconn =>
 
                 val strSQL : String = "{ call dbo.ValidateClientAPI(?,?,?,?,?,?,?) }"
@@ -1163,12 +1192,12 @@ class CbsEngine @Inject()
                 mystmt.registerOutParameter("responseCode", java.sql.Types.INTEGER)
                 mystmt.registerOutParameter("responseMessage", java.sql.Types.VARCHAR)
                 mystmt.execute()
-                responseCode = mystmt.getInt("responseCode")
+                //responseCode = mystmt.getInt("responseCode")
+                val respCode = mystmt.getInt("responseCode")
                 responseMessage = mystmt.getString("responseMessage")
-                isProcessed = true
 
-                if (responseCode == null){
-                  responseCode = 1
+                if (respCode != null){
+                  responseCode = respCode
                 }
 
                 if (responseMessage == null){
@@ -1181,14 +1210,12 @@ class CbsEngine @Inject()
           catch
             {
               case ex: Exception =>
-                isProcessed = false//strname = "no data"//println("Got some other kind of exception")
                 log_errors(strApifunction + " : " + ex.getMessage())
               case tr: Throwable =>
-                isProcessed = false//strname = "no data"//println("Got some other kind of exception")
                 log_errors(strApifunction + " : " + tr.getMessage())
             }
 
-          if (isCredentialsFound == true && responseCode == 0){
+          if (isCredentialsFound && responseCode == 0){
 
             val myjson = request.body.asJson.get
 
@@ -1196,38 +1223,67 @@ class CbsEngine @Inject()
             responseCode = 1
             responseMessage  = "Error occured during processing, please try again."
 
-            implicit val S2B_PaymentDetails_Request_Reads: Reads[S2B_PaymentDetails_Request] = (
-              (JsPath \ "debitaccountnumber").readNullable[JsValue] and
-                (JsPath \ "accountname").readNullable[JsValue] and
-                (JsPath \ "customerreference").readNullable[JsValue] and
-                (JsPath \ "accountnumber").readNullable[JsValue] and
-                (JsPath \ "bankcode").readNullable[JsValue] and
-                (JsPath \ "localbankcode").readNullable[JsValue] and
-                (JsPath \ "branchcode").readNullable[JsValue] and
-                (JsPath \ "amount").readNullable[JsValue] and
-                (JsPath \ "description").readNullable[JsValue] and
-                (JsPath \ "paymenttype").readNullable[JsValue] and
-                (JsPath \ "purposeofpayment").readNullable[JsValue] and
+            implicit val ContactInformation_Reads: Reads[ContactInformation] = (
+              (JsPath \ "phonenumber").readNullable[JsValue] and
                 (JsPath \ "emailaddress").readNullable[JsValue]
-              )(S2B_PaymentDetails_Request.apply _)
+              )(ContactInformation.apply _)
 
-            implicit val S2B_PaymentDetails_BatchRequest_Reads: Reads[S2B_PaymentDetails_BatchRequest] = (
-              (JsPath \ "batchno").readNullable[Int] and
-                (JsPath \ "paymentdata").read[Seq[S2B_PaymentDetails_Request]]
-              )(S2B_PaymentDetails_BatchRequest.apply _)
+            implicit val DebitAccountInformation_Reads: Reads[DebitAccountInformation] = (
+              (JsPath \ "debitaccountnumber").readNullable[JsValue] and
+                (JsPath \ "debitaccountname").readNullable[JsValue] and
+                (JsPath \ "debitcontactinformation").read[ContactInformation]
+              )(DebitAccountInformation.apply _)
 
-            myjson.validate[S2B_PaymentDetails_BatchRequest] match {
-              case JsSuccess(myS2B_PaymentDetails_BatchRequest, _) => {
+            implicit val CreditAccountInformation_Reads: Reads[CreditAccountInformation] = (
+              (JsPath \ "creditaccountnumber").readNullable[JsValue] and
+                (JsPath \ "creditaccountname").readNullable[JsValue] and
+                (JsPath \ "schemename").readNullable[JsValue] and
+                (JsPath \ "bankcode").readNullable[JsValue] and
+                (JsPath \ "creditcontactinformation").read[ContactInformation]
+              )(CreditAccountInformation.apply _)
+
+            implicit val TransferPurposeInformation_Reads: Reads[TransferPurposeInformation] = (
+              (JsPath \ "purposecode").readNullable[JsValue] and
+                (JsPath \ "purposedescription").readNullable[JsValue]
+              )(TransferPurposeInformation.apply _)
+
+            implicit val TransferRemittanceInformation_Reads: Reads[TransferRemittanceInformation] = (
+              (JsPath \ "unstructured").readNullable[JsValue] and
+                (JsPath \ "taxremittancereferencenumber").readNullable[JsValue]
+              )(TransferRemittanceInformation.apply _)
+
+            implicit val TransferMandateInformation_Reads: Reads[TransferMandateInformation] = (
+              (JsPath \ "mandateidentification").readNullable[JsValue] and
+                (JsPath \ "mandatedescription").readNullable[JsValue]
+              )(TransferMandateInformation.apply _)
+
+            implicit val CreditTransferPaymentInformation_Reads: Reads[CreditTransferPaymentInformation] = (
+              (JsPath \ "transactionreference").readNullable[JsValue] and
+                (JsPath \ "amount").readNullable[JsValue] and
+                (JsPath \ "debitaccountinformation").read[DebitAccountInformation] and
+                (JsPath \ "creditaccountinformation").read[CreditAccountInformation] and
+                (JsPath \ "mandateinformation").read[TransferMandateInformation] and
+                (JsPath \ "remittanceinformation").read[TransferRemittanceInformation] and
+                (JsPath \ "purposeinformation").read[TransferPurposeInformation]
+              )(CreditTransferPaymentInformation.apply _)
+
+            implicit val SingleCreditTransferPaymentDetails_Request_Reads: Reads[SingleCreditTransferPaymentDetails_Request] = (
+              (JsPath \ "messagereference").readNullable[JsValue] and
+                (JsPath \ "paymentdata").read[CreditTransferPaymentInformation]
+              )(SingleCreditTransferPaymentDetails_Request.apply _)
+
+            myjson.validate[SingleCreditTransferPaymentDetails_Request] match {
+              case JsSuccess(myPaymentDetails, _) => {
 
                 var isValidInputData : Boolean = false
-                var myBatchSize : Integer = 0
+                //var myBatchSize : Integer = 0
                 var strBatchReference : String = ""
                 var strRequestData : String = ""
 
                 try
                 {
                   entryID = 0
-                  myBatchSize = myS2B_PaymentDetails_BatchRequest.paymentdata.length
+                  //myBatchSize = myS2B_PaymentDetails_BatchRequest.paymentdata.length
                   strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
                   val myBatchReference : java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
 
@@ -1250,19 +1306,64 @@ class CbsEngine @Inject()
                     sourceDataTable.addColumnMetadata("BatchSize", java.sql.Types.INTEGER)
 
 
-                    var myAmount : BigDecimal = 0
-                    var strDebitAccountNumber : String = ""
-                    var strAccountName : String = ""
-                    var strCustomerReference : String = ""
-                    var strAccountNumber : String = ""
-                    var strBankCode : String = ""
-                    var strLocalBankCode : String = ""
-                    var strBranchCode : String = ""
-                    var strAmount : String = ""
-                    var strDescription : String = ""
-                    var strPaymentType : String = ""
-                    var strPurposeofPayment : String = ""
-                    var strEmailAddress : String = ""
+                    var myAmount: BigDecimal = 0
+                    var strAmount: String = ""
+
+                    var messageidentification: String = ""
+
+                    var paymentendtoendidentification: String = ""
+                    var interbanksettlementamount: BigDecimal = 0
+                    var totalinterbanksettlementamount: BigDecimal = 0
+                    var mandateidentification: String = ""
+                    //debtor
+                    var debtorinformationdebtorname: String = ""
+                    val debtorinformationdebtororganisationidentification: String = firstAgentIdentification
+                    var debtorinformationdebtorcontactphonenumber: String = ""
+                    var debtoraccountinformationdebtoraccountidentification: String = ""
+                    val debtoraccountinformationdebtoraccountschemename: String = SchemeName.ACC.toString.toUpperCase
+                    var debtoraccountinformationdebtoraccountname: String = ""
+                    val debtoragentinformationfinancialInstitutionIdentification: String = firstAgentIdentification
+                    //creditor
+                    var creditoragentinformationfinancialInstitutionIdentification: String = ""
+                    var creditorinformationcreditorname: String = ""
+                    var creditorinformationcreditororganisationidentification: String = ""
+                    var creditorinformationcreditorcontactphonenumber: String = ""
+                    var creditoraccountinformationcreditoraccountidentification: String = ""
+                    var creditoraccountinformationcreditoraccountschemename: String = ""
+                    var creditoraccountinformationcreditoraccountname: String = ""
+                    //other details
+                    var purposeinformationpurposecode: String = ""
+                    var remittanceinformationunstructured: String = ""
+                    var remittanceinformationtaxremittancereferencenumber: String = ""
+                    //default values
+                    val instructingagentinformationfinancialInstitutionIdentification: String = firstAgentIdentification
+                    val instructedagentinformationfinancialInstitutionIdentification: String = assigneeAgentIdentification //i.e IPSL
+                    val initiatingpartyinformationorganisationidentification: String = firstAgentIdentification
+                    val chargebearer: String = chargeBearer
+                    val settlementmethod: String = settlementMethod
+                    val clearingsystem: String = clearingSystem
+                    val servicelevel: String = serviceLevel
+                    val localinstrumentcode: String = localInstrumentCode
+                    val categorypurpose: String = categoryPurpose
+
+                    val creationDateTime: String = new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
+                    /*
+                    val schemeName: String = {
+                      mySchemeMode match {
+                        case 0 =>
+                          SchemeName.ACC.toString.toUpperCase
+                        case 1 =>
+                          SchemeName.PHNE.toString.toUpperCase
+                        case _ =>
+                          SchemeName.ACC.toString.toUpperCase
+                      }
+                    }
+                    */
+                    val numberoftransactions: Int = 1
+                    val acceptancedatetime: String = new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
+
+                    val accSchemeName: String = SchemeName.ACC.toString.toUpperCase
+                    val phneSchemeName: String = SchemeName.PHNE.toString.toUpperCase
 
                     if (strRequest != null && strRequest != None){
                       strRequest = strRequest.trim
@@ -1272,262 +1373,441 @@ class CbsEngine @Inject()
                       }
                     }
 
-                    myS2B_PaymentDetails_BatchRequest.paymentdata.foreach(myPaymentDetails => {
+                    //myS2B_PaymentDetails_BatchRequest.paymentdata.foreach(myPaymentDetails => {
 
-                      myAmount = 0
-                      strDebitAccountNumber = ""
-                      strAccountName = ""
-                      strCustomerReference = ""
-                      strAccountNumber = ""
-                      strBankCode = ""
-                      strLocalBankCode = ""
-                      strBranchCode = ""
-                      strAmount = ""
-                      strDescription = ""
-                      strPaymentType = ""
-                      strPurposeofPayment = ""
-                      strEmailAddress = ""
+                    myAmount = 0
+                    strAmount = ""
+                    messageidentification = ""
 
-                      try{
-                        //strDebitAccountNumber
-                        if (myPaymentDetails.debitaccountnumber != None) {
-                          if (myPaymentDetails.debitaccountnumber.get != None) {
-                            val myData = myPaymentDetails.debitaccountnumber.get
-                            strDebitAccountNumber = myData.toString()
-                            if (strDebitAccountNumber != null && strDebitAccountNumber != None){
-                              strDebitAccountNumber = strDebitAccountNumber.trim
-                              if (strDebitAccountNumber.length > 0){
-                                strDebitAccountNumber = strDebitAccountNumber.replace("'","")//Remove apostrophe
-                                strDebitAccountNumber = strDebitAccountNumber.replace(" ","")//Remove spaces
-                                strDebitAccountNumber = strDebitAccountNumber.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                strDebitAccountNumber = strDebitAccountNumber.trim
-                              }
+                    paymentendtoendidentification = ""
+                    interbanksettlementamount = 0
+                    totalinterbanksettlementamount = 0
+                    mandateidentification = ""
+                    //debtor
+                    debtorinformationdebtorname = ""
+                    debtorinformationdebtorcontactphonenumber = ""
+                    debtoraccountinformationdebtoraccountidentification = ""
+                    debtoraccountinformationdebtoraccountname = ""
+                    //creditor
+                    creditoragentinformationfinancialInstitutionIdentification = ""
+                    creditorinformationcreditorname = ""
+                    creditorinformationcreditororganisationidentification = ""
+                    creditorinformationcreditorcontactphonenumber = ""
+                    creditoraccountinformationcreditoraccountidentification = ""
+                    creditoraccountinformationcreditoraccountschemename = ""
+                    creditoraccountinformationcreditoraccountname = ""
+                    //other details
+                    purposeinformationpurposecode = ""
+                    remittanceinformationunstructured = ""
+                    remittanceinformationtaxremittancereferencenumber = ""
+
+                    try{
+                      //messageidentification
+                      if (myPaymentDetails.messagereference != None) {
+                        if (myPaymentDetails.messagereference.get != None) {
+                          val myData = myPaymentDetails.messagereference.get
+                          messageidentification = myData.toString()
+                          if (messageidentification != null && messageidentification != None){
+                            messageidentification = messageidentification.trim
+                            if (messageidentification.length > 0){
+                              messageidentification = messageidentification.replace("'","")//Remove apostrophe
+                              messageidentification = messageidentification.replace(" ","")//Remove spaces
+                              messageidentification = messageidentification.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              messageidentification = messageidentification.trim
                             }
                           }
                         }
+                      }
 
-                        //strAccountName
-                        if (myPaymentDetails.accountname != None) {
-                          if (myPaymentDetails.accountname.get != None) {
-                            val myData = myPaymentDetails.accountname.get
-                            strAccountName = myData.toString()
-                            if (strAccountName != null && strAccountName != None){
-                              strAccountName = strAccountName.trim
-                              if (strAccountName.length > 0){
-                                strAccountName = strAccountName.replace("'","")//Remove apostrophe
-                                strAccountName = strAccountName.replace("  "," ")//Remove double spaces
-                                strAccountName = strAccountName.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                strAccountName = strAccountName.trim
-                              }
+                      //paymentendtoendidentification
+                      if (myPaymentDetails.paymentdata.transactionreference != None) {
+                        if (myPaymentDetails.paymentdata.transactionreference.get != None) {
+                          val myData = myPaymentDetails.paymentdata.transactionreference.get
+                          paymentendtoendidentification = myData.toString()
+                          if (paymentendtoendidentification != null && paymentendtoendidentification != None){
+                            paymentendtoendidentification = paymentendtoendidentification.trim
+                            if (paymentendtoendidentification.length > 0){
+                              paymentendtoendidentification = paymentendtoendidentification.replace("'","")//Remove apostrophe
+                              paymentendtoendidentification = paymentendtoendidentification.replace(" ","")//Remove spaces
+                              paymentendtoendidentification = paymentendtoendidentification.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              paymentendtoendidentification = paymentendtoendidentification.trim
                             }
                           }
                         }
+                      }
 
-                        //strCustomerReference
-                        if (myPaymentDetails.customerreference != None) {
-                          if (myPaymentDetails.customerreference.get != None) {
-                            val myData = myPaymentDetails.customerreference.get
-                            strCustomerReference = myData.toString()
-                            if (strCustomerReference != null && strCustomerReference != None){
-                              strCustomerReference = strCustomerReference.trim
-                              if (strCustomerReference.length > 0){
-                                strCustomerReference = strCustomerReference.replace("'","")//Remove apostrophe
-                                strCustomerReference = strCustomerReference.replace(" ","")//Remove spaces
-                                strCustomerReference = strCustomerReference.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                strCustomerReference = strCustomerReference.trim
-                              }
-                            }
-                          }
-                        }
-
-                        //strAccountNumber
-                        if (myPaymentDetails.accountnumber != None) {
-                          if (myPaymentDetails.accountnumber.get != None) {
-                            val myData = myPaymentDetails.accountnumber.get
-                            strAccountNumber = myData.toString()
-                            if (strAccountNumber != null && strAccountNumber != None){
-                              strAccountNumber = strAccountNumber.trim
-                              if (strAccountNumber.length > 0){
-                                strAccountNumber = strAccountNumber.replace("'","")//Remove apostrophe
-                                strAccountNumber = strAccountNumber.replace(" ","")//Remove spaces
-                                strAccountNumber = strAccountNumber.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                strAccountNumber = strAccountNumber.trim
-                              }
-                            }
-                          }
-                        }
-
-                        //strBankCode
-                        if (myPaymentDetails.bankcode != None) {
-                          if (myPaymentDetails.bankcode.get != None) {
-                            val myData = myPaymentDetails.bankcode.get
-                            strBankCode = myData.toString()
-                            if (strBankCode != null && strBankCode != None){
-                              strBankCode = strBankCode.trim
-                              if (strBankCode.length > 0){
-                                strBankCode = strBankCode.replace("'","")//Remove apostrophe
-                                strBankCode = strBankCode.replace(" ","")//Remove spaces
-                                strBankCode = strBankCode.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                strBankCode = strBankCode.trim
-                              }
-                            }
-                          }
-                        }
-
-                        //strLocalBankCode
-                        if (myPaymentDetails.localbankcode != None) {
-                          if (myPaymentDetails.localbankcode.get != None) {
-                            val myData = myPaymentDetails.localbankcode.get
-                            strLocalBankCode = myData.toString()
-                            if (strLocalBankCode != null && strLocalBankCode != None){
-                              strLocalBankCode = strLocalBankCode.trim
-                              if (strLocalBankCode.length > 0){
-                                strLocalBankCode = strLocalBankCode.replace("'","")//Remove apostrophe
-                                strLocalBankCode = strLocalBankCode.replace(" ","")//Remove spaces
-                                strLocalBankCode = strLocalBankCode.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                strLocalBankCode = strLocalBankCode.trim
-                              }
-                            }
-                          }
-                        }
-
-                        //strBranchCode
-                        if (myPaymentDetails.branchcode != None) {
-                          if (myPaymentDetails.branchcode.get != None) {
-                            val myData = myPaymentDetails.branchcode.get
-                            strBranchCode = myData.toString()
-                            if (strBranchCode != null && strBranchCode != None){
-                              strBranchCode = strBranchCode.trim
-                              if (strBranchCode.length > 0){
-                                strBranchCode = strBranchCode.replace("'","")//Remove apostrophe
-                                strBranchCode = strBranchCode.replace(" ","")//Remove spaces
-                                strBranchCode = strBranchCode.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                strBranchCode = strBranchCode.trim
-                              }
-                            }
-                          }
-                        }
-
-                        //strAmount
-                        if (myPaymentDetails.amount != None) {
-                          if (myPaymentDetails.amount.get != None) {
-                            val myData = myPaymentDetails.amount.get
-                            strAmount = myData.toString()
-                            if (strAmount != null && strAmount != None){
+                      //strAmount
+                      if (myPaymentDetails.paymentdata.amount != None) {
+                        if (myPaymentDetails.paymentdata.amount.get != None) {
+                          val myData = myPaymentDetails.paymentdata.amount.get
+                          strAmount = myData.toString()
+                          if (strAmount != null && strAmount != None){
+                            strAmount = strAmount.trim
+                            if (strAmount.length > 0){
+                              strAmount = strAmount.replace("'","")//Remove apostrophe
+                              strAmount = strAmount.replace(" ","")//Remove spaces
+                              strAmount = strAmount.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                               strAmount = strAmount.trim
                               if (strAmount.length > 0){
-                                strAmount = strAmount.replace("'","")//Remove apostrophe
-                                strAmount = strAmount.replace(" ","")//Remove spaces
-                                strAmount = strAmount.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                strAmount = strAmount.trim
-                                if (strAmount.length > 0){
-                                  //val isNumeric : Boolean = strAmount.toString.matches("[0-9]+") //validate numbers only
-                                  val isNumeric : Boolean = strAmount.matches("^[1-9]\\d*(\\.\\d+)?$") //validate number and decimals
-                                  if (isNumeric == true){
-                                    myAmount = BigDecimal(strAmount)
-                                  }
+                                //val isNumeric : Boolean = strAmount.toString.matches("[0-9]+") //validate numbers only
+                                val isNumeric : Boolean = strAmount.matches("^[1-9]\\d*(\\.\\d+)?$") //validate number and decimals
+                                if (isNumeric){
+                                  myAmount = BigDecimal(strAmount)
+                                  interbanksettlementamount = myAmount
+                                  totalinterbanksettlementamount = myAmount
                                 }
                               }
                             }
                           }
                         }
+                      }
 
-                        //strDescription
-                        if (myPaymentDetails.description != None) {
-                          if (myPaymentDetails.description.get != None) {
-                            val myData = myPaymentDetails.description.get
-                            strDescription = myData.toString()
-                            if (strDescription != null && strDescription != None){
-                              strDescription = strDescription.trim
-                              if (strDescription.length > 0){
-                                strDescription = strDescription.replace("'","")//Remove apostrophe
-                                strDescription = strDescription.replace("  "," ")//Remove double spaces
-                                strDescription = strDescription.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                strDescription = strDescription.trim
-                              }
+                      //mandateidentification
+                      if (myPaymentDetails.paymentdata.mandateinformation.mandateidentification != None) {
+                        if (myPaymentDetails.paymentdata.mandateinformation.mandateidentification.get != None) {
+                          val myData = myPaymentDetails.paymentdata.mandateinformation.mandateidentification.get
+                          mandateidentification = myData.toString()
+                          if (mandateidentification != null && mandateidentification != None){
+                            mandateidentification = mandateidentification.trim
+                            if (mandateidentification.length > 0){
+                              mandateidentification = mandateidentification.replace("'","")//Remove apostrophe
+                              mandateidentification = mandateidentification.replace(" ","")//Remove spaces
+                              mandateidentification = mandateidentification.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              mandateidentification = mandateidentification.trim
                             }
                           }
                         }
+                      }
 
-                        //strPaymentType
-                        if (myPaymentDetails.paymenttype != None) {
-                          if (myPaymentDetails.paymenttype.get != None) {
-                            val myData = myPaymentDetails.paymenttype.get
-                            strPaymentType = myData.toString()
-                            if (strPaymentType != null && strPaymentType != None){
-                              strPaymentType = strPaymentType.trim
-                              if (strPaymentType.length > 0){
-                                strPaymentType = strPaymentType.replace("'","")//Remove apostrophe
-                                strPaymentType = strPaymentType.replace(" ","")//Remove spaces
-                                strPaymentType = strPaymentType.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                strPaymentType = strPaymentType.trim
-                              }
+                      //debtorinformationdebtorname
+                      if (myPaymentDetails.paymentdata.debitaccountinformation.debitaccountname != None) {
+                        if (myPaymentDetails.paymentdata.debitaccountinformation.debitaccountname.get != None) {
+                          val myData = myPaymentDetails.paymentdata.debitaccountinformation.debitaccountname.get
+                          debtorinformationdebtorname = myData.toString()
+                          if (debtorinformationdebtorname != null && debtorinformationdebtorname != None){
+                            debtorinformationdebtorname = debtorinformationdebtorname.trim
+                            if (debtorinformationdebtorname.length > 0){
+                              debtorinformationdebtorname = debtorinformationdebtorname.replace("'","")//Remove apostrophe
+                              debtorinformationdebtorname = debtorinformationdebtorname.replace("  "," ")//Remove double spaces
+                              debtorinformationdebtorname = debtorinformationdebtorname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              debtorinformationdebtorname = debtorinformationdebtorname.trim
                             }
                           }
                         }
+                      }
 
-                        //strPurposeofPayment
-                        if (myPaymentDetails.purposeofpayment != None) {
-                          if (myPaymentDetails.purposeofpayment.get != None) {
-                            val myData = myPaymentDetails.purposeofpayment.get
-                            strPurposeofPayment = myData.toString()
-                            if (strPurposeofPayment != null && strPurposeofPayment != None){
-                              strPurposeofPayment = strPurposeofPayment.trim
-                              if (strPurposeofPayment.length > 0){
-                                strPurposeofPayment = strPurposeofPayment.replace("'","")//Remove apostrophe
-                                strPurposeofPayment = strPurposeofPayment.replace(" ","")//Remove spaces
-                                strPurposeofPayment = strPurposeofPayment.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                strPurposeofPayment = strPurposeofPayment.trim
-                              }
+                      //debtorinformationdebtorcontactphonenumber
+                      if (myPaymentDetails.paymentdata.debitaccountinformation.debitcontactinformation.phonenumber != None) {
+                        if (myPaymentDetails.paymentdata.debitaccountinformation.debitcontactinformation.phonenumber.get != None) {
+                          val myData = myPaymentDetails.paymentdata.debitaccountinformation.debitcontactinformation.phonenumber.get
+                          debtorinformationdebtorcontactphonenumber = myData.toString()
+                          if (debtorinformationdebtorcontactphonenumber != null && debtorinformationdebtorcontactphonenumber != None){
+                            debtorinformationdebtorcontactphonenumber = debtorinformationdebtorcontactphonenumber.trim
+                            if (debtorinformationdebtorcontactphonenumber.length > 0){
+                              debtorinformationdebtorcontactphonenumber = debtorinformationdebtorcontactphonenumber.replace("'","")//Remove apostrophe
+                              debtorinformationdebtorcontactphonenumber = debtorinformationdebtorcontactphonenumber.replace(" ","")//Remove spaces
+                              debtorinformationdebtorcontactphonenumber = debtorinformationdebtorcontactphonenumber.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              debtorinformationdebtorcontactphonenumber = debtorinformationdebtorcontactphonenumber.trim
                             }
                           }
                         }
+                      }
 
-                        //strEmailAddress
-                        if (myPaymentDetails.emailaddress != None) {
-                          if (myPaymentDetails.emailaddress.get != None) {
-                            val myData = myPaymentDetails.emailaddress.get
-                            strEmailAddress = myData.toString()
-                            if (strEmailAddress != null && strEmailAddress != None){
-                              strEmailAddress = strEmailAddress.trim
-                              if (strEmailAddress.length > 0){
-                                strEmailAddress = strEmailAddress.replace("'","")//Remove apostrophe
-                                strEmailAddress = strEmailAddress.replace(" ","")//Remove spaces
-                                strEmailAddress = strEmailAddress.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                strEmailAddress = strEmailAddress.trim
-                              }
+                      //debtoraccountinformationdebtoraccountidentification
+                      if (myPaymentDetails.paymentdata.debitaccountinformation.debitaccountnumber != None) {
+                        if (myPaymentDetails.paymentdata.debitaccountinformation.debitaccountnumber.get != None) {
+                          val myData = myPaymentDetails.paymentdata.debitaccountinformation.debitaccountnumber.get
+                          debtoraccountinformationdebtoraccountidentification = myData.toString()
+                          if (debtoraccountinformationdebtoraccountidentification != null && debtoraccountinformationdebtoraccountidentification != None){
+                            debtoraccountinformationdebtoraccountidentification = debtoraccountinformationdebtoraccountidentification.trim
+                            if (debtoraccountinformationdebtoraccountidentification.length > 0){
+                              debtoraccountinformationdebtoraccountidentification = debtoraccountinformationdebtoraccountidentification.replace("'","")//Remove apostrophe
+                              debtoraccountinformationdebtoraccountidentification = debtoraccountinformationdebtoraccountidentification.replace(" ","")//Remove spaces
+                              debtoraccountinformationdebtoraccountidentification = debtoraccountinformationdebtoraccountidentification.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              debtoraccountinformationdebtoraccountidentification = debtoraccountinformationdebtoraccountidentification.trim
                             }
                           }
                         }
-
-                      }
-                      catch {
-                        case io: Throwable =>
-                          log_errors(strApifunction + " : " + io.getMessage())
-                        case ex: Exception =>
-                          log_errors(strApifunction + " : " + ex.getMessage())
                       }
 
-                      /* Lets set var isValidInputData to true if valid data is received from FundMaster Core System */
-                      if (isValidInputData == false){
-                        if (strDebitAccountNumber.length > 0 && strAccountNumber.length > 0){
-                          isValidInputData = true
+                      //debtoraccountinformationdebtoraccountname
+                      if (myPaymentDetails.paymentdata.debitaccountinformation.debitaccountname != None) {
+                        if (myPaymentDetails.paymentdata.debitaccountinformation.debitaccountname.get != None) {
+                          val myData = myPaymentDetails.paymentdata.debitaccountinformation.debitaccountname.get
+                          debtoraccountinformationdebtoraccountname = myData.toString()
+                          if (debtoraccountinformationdebtoraccountname != null && debtoraccountinformationdebtoraccountname != None){
+                            debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.trim
+                            if (debtoraccountinformationdebtoraccountname.length > 0){
+                              debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("'","")//Remove apostrophe
+                              debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("  "," ")//Remove double spaces
+                              debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.trim
+                            }
+                          }
                         }
                       }
 
-                      try{
-                        sourceDataTable.addRow(myBatchReference, strDebitAccountNumber, strAccountNumber, strAccountName, strCustomerReference, strBankCode, strLocalBankCode, strBranchCode, myAmount, strPaymentType, strPurposeofPayment, strDescription, strEmailAddress, myBatchSize)
+                      //creditorinformationcreditorname
+                      if (myPaymentDetails.paymentdata.creditaccountinformation.creditaccountname != None) {
+                        if (myPaymentDetails.paymentdata.creditaccountinformation.creditaccountname.get != None) {
+                          val myData = myPaymentDetails.paymentdata.creditaccountinformation.creditaccountname.get
+                          creditorinformationcreditorname = myData.toString()
+                          if (creditorinformationcreditorname != null && creditorinformationcreditorname != None){
+                            creditorinformationcreditorname = creditorinformationcreditorname.trim
+                            if (creditorinformationcreditorname.length > 0){
+                              creditorinformationcreditorname = creditorinformationcreditorname.replace("'","")//Remove apostrophe
+                              creditorinformationcreditorname = creditorinformationcreditorname.replace("  "," ")//Remove double spaces
+                              creditorinformationcreditorname = creditorinformationcreditorname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              creditorinformationcreditorname = creditorinformationcreditorname.trim
+                            }
+                          }
+                        }
                       }
-                      catch {
-                        case io: Throwable =>
-                          log_errors(strApifunction + " : " + io.getMessage())
-                        case ex: Exception =>
-                          log_errors(strApifunction + " : " + ex.getMessage())
+
+                      //creditorinformationcreditorcontactphonenumber
+                      if (myPaymentDetails.paymentdata.creditaccountinformation.creditcontactinformation.phonenumber != None) {
+                        if (myPaymentDetails.paymentdata.creditaccountinformation.creditcontactinformation.phonenumber.get != None) {
+                          val myData = myPaymentDetails.paymentdata.creditaccountinformation.creditcontactinformation.phonenumber.get
+                          creditorinformationcreditorcontactphonenumber = myData.toString()
+                          if (creditorinformationcreditorcontactphonenumber != null && creditorinformationcreditorcontactphonenumber != None){
+                            creditorinformationcreditorcontactphonenumber = creditorinformationcreditorcontactphonenumber.trim
+                            if (creditorinformationcreditorcontactphonenumber.length > 0){
+                              creditorinformationcreditorcontactphonenumber = creditorinformationcreditorcontactphonenumber.replace("'","")//Remove apostrophe
+                              creditorinformationcreditorcontactphonenumber = creditorinformationcreditorcontactphonenumber.replace(" ","")//Remove spaces
+                              creditorinformationcreditorcontactphonenumber = creditorinformationcreditorcontactphonenumber.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              creditorinformationcreditorcontactphonenumber = creditorinformationcreditorcontactphonenumber.trim
+                            }
+                          }
+                        }
                       }
-                    })
+
+                      //creditoraccountinformationcreditoraccountidentification
+                      if (myPaymentDetails.paymentdata.creditaccountinformation.creditaccountnumber != None) {
+                        if (myPaymentDetails.paymentdata.creditaccountinformation.creditaccountnumber.get != None) {
+                          val myData = myPaymentDetails.paymentdata.creditaccountinformation.creditaccountnumber.get
+                          creditoraccountinformationcreditoraccountidentification = myData.toString()
+                          if (creditoraccountinformationcreditoraccountidentification != null && creditoraccountinformationcreditoraccountidentification != None){
+                            creditoraccountinformationcreditoraccountidentification = creditoraccountinformationcreditoraccountidentification.trim
+                            if (creditoraccountinformationcreditoraccountidentification.length > 0){
+                              creditoraccountinformationcreditoraccountidentification = creditoraccountinformationcreditoraccountidentification.replace("'","")//Remove apostrophe
+                              creditoraccountinformationcreditoraccountidentification = creditoraccountinformationcreditoraccountidentification.replace(" ","")//Remove spaces
+                              creditoraccountinformationcreditoraccountidentification = creditoraccountinformationcreditoraccountidentification.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              creditoraccountinformationcreditoraccountidentification = creditoraccountinformationcreditoraccountidentification.trim
+                            }
+                          }
+                        }
+                      }
+
+                      //creditoraccountinformationcreditoraccountschemename
+                      if (myPaymentDetails.paymentdata.creditaccountinformation.schemename != None) {
+                        if (myPaymentDetails.paymentdata.creditaccountinformation.schemename.get != None) {
+                          val myData = myPaymentDetails.paymentdata.creditaccountinformation.schemename.get
+                          creditoraccountinformationcreditoraccountschemename = myData.toString()
+                          if (creditoraccountinformationcreditoraccountschemename != null && creditoraccountinformationcreditoraccountschemename != None){
+                            creditoraccountinformationcreditoraccountschemename = creditoraccountinformationcreditoraccountschemename.trim
+                            if (creditoraccountinformationcreditoraccountschemename.length > 0){
+                              creditoraccountinformationcreditoraccountschemename = creditoraccountinformationcreditoraccountschemename.replace("'","")//Remove apostrophe
+                              creditoraccountinformationcreditoraccountschemename = creditoraccountinformationcreditoraccountschemename.replace(" ","")//Remove spaces
+                              creditoraccountinformationcreditoraccountschemename = creditoraccountinformationcreditoraccountschemename.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              creditoraccountinformationcreditoraccountschemename = creditoraccountinformationcreditoraccountschemename.trim
+                            }
+                          }
+                        }
+                      }
+
+                      //creditoraccountinformationcreditoraccountname
+                      if (myPaymentDetails.paymentdata.creditaccountinformation.creditaccountname != None) {
+                        if (myPaymentDetails.paymentdata.creditaccountinformation.creditaccountname.get != None) {
+                          val myData = myPaymentDetails.paymentdata.creditaccountinformation.creditaccountname.get
+                          creditoraccountinformationcreditoraccountname = myData.toString()
+                          if (creditoraccountinformationcreditoraccountname != null && creditoraccountinformationcreditoraccountname != None){
+                            creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.trim
+                            if (creditoraccountinformationcreditoraccountname.length > 0){
+                              creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace("'","")//Remove apostrophe
+                              creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace("  "," ")//Remove double spaces
+                              creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.trim
+                            }
+                          }
+                        }
+                      }
+
+                      //creditoragentinformationfinancialInstitutionIdentification
+                      if (myPaymentDetails.paymentdata.creditaccountinformation.bankcode != None) {
+                        if (myPaymentDetails.paymentdata.creditaccountinformation.bankcode.get != None) {
+                          val myData = myPaymentDetails.paymentdata.creditaccountinformation.bankcode.get
+                          creditoragentinformationfinancialInstitutionIdentification = myData.toString()
+                          if (creditoragentinformationfinancialInstitutionIdentification != null && creditoragentinformationfinancialInstitutionIdentification != None){
+                            creditoragentinformationfinancialInstitutionIdentification = creditoragentinformationfinancialInstitutionIdentification.trim
+                            if (creditoragentinformationfinancialInstitutionIdentification.length > 0){
+                              creditoragentinformationfinancialInstitutionIdentification = creditoragentinformationfinancialInstitutionIdentification.replace("'","")//Remove apostrophe
+                              creditoragentinformationfinancialInstitutionIdentification = creditoragentinformationfinancialInstitutionIdentification.replace(" ","")//Remove spaces
+                              creditoragentinformationfinancialInstitutionIdentification = creditoragentinformationfinancialInstitutionIdentification.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              creditoragentinformationfinancialInstitutionIdentification = creditoragentinformationfinancialInstitutionIdentification.trim
+                            }
+                          }
+                        }
+                      }
+
+                      //creditorinformationcreditororganisationidentification
+                      creditorinformationcreditororganisationidentification = creditoragentinformationfinancialInstitutionIdentification
+
+
+                      //purposeinformationpurposecode
+                      if (myPaymentDetails.paymentdata.purposeinformation.purposecode != None) {
+                        if (myPaymentDetails.paymentdata.purposeinformation.purposecode.get != None) {
+                          val myData = myPaymentDetails.paymentdata.purposeinformation.purposecode.get
+                          purposeinformationpurposecode = myData.toString()
+                          if (purposeinformationpurposecode != null && purposeinformationpurposecode != None){
+                            purposeinformationpurposecode = purposeinformationpurposecode.trim
+                            if (purposeinformationpurposecode.length > 0){
+                              purposeinformationpurposecode = purposeinformationpurposecode.replace("'","")//Remove apostrophe
+                              purposeinformationpurposecode = purposeinformationpurposecode.replace(" ","")//Remove spaces
+                              purposeinformationpurposecode = purposeinformationpurposecode.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              purposeinformationpurposecode = purposeinformationpurposecode.trim
+                            }
+                          }
+                        }
+                      }
+
+                      //remittanceinformationunstructured
+                      if (myPaymentDetails.paymentdata.remittanceinformation.unstructured != None) {
+                        if (myPaymentDetails.paymentdata.remittanceinformation.unstructured.get != None) {
+                          val myData = myPaymentDetails.paymentdata.remittanceinformation.unstructured.get
+                          remittanceinformationunstructured = myData.toString()
+                          if (remittanceinformationunstructured != null && remittanceinformationunstructured != None){
+                            remittanceinformationunstructured = remittanceinformationunstructured.trim
+                            if (remittanceinformationunstructured.length > 0){
+                              remittanceinformationunstructured = remittanceinformationunstructured.replace("'","")//Remove apostrophe
+                              remittanceinformationunstructured = remittanceinformationunstructured.replace(" ","")//Remove spaces
+                              remittanceinformationunstructured = remittanceinformationunstructured.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              remittanceinformationunstructured = remittanceinformationunstructured.trim
+                            }
+                          }
+                        }
+                      }
+
+                      //remittanceinformationtaxremittancereferencenumber
+                      if (myPaymentDetails.paymentdata.remittanceinformation.taxremittancereferencenumber != None) {
+                        if (myPaymentDetails.paymentdata.remittanceinformation.taxremittancereferencenumber.get != None) {
+                          val myData = myPaymentDetails.paymentdata.remittanceinformation.taxremittancereferencenumber.get
+                          remittanceinformationtaxremittancereferencenumber = myData.toString()
+                          if (remittanceinformationtaxremittancereferencenumber != null && remittanceinformationtaxremittancereferencenumber != None){
+                            remittanceinformationtaxremittancereferencenumber = remittanceinformationtaxremittancereferencenumber.trim
+                            if (remittanceinformationtaxremittancereferencenumber.length > 0){
+                              remittanceinformationtaxremittancereferencenumber = remittanceinformationtaxremittancereferencenumber.replace("'","")//Remove apostrophe
+                              remittanceinformationtaxremittancereferencenumber = remittanceinformationtaxremittancereferencenumber.replace(" ","")//Remove spaces
+                              remittanceinformationtaxremittancereferencenumber = remittanceinformationtaxremittancereferencenumber.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              remittanceinformationtaxremittancereferencenumber = remittanceinformationtaxremittancereferencenumber.trim
+                            }
+                          }
+                        }
+                      }
+
+                    }
+                    catch {
+                      case io: Throwable =>
+                        log_errors(strApifunction + " : " + io.getMessage())
+                      case ex: Exception =>
+                        log_errors(strApifunction + " : " + ex.getMessage())
+                    }
+
+                    /* Lets set var isValidInputData to true if valid data is received from e-Channels/ESB-CBS System */
+                    /*
+                    val isValidSchemeName: Boolean = {
+                      creditoraccountinformationcreditoraccountschemename match {
+                        case accSchemeName =>
+                          true
+                        case phneSchemeName =>
+                          true
+                        case _ =>
+                          false
+                      }
+                    }
+                    */
+                    val isValidSchemeName: Boolean = {
+                      var isValid: Boolean = false
+                      if (creditoraccountinformationcreditoraccountschemename.length == 0 || accSchemeName.length == 0){
+                        isValid = false
+                      }
+                      else if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(accSchemeName)){
+                        isValid = true
+                      }
+                      else if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(phneSchemeName)){
+                        isValid = true
+                      }
+                      else {
+                        isValid = false
+                      }
+                      isValid
+                    }
+
+                    if (debtoraccountinformationdebtoraccountidentification.length > 0 && creditoraccountinformationcreditoraccountidentification.length > 0 && isValidSchemeName){
+                      isValidInputData = true
+                      myHttpStatusCode = HttpStatusCode.Accepted //TESTS ONLY
+                      responseCode = 0
+                      responseMessage = "Message accepted for processing."
+                      println("messageidentification - " + messageidentification + ", paymentendtoendidentification - " + paymentendtoendidentification + ", totalinterbanksettlementamount - " + totalinterbanksettlementamount +
+                        ", debtoraccountinformationdebtoraccountidentification - " + debtoraccountinformationdebtoraccountidentification + ", creditoraccountinformationcreditoraccountidentification - " + creditoraccountinformationcreditoraccountidentification)
+                    }
 
                     try{
-                      if (isValidInputData == true){
+                      //sourceDataTable.addRow(myBatchReference, strDebitAccountNumber, strAccountNumber, strAccountName, strCustomerReference, strBankCode, strLocalBankCode, strBranchCode, myAmount, strPaymentType, strPurposeofPayment, strDescription, strEmailAddress, myBatchSize)
+                      //validate creditoraccountinformationcreditoraccountschemename to ensure it has the right input value
+                      /*
+                      val schemeName: String = {
+                        creditoraccountinformationcreditoraccountschemename match {
+                          case accSchemeName =>
+                            SchemeName.ACC.toString.toUpperCase
+                          case phneSchemeName =>
+                            SchemeName.PHNE.toString.toUpperCase
+                          case _ =>
+                            SchemeName.ACC.toString.toUpperCase
+                        }
+                      }
+                      */
+                      val schemeName: String = {
+                        var scheme: String = ""
+                        if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(accSchemeName)){
+                          scheme = accSchemeName
+                        }
+                        else if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(phneSchemeName)){
+                          scheme = phneSchemeName
+                        }
+                        scheme
+                      }
+
+                      creditoraccountinformationcreditoraccountschemename = schemeName
+
+                      val transferDefaultInfo = TransferDefaultInfo(firstAgentIdentification, assigneeAgentIdentification, chargeBearer, settlementMethod, clearingSystem, serviceLevel, localInstrumentCode, categoryPurpose)
+                      val debitcontactinformation = ContactInfo(debtorinformationdebtorcontactphonenumber)
+                      val debitAccountInfo = DebitAccountInfo(debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, debitcontactinformation, SchemeName.ACC.toString.toUpperCase)
+                      val creditcontactinformation = ContactInfo(creditorinformationcreditorcontactphonenumber)
+                      val creditAccountInfo = CreditAccountInfo(creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoraccountinformationcreditoraccountschemename, creditoragentinformationfinancialInstitutionIdentification, creditcontactinformation)
+                      val purposeInfo = TransferPurposeInfo(purposeinformationpurposecode)
+                      val remittanceInfo = TransferRemittanceInfo(remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber)
+                      val mandateInfo = TransferMandateInfo(mandateidentification)
+                      val paymentdata = CreditTransferPaymentInfo(paymentendtoendidentification, interbanksettlementamount, debitAccountInfo, creditAccountInfo, mandateInfo, remittanceInfo, purposeInfo, transferDefaultInfo)
+                      val singleCreditTransferPaymentInfo = SingleCreditTransferPaymentInfo(messageidentification, creationDateTime, numberoftransactions, totalinterbanksettlementamount, paymentdata)
+
+                      val f = Future {
+                        println("singleCreditTransferPaymentInfo - " + singleCreditTransferPaymentInfo)
+                        val myRespData: String = getSingleCreditTransferDetails(singleCreditTransferPaymentInfo)
+                        sendSingleCreditTransferRequestsIpsl(myRespData)
+                      }
+
+                    }
+                    catch {
+                      case io: Throwable =>
+                        log_errors(strApifunction + " : " + io.getMessage())
+                      case ex: Exception =>
+                        log_errors(strApifunction + " : " + ex.getMessage())
+                    }
+                    //})
+
+                    try{
+                      if (isValidInputData){
+                        /*
                         myDB.withConnection { implicit  myconn =>
 
                           try {
@@ -1591,8 +1871,8 @@ class CbsEngine @Inject()
                               log_errors(strApifunction + " : " + ex.getMessage())
                           }
                         }
+                        */
                       }
-
                       else{
                         responseMessage = "Invalid Input Data length"
                         /*
@@ -1630,9 +1910,6 @@ class CbsEngine @Inject()
                         entryID = 3
                         log_errors(strApifunction + " : " + ex.getMessage())
                     }
-                    finally{
-
-                    }
 
                   }
                   catch {
@@ -1649,39 +1926,33 @@ class CbsEngine @Inject()
                       entryID = 3
                       log_errors(strApifunction + " : " + ex.getMessage())
                   }
-                  finally{
-
-                  }
                 }
                 catch
                   {
                     case ex: Exception =>
-                      isProcessed = false
                       log_errors(strApifunction + " : " + ex.getMessage())
                     case tr: Throwable =>
-                      isProcessed = false
                       log_errors(strApifunction + " : " + tr.getMessage())
                   }
-                finally
-                {
-                }
 
               }
               case JsError(e) => {
                 // do something
-                isProcessed = false
                 responseMessage = "Error occured when unpacking Json values"
                 log_errors(strApifunction + " : " + e.toString())
               }
             }
           }
+          else{
+            myHttpStatusCode = HttpStatusCode.Unauthorized
+          }
 
         }
         else {
-          if (isDataFound == false) {
+          if (!isDataFound) {
             responseMessage = "Invalid Request Data"
           }
-          else if (isAuthTokenFound == false) {
+          else if (!isAuthTokenFound) {
             responseMessage = "Invalid Access Token"
           }
           else {
@@ -1693,22 +1964,17 @@ class CbsEngine @Inject()
       catch
         {
           case ex: Exception =>
-            isProcessed = false
             responseMessage = "Error occured during processing, please try again."
             log_errors(strApifunction + " : " + ex.getMessage())
           case tr: Throwable =>
-            isProcessed = false
             responseMessage = "Error occured during processing, please try again."
             log_errors(strApifunction + " : " + tr.getMessage())
         }
-      finally
-      {
-      }
-
+      /*
       implicit val S2B_PaymentDetailsResponse_BatchWrites = Json.writes[S2B_PaymentDetailsResponse_Batch]
       implicit val S2B_PaymentDetailsResponse_BatchDataWrites = Json.writes[S2B_PaymentDetailsResponse_BatchData]
 
-      if (myS2B_PaymentDetailsResponse_BatchData.isEmpty == true || myS2B_PaymentDetailsResponse_BatchData == true){
+      if (myS2B_PaymentDetailsResponse_BatchData.isEmpty || myS2B_PaymentDetailsResponse_BatchData){
         val myS2B_PaymentDetailsResponse_Batch = new S2B_PaymentDetailsResponse_Batch("", "", "", "", responseCode, responseMessage)
         myS2B_PaymentDetailsResponse_BatchData  = myS2B_PaymentDetailsResponse_BatchData :+ myS2B_PaymentDetailsResponse_Batch
       }
@@ -1716,6 +1982,7 @@ class CbsEngine @Inject()
       val myPaymentDetailsResponse = new S2B_PaymentDetailsResponse_BatchData(myS2B_PaymentDetailsResponse_BatchData)
 
       val jsonResponse = Json.toJson(myPaymentDetailsResponse)
+      */
       /*
       try{
         log_data(strApifunction + " : " + "response - " + jsonResponse.toString() + " , remoteAddress - " + request.remoteAddress)
@@ -1732,14 +1999,11 @@ class CbsEngine @Inject()
       val r: Result = Ok(jsonResponse)
       r
       */
-      //implicit val response_processUssdActions_Writes = Json.writes[response_processUssdActions]
-
+      /*
       val myRespData: String = getSingleCreditTransferDetails
-      //val myresponse_processUssdActions = new response_processUssdActions(myData)
 
-      //TESTS ONLY
-      //sendSingleCreditTransferRequestsIpsl(myData.toString())
       val f = Future {sendSingleCreditTransferRequestsIpsl(myRespData)}
+      */
 
       //Log_data("processWhatsAppActions - " + "ResponseCode - " + responseCode.toString + " , ResponseMessage - " + responseMessage + " - Request Message : " + strRequest)
       /*
@@ -1747,14 +2011,24 @@ class CbsEngine @Inject()
       val r: Result = textResponse
       r
       */
-      implicit val textResponseData_Writes = Json.writes[textResponseData]
+      implicit val  SingleCreditTransferPaymentDetailsResponse_Writes = Json.writes[SingleCreditTransferPaymentDetailsResponse]
 
-      val myData: String = "Message accepted for processing."
+      val mySingleCreditTransferPaymentResponse =  SingleCreditTransferPaymentDetailsResponse(responseCode, responseMessage)
+      val jsonResponse = Json.toJson(mySingleCreditTransferPaymentResponse)
 
-      val myResponseData = new textResponseData(myData)
+      val r: Result = {
+        myHttpStatusCode match {
+          case HttpStatusCode.Accepted =>
+            Accepted(jsonResponse)
+          case HttpStatusCode.BadRequest =>
+            BadRequest(jsonResponse)
+          case HttpStatusCode.Unauthorized =>
+            Unauthorized(jsonResponse)
+          case _ =>
+            BadRequest(jsonResponse)
+        }
+      }
 
-      val textResponse = Accepted(myResponseData.text.toString).as("text/plain")
-      val r: Result = textResponse
       r
     }(myExecutionContext)
   }
@@ -1766,7 +2040,7 @@ class CbsEngine @Inject()
       var responseCode : Int = 1
       var responseMessage : String = "Error occured during processing, please try again."
       var myS2B_ForexPaymentDetailsResponse_BatchData : Seq[S2B_ForexPaymentDetailsResponse_Batch] = Seq.empty[S2B_ForexPaymentDetailsResponse_Batch]
-      val strApifunction : String = "addBulkCreditTransferPaymentDetails"
+      val strApifunction : String = "addbulkcredittransferpaymentdetails"
 
       try
       {
@@ -2821,11 +3095,11 @@ class CbsEngine @Inject()
                 mystmt.registerOutParameter("responseCode", java.sql.Types.INTEGER)
                 mystmt.registerOutParameter("responseMessage", java.sql.Types.VARCHAR)
                 mystmt.execute()
-                responseCode = mystmt.getInt("responseCode")
+                val respCode = mystmt.getInt("responseCode")
                 responseMessage = mystmt.getString("responseMessage")
 
-                if (responseCode == null){
-                  responseCode = 1
+                if (respCode != null){
+                  responseCode = respCode
                 }
 
                 if (responseMessage == null){
@@ -3235,7 +3509,7 @@ class CbsEngine @Inject()
       val myAccountVerificationDetailsResponse_Batch = AccountVerificationDetailsResponse_Batch(strTransactionReference, strAccountNumber, strAccountname, myBankCode.toString)
       val myAccountVerificationResponse = AccountVerificationDetailsResponse_BatchData(strMessageReference, responseCode, responseMessage, myAccountVerificationDetailsResponse_Batch)
       */
-      implicit val  AccountVerificationDetailsResponse_BatchWrites = Json.writes[AccountVerificationDetailsResponse]
+      implicit val  AccountVerificationDetailsResponse_Writes = Json.writes[AccountVerificationDetailsResponse]
 
       val myAccountVerificationResponse =  AccountVerificationDetailsResponse(responseCode, responseMessage)
       val jsonResponse = Json.toJson(myAccountVerificationResponse)
@@ -9947,68 +10221,50 @@ class CbsEngine @Inject()
 
     strOutput
   }
-  def getSingleCreditTransferDetails() : String = {
+  def getSingleCreditTransferDetails(creditTransferPaymentInfo: SingleCreditTransferPaymentInfo) : String = {
 
     var strOutput: String = ""
     try {
-      /*
-      myDB.withConnection { implicit myconn =>
-
-        try{
-          val mystmt: CallableStatement = myconn.prepareCall(strSQL)
-          mystmt.setInt(1,myServiceCode)
-          mystmt.registerOutParameter("ServiceEsbApi", java.sql.Types.BOOLEAN)
-          mystmt.execute()
-          isServiceEsbApi = mystmt.getBoolean("ServiceEsbApi")
-        }
-        catch{
-          case ex : Exception =>
-            log_errors("getServiceEsbApi : " + ex.getMessage + " - ex exception error occured." + " ServiceCode - " + myServiceCode.toString())
-          case t: Throwable =>
-            log_errors("getServiceEsbApi : " + t.getMessage + " exception error occured." + " ServiceCode - " + myServiceCode.toString())
-        }
-
-      }
-      */
-      val messageidentification: String = "001"
-      val creationdatetime: String = "2021-03-27"
-      val numberoftransactions: Int = 1
-      val settlementmethod: String = "CLRG"
-      val clearingSystem: String = "IPS"
-      val servicelevel: String = "P2PT"
-      val localinstrumentcode: String = "INST"
-      val categorypurpose: String = "IBNK"
-      val instructingagentinformationfinancialInstitutionIdentification: String = "2000"
-      val instructedagentinformationfinancialInstitutionIdentification: String = "1990"
-      val paymentendtoendidentification: String = "2031203220210120095543e10b05af"
-      val interbanksettlementamount: BigDecimal = 6545.56
-      val acceptancedatetime: String = "2021-03-27"
-      val chargebearer: String = "SLEV"
-      val mandateidentification: String = ""
-      val ultimatedebtorinformationdebtorname: String = "paul wakimani"
-      val ultimatedebtorinformationdebtororganisationidentification: String = "2000"
-      val ultimatedebtorinformationdebtorcontactphonenumber: String = "0711000000"
-      val initiatingpartyinformationorganisationidentification: String = "2000"
-      val debtorinformationdebtorname: String = "paul wakimani"
-      val debtorinformationdebtororganisationidentification: String = "2000"
-      val debtorinformationdebtorcontactphonenumber: String = "0711000000"
-      val debtoraccountinformationdebtoraccountidentification: String = "0711000000"
-      val debtoraccountinformationdebtoraccounttransactionmode: String = "PHNE"
-      val debtoraccountinformationdebtoraccountname: String = "paul wakimani"
-      val debtoragentinformationfinancialInstitutionIdentification: String = "2000"
-      val creditoragentinformationfinancialInstitutionIdentification: String = "1990"
-      val creditorinformationcreditorname: String = "Nancy Mbera"
-      val creditorinformationcreditororganisationidentification: String = "1990"
-      val creditorinformationcreditorcontactphonenumber: String = "0756000000"
-      val creditoraccountinformationcreditoraccountidentification: String = "0756000000"
-      val creditoraccountinformationcreditoraccounttransactionmode: String = "PHNE"
-      val creditoraccountinformationcreditoraccountname: String = "Nancy Mbera"
-      val ultimatecreditorinformationcreditorname: String = "Nancy Mbera"
-      val ultimatecreditorinformationcreditororganisationidentification: String = "1990"
-      val ultimatecreditorinformationcreditorcontactphonenumber: String = "0756000000"
-      val purposeinformationpurposecode: String = ""
-      val remittanceinformationunstructured: String = ""
-      val remittanceinformationtaxremittancereferencenumber: String = ""
+      val messageidentification: String = creditTransferPaymentInfo.messagereference//"001"
+      val creationdatetime: String = creditTransferPaymentInfo.creationdatetime//"2021-03-27"
+      val numberoftransactions: Int = creditTransferPaymentInfo.numberoftransactions
+      val totalinterbanksettlementamount: BigDecimal = creditTransferPaymentInfo.totalinterbanksettlementamount
+      val settlementmethod: String = creditTransferPaymentInfo.paymentdata.transferdefaultinformation.settlementmethod//"CLRG"
+      val clearingSystem: String = creditTransferPaymentInfo.paymentdata.transferdefaultinformation.clearingsystem//"IPS"
+      val servicelevel: String = creditTransferPaymentInfo.paymentdata.transferdefaultinformation.servicelevel//"P2PT"
+      val localinstrumentcode: String = creditTransferPaymentInfo.paymentdata.transferdefaultinformation.localinstrumentcode//"INST"
+      val categorypurpose: String = creditTransferPaymentInfo.paymentdata.transferdefaultinformation.categorypurpose//"IBNK"
+      val instructingagentinformationfinancialInstitutionIdentification: String = creditTransferPaymentInfo.paymentdata.transferdefaultinformation.firstagentidentification//"2000"
+      val instructedagentinformationfinancialInstitutionIdentification: String = creditTransferPaymentInfo.paymentdata.transferdefaultinformation.assigneeagentidentification//"1990"
+      val paymentendtoendidentification: String = creditTransferPaymentInfo.paymentdata.transactionreference//"2031203220210120095543e10b05af"
+      val interbanksettlementamount: BigDecimal = creditTransferPaymentInfo.paymentdata.amount//6545.56
+      val acceptancedatetime: String = creditTransferPaymentInfo.creationdatetime//"2021-03-27"
+      val chargebearer: String = creditTransferPaymentInfo.paymentdata.transferdefaultinformation.chargebearer//"SLEV"
+      val mandateidentification: String = creditTransferPaymentInfo.paymentdata.mandateinformation.mandateidentification//""
+      val ultimatedebtorinformationdebtorname: String = creditTransferPaymentInfo.paymentdata.debitaccountinformation.debitaccountname//"paul wakimani"
+      val ultimatedebtorinformationdebtororganisationidentification: String = creditTransferPaymentInfo.paymentdata.transferdefaultinformation.firstagentidentification//"2000"
+      val ultimatedebtorinformationdebtorcontactphonenumber: String = creditTransferPaymentInfo.paymentdata.debitaccountinformation.debitcontactinformation.phonenumber//"0711000000"
+      val initiatingpartyinformationorganisationidentification: String = creditTransferPaymentInfo.paymentdata.transferdefaultinformation.firstagentidentification//"2000"
+      val debtorinformationdebtorname: String = creditTransferPaymentInfo.paymentdata.debitaccountinformation.debitaccountname//"paul wakimani"
+      val debtorinformationdebtororganisationidentification: String = creditTransferPaymentInfo.paymentdata.transferdefaultinformation.firstagentidentification//"2000"
+      val debtorinformationdebtorcontactphonenumber: String = creditTransferPaymentInfo.paymentdata.debitaccountinformation.debitcontactinformation.phonenumber//"0711000000"
+      val debtoraccountinformationdebtoraccountidentification: String = creditTransferPaymentInfo.paymentdata.debitaccountinformation.debitaccountnumber//"0711000000"
+      val debtoraccountinformationdebtoraccountschemename: String = creditTransferPaymentInfo.paymentdata.debitaccountinformation.schemename//"PHNE"
+      val debtoraccountinformationdebtoraccountname: String = creditTransferPaymentInfo.paymentdata.debitaccountinformation.debitaccountname//"paul wakimani"
+      val debtoragentinformationfinancialInstitutionIdentification: String = creditTransferPaymentInfo.paymentdata.transferdefaultinformation.firstagentidentification//"2000"
+      val creditoragentinformationfinancialInstitutionIdentification: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.bankcode//"1990"
+      val creditorinformationcreditorname: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.creditaccountname//"Nancy Mbera"
+      val creditorinformationcreditororganisationidentification: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.bankcode//"1990"
+      val creditorinformationcreditorcontactphonenumber: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.creditcontactinformation.phonenumber//"0756000000"
+      val creditoraccountinformationcreditoraccountidentification: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.creditaccountnumber//"0756000000"
+      val creditoraccountinformationcreditoraccountschemename: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.schemename//"PHNE"
+      val creditoraccountinformationcreditoraccountname: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.creditaccountname//"Nancy Mbera"
+      val ultimatecreditorinformationcreditorname: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.creditaccountname//"Nancy Mbera"
+      val ultimatecreditorinformationcreditororganisationidentification: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.bankcode//"1990"
+      val ultimatecreditorinformationcreditorcontactphonenumber: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.creditcontactinformation.phonenumber//"0756000000"
+      val purposeinformationpurposecode: String = creditTransferPaymentInfo.paymentdata.purposeinformation.purposecode//""
+      val remittanceinformationunstructured: String = creditTransferPaymentInfo.paymentdata.remittanceinformation.unstructured//""
+      val remittanceinformationtaxremittancereferencenumber: String = creditTransferPaymentInfo.paymentdata.remittanceinformation.taxremittancereferencenumber//""
 
       //Group Header Information
       /*
@@ -10017,7 +10273,6 @@ class CbsEngine @Inject()
       val numberoftransactions: Int = 0
       val totalinterbanksettlementamount: BigDecimal = 0
       */
-      val totalinterbanksettlementamount: BigDecimal = 6545.56
       val settlementinformation: SettlementInformation = SettlementInformation(settlementmethod, clearingSystem)
       val paymenttypeinformation: PaymentTypeInformation = PaymentTypeInformation(servicelevel, localinstrumentcode, categorypurpose)
       val instructingagentinformation: InstructingAgentInformation = InstructingAgentInformation(instructingagentinformationfinancialInstitutionIdentification)
@@ -10038,11 +10293,11 @@ class CbsEngine @Inject()
       val ultimatedebtorinformation: UltimateDebtorInformation = UltimateDebtorInformation(ultimatedebtorinformationdebtorname, ultimatedebtorinformationdebtororganisationidentification, ultimatedebtorinformationdebtorcontactphonenumber)
       val initiatingpartyinformation: InitiatingPartyInformation = InitiatingPartyInformation(initiatingpartyinformationorganisationidentification)
       val debtorinformation: DebtorInformation = DebtorInformation(debtorinformationdebtorname, debtorinformationdebtororganisationidentification, debtorinformationdebtorcontactphonenumber)
-      val debtoraccountinformation: DebtorAccountInformation = DebtorAccountInformation(debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccounttransactionmode, debtoraccountinformationdebtoraccountname)
+      val debtoraccountinformation: DebtorAccountInformation = DebtorAccountInformation(debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountschemename, debtoraccountinformationdebtoraccountname)
       val debtoragentinformation: DebtorAgentInformation = DebtorAgentInformation(debtoragentinformationfinancialInstitutionIdentification)
       val creditoragentinformation: CreditorAgentInformation = CreditorAgentInformation(creditoragentinformationfinancialInstitutionIdentification)
       val creditorinformation: CreditorInformation = CreditorInformation(creditorinformationcreditorname, creditorinformationcreditororganisationidentification, creditorinformationcreditorcontactphonenumber)
-      val creditoraccountinformation: CreditorAccountInformation = CreditorAccountInformation(creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccounttransactionmode, creditoraccountinformationcreditoraccountname)
+      val creditoraccountinformation: CreditorAccountInformation = CreditorAccountInformation(creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountschemename, creditoraccountinformationcreditoraccountname)
       val ultimatecreditorinformation: UltimateCreditorInformation = UltimateCreditorInformation(ultimatecreditorinformationcreditorname, ultimatecreditorinformationcreditororganisationidentification, ultimatecreditorinformationcreditorcontactphonenumber)
       val purposeinformation: PurposeInformation = PurposeInformation(purposeinformationpurposecode)
       val remittanceinformation: RemittanceInformation = RemittanceInformation(remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber)
