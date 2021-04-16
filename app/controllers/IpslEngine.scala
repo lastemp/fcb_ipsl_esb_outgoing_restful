@@ -353,11 +353,11 @@ class IpslEngine @Inject()
                                      var verificationStatus: String,
                                      var verificationReasonCode: String,
                                      var originalBeneficiaryAccountNumber: String,
-                                     var originalBeneficiaryTransactionMode: String,
+                                     var originalBeneficiarySchemeName: String,
                                      var originalBeneficiaryAgentIdentification: String,
                                      var updatedBeneficiaryAccountName: String,
                                      var updatedBeneficiaryAccountNumber: String,
-                                     var updatedBeneficiaryTransactionMode: String,
+                                     var updatedBeneficiarySchemeName: String,
                                      var updatedBeneficiaryAgentIdentification: String
                                    ) {
 
@@ -416,7 +416,7 @@ class IpslEngine @Inject()
                 <Othr>
                   <Id>{originalBeneficiaryAccountNumber}</Id>
                   <SchmeNm>
-                    <Prtry>{originalBeneficiaryTransactionMode}</Prtry>
+                    <Prtry>{originalBeneficiarySchemeName}</Prtry>
                   </SchmeNm>
                 </Othr>
               </Acct>
@@ -436,7 +436,7 @@ class IpslEngine @Inject()
                 <Othr>
                   <Id>{updatedBeneficiaryAccountNumber}</Id>
                   <SchmeNm>
-                    <Prtry>{updatedBeneficiaryTransactionMode}</Prtry>
+                    <Prtry>{updatedBeneficiarySchemeName}</Prtry>
                   </SchmeNm>
                 </Othr>
               </Acct>
@@ -454,7 +454,7 @@ class IpslEngine @Inject()
     }
 
     override def toString =
-      s"messageIdentification: $messageIdentification, creationDateTime: $creationDateTime, firstAgentIdentification: $firstAgentIdentification, assignerAgentIdentification: $assignerAgentIdentification, assigneeAgentIdentification: $assigneeAgentIdentification, originalMessageIdentification: $originalMessageIdentification, originalCreationDateTime: $originalCreationDateTime, originalFirstAgentIdentification: $originalFirstAgentIdentification, originalVerificationIdentification: $originalVerificationIdentification, verificationStatus: $verificationStatus, verificationReasonCode: $verificationReasonCode, originalBeneficiaryAccountNumber: $originalBeneficiaryAccountNumber, originalBeneficiaryTransactionMode: $originalBeneficiaryTransactionMode, originalBeneficiaryAgentIdentification: $originalBeneficiaryAgentIdentification, updatedBeneficiaryAccountName: $updatedBeneficiaryAccountName, updatedBeneficiaryAccountNumber: $updatedBeneficiaryAccountNumber, updatedBeneficiaryTransactionMode: $updatedBeneficiaryTransactionMode, updatedBeneficiaryAgentIdentification: $updatedBeneficiaryAgentIdentification"
+      s"messageIdentification: $messageIdentification, creationDateTime: $creationDateTime, firstAgentIdentification: $firstAgentIdentification, assignerAgentIdentification: $assignerAgentIdentification, assigneeAgentIdentification: $assigneeAgentIdentification, originalMessageIdentification: $originalMessageIdentification, originalCreationDateTime: $originalCreationDateTime, originalFirstAgentIdentification: $originalFirstAgentIdentification, originalVerificationIdentification: $originalVerificationIdentification, verificationStatus: $verificationStatus, verificationReasonCode: $verificationReasonCode, originalBeneficiaryAccountNumber: $originalBeneficiaryAccountNumber, originalBeneficiarySchemeName: $originalBeneficiarySchemeName, originalBeneficiaryAgentIdentification: $originalBeneficiaryAgentIdentification, updatedBeneficiaryAccountName: $updatedBeneficiaryAccountName, updatedBeneficiaryAccountNumber: $updatedBeneficiaryAccountNumber, updatedBeneficiarySchemeName: $updatedBeneficiarySchemeName, updatedBeneficiaryAgentIdentification: $updatedBeneficiaryAgentIdentification"
     }
 
         object AccountVerificationResponse {
@@ -473,19 +473,19 @@ class IpslEngine @Inject()
         val verificationStatus: String = (node \ "IdVrfctnRpt" \ "Rpt" \ "Vrfctn").text
         val verificationReasonCode: String = (node \ "IdVrfctnRpt" \ "Rpt" \ "Rsn" \ "Cd").text
         val originalBeneficiaryAccountNumber: String = (node \ "IdVrfctnRpt" \ "Rpt" \ "OrgnlPtyAndAcctId" \ "Acct" \ "Othr" \ "Id").text
-        val originalBeneficiaryTransactionMode: String = (node \ "IdVrfctnRpt" \ "Rpt" \ "OrgnlPtyAndAcctId" \ "Acct" \ "Othr" \ "SchmeNm" \ "Prtry").text
+        val originalBeneficiarySchemeName: String = (node \ "IdVrfctnRpt" \ "Rpt" \ "OrgnlPtyAndAcctId" \ "Acct" \ "Othr" \ "SchmeNm" \ "Prtry").text
         val originalBeneficiaryAgentIdentification: String = (node \ "IdVrfctnRpt" \ "Rpt" \ "OrgnlPtyAndAcctId" \ "Agt" \ "FinInstnId" \ "Othr" \ "Id").text
         val updatedBeneficiaryAccountName: String = (node \ "IdVrfctnRpt" \ "Rpt" \ "UpdtdPtyAndAcctId" \ "Pty" \ "Nm").text
         val updatedBeneficiaryAccountNumber: String = (node \ "IdVrfctnRpt" \ "Rpt" \ "UpdtdPtyAndAcctId" \ "Acct" \ "Othr" \ "Id").text
-        val updatedBeneficiaryTransactionMode: String = (node \ "IdVrfctnRpt" \ "Rpt" \ "UpdtdPtyAndAcctId" \ "Acct" \ "Othr" \ "SchmeNm" \ "Prtry").text
+        val updatedBeneficiarySchemeName: String = (node \ "IdVrfctnRpt" \ "Rpt" \ "UpdtdPtyAndAcctId" \ "Acct" \ "Othr" \ "SchmeNm" \ "Prtry").text
         val updatedBeneficiaryAgentIdentification: String = (node \ "IdVrfctnRpt" \ "Rpt" \ "UpdtdPtyAndAcctId" \ "Agt" \ "FinInstnId" \ "Othr" \ "Id").text
         new AccountVerificationResponse(
         messageIdentification, creationDateTime, firstAgentIdentification,
         assignerAgentIdentification, assigneeAgentIdentification, originalMessageIdentification,
         originalCreationDateTime, originalFirstAgentIdentification, originalVerificationIdentification,
         verificationStatus, verificationReasonCode, originalBeneficiaryAccountNumber,
-        originalBeneficiaryTransactionMode, originalBeneficiaryAgentIdentification, updatedBeneficiaryAccountName,
-        updatedBeneficiaryAccountNumber, updatedBeneficiaryTransactionMode, updatedBeneficiaryAgentIdentification
+        originalBeneficiarySchemeName, originalBeneficiaryAgentIdentification, updatedBeneficiaryAccountName,
+        updatedBeneficiaryAccountNumber, updatedBeneficiarySchemeName, updatedBeneficiaryAgentIdentification
         )
         }
 
@@ -10854,19 +10854,19 @@ class IpslEngine @Inject()
       val verificationStatus: String =  "true"//"false"
       val verificationReasonCode: String = ""//"Account does not exist"
       val originalBeneficiaryAccountNumber: String = "219277372626"
-      val originalBeneficiaryTransactionMode: String = "PHNE"
+      val originalBeneficiarySchemeName: String = "PHNE"
       val originalBeneficiaryAgentIdentification: String = "2010"
       val updatedBeneficiaryAccountName: String = "Paul Wakimani"
       val updatedBeneficiaryAccountNumber: String = "219277372626"
-      val updatedBeneficiaryTransactionMode: String = "PHNE"
+      val updatedBeneficiarySchemeName: String = "PHNE"
       val updatedBeneficiaryAgentIdentification: String = "2010"
       val accountVerification = new AccountVerificationResponse(
         messageIdentification, creationDateTime, firstAgentIdentification,
         assignerAgentIdentification, assigneeAgentIdentification, originalMessageIdentification,
         originalCreationDateTime, originalFirstAgentIdentification, originalVerificationIdentification,
         verificationStatus, verificationReasonCode, originalBeneficiaryAccountNumber,
-        originalBeneficiaryTransactionMode, originalBeneficiaryAgentIdentification, updatedBeneficiaryAccountName,
-        updatedBeneficiaryAccountNumber, updatedBeneficiaryTransactionMode, updatedBeneficiaryAgentIdentification
+        originalBeneficiarySchemeName, originalBeneficiaryAgentIdentification, updatedBeneficiaryAccountName,
+        updatedBeneficiaryAccountNumber, updatedBeneficiarySchemeName, updatedBeneficiaryAgentIdentification
         )
       val myData = accountVerification.toXml
 

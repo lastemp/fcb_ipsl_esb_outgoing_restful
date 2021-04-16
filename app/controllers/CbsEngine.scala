@@ -228,11 +228,11 @@ class CbsEngine @Inject()
   case class UltimateDebtorInformation(debtorname: String, debtororganisationidentification: String, debtorcontactphonenumber: String)
   case class InitiatingPartyInformation(organisationidentification: String)
   case class DebtorInformation(debtorname: String, debtororganisationidentification: String, debtorcontactphonenumber: String)
-  case class DebtorAccountInformation(debtoraccountidentification: String, debtoraccounttransactionmode: String, debtoraccountname: String)
+  case class DebtorAccountInformation(debtoraccountidentification: String, debtoraccountschemename: String, debtoraccountname: String)
   case class DebtorAgentInformation(financialInstitutionIdentification: String)
   case class CreditorAgentInformation(financialInstitutionIdentification: String)
   case class CreditorInformation(creditorname: String, creditororganisationidentification: String, creditorcontactphonenumber: String)
-  case class CreditorAccountInformation(creditoraccountidentification: String, creditoraccounttransactionmode: String, creditoraccountname: String)
+  case class CreditorAccountInformation(creditoraccountidentification: String, creditoraccountschemename: String, creditoraccountname: String)
   case class UltimateCreditorInformation(creditorname: String, creditororganisationidentification: String, creditorcontactphonenumber: String)
   case class PurposeInformation(purposecode: String)
   case class RemittanceInformation(unstructured: String, taxremittancereferencenumber: String)
@@ -606,7 +606,7 @@ class CbsEngine @Inject()
                 <Othr>
                   <Id>{creditTransferTransactionInformation.debtoraccountinformation.debtoraccountidentification}</Id>
                   <SchmeNm>
-                    <Prtry>{creditTransferTransactionInformation.debtoraccountinformation.debtoraccounttransactionmode}</Prtry>
+                    <Prtry>{creditTransferTransactionInformation.debtoraccountinformation.debtoraccountschemename}</Prtry>
                   </SchmeNm>
                 </Othr>
               </Id>
@@ -644,7 +644,7 @@ class CbsEngine @Inject()
                 <Othr>
                   <Id>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccountidentification}</Id>
                   <SchmeNm>
-                    <Prtry>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccounttransactionmode}</Prtry>
+                    <Prtry>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccountschemename}</Prtry>
                   </SchmeNm>
                 </Othr>
               </Id>
@@ -873,7 +873,7 @@ class CbsEngine @Inject()
                       <Othr>
                         <Id>{creditTransferTransactionInformation.debtoraccountinformation.debtoraccountidentification}</Id>
                         <SchmeNm>
-                          <Prtry>{creditTransferTransactionInformation.debtoraccountinformation.debtoraccounttransactionmode}</Prtry>
+                          <Prtry>{creditTransferTransactionInformation.debtoraccountinformation.debtoraccountschemename}</Prtry>
                         </SchmeNm>
                       </Othr>
                     </Id>
@@ -911,7 +911,7 @@ class CbsEngine @Inject()
                       <Othr>
                         <Id>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccountidentification}</Id>
                         <SchmeNm>
-                          <Prtry>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccounttransactionmode}</Prtry>
+                          <Prtry>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccountschemename}</Prtry>
                         </SchmeNm>
                       </Othr>
                     </Id>
@@ -10371,7 +10371,7 @@ class CbsEngine @Inject()
       val debtorinformationdebtororganisationidentification: String = "2000"
       val debtorinformationdebtorcontactphonenumber: String = "0711000000"
       val debtoraccountinformationdebtoraccountidentification: String = "0711000000"
-      val debtoraccountinformationdebtoraccounttransactionmode: String = "PHNE"
+      val debtoraccountinformationdebtoraccountschemename: String = "PHNE"
       val debtoraccountinformationdebtoraccountname: String = "paul wakimani"
       val debtoragentinformationfinancialInstitutionIdentification: String = "2000"
       val creditoragentinformationfinancialInstitutionIdentification: String = "1990"
@@ -10379,7 +10379,7 @@ class CbsEngine @Inject()
       val creditorinformationcreditororganisationidentification: String = "1990"
       val creditorinformationcreditorcontactphonenumber: String = "0756000000"
       val creditoraccountinformationcreditoraccountidentification: String = "0756000000"
-      val creditoraccountinformationcreditoraccounttransactionmode: String = "PHNE"
+      val creditoraccountinformationcreditoraccountschemename: String = "PHNE"
       val creditoraccountinformationcreditoraccountname: String = "Nancy Mbera"
       val ultimatecreditorinformationcreditorname: String = "Nancy Mbera"
       val ultimatecreditorinformationcreditororganisationidentification: String = "1990"
@@ -10415,11 +10415,11 @@ class CbsEngine @Inject()
       val ultimatedebtorinformation: UltimateDebtorInformation = UltimateDebtorInformation(ultimatedebtorinformationdebtorname, ultimatedebtorinformationdebtororganisationidentification, ultimatedebtorinformationdebtorcontactphonenumber)
       val initiatingpartyinformation: InitiatingPartyInformation = InitiatingPartyInformation(initiatingpartyinformationorganisationidentification)
       val debtorinformation: DebtorInformation = DebtorInformation(debtorinformationdebtorname, debtorinformationdebtororganisationidentification, debtorinformationdebtorcontactphonenumber)
-      val debtoraccountinformation: DebtorAccountInformation = DebtorAccountInformation(debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccounttransactionmode, debtoraccountinformationdebtoraccountname)
+      val debtoraccountinformation: DebtorAccountInformation = DebtorAccountInformation(debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountschemename, debtoraccountinformationdebtoraccountname)
       val debtoragentinformation: DebtorAgentInformation = DebtorAgentInformation(debtoragentinformationfinancialInstitutionIdentification)
       val creditoragentinformation: CreditorAgentInformation = CreditorAgentInformation(creditoragentinformationfinancialInstitutionIdentification)
       val creditorinformation: CreditorInformation = CreditorInformation(creditorinformationcreditorname, creditorinformationcreditororganisationidentification, creditorinformationcreditorcontactphonenumber)
-      val creditoraccountinformation: CreditorAccountInformation = CreditorAccountInformation(creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccounttransactionmode, creditoraccountinformationcreditoraccountname)
+      val creditoraccountinformation: CreditorAccountInformation = CreditorAccountInformation(creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountschemename, creditoraccountinformationcreditoraccountname)
       val ultimatecreditorinformation: UltimateCreditorInformation = UltimateCreditorInformation(ultimatecreditorinformationcreditorname, ultimatecreditorinformationcreditororganisationidentification, ultimatecreditorinformationcreditorcontactphonenumber)
       val purposeinformation: PurposeInformation = PurposeInformation(purposeinformationpurposecode)
       val remittanceinformation: RemittanceInformation = RemittanceInformation(remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber)
