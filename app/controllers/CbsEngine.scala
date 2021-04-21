@@ -36,6 +36,8 @@ import scala.util.{Failure, Success}
 //import com.microsoft.sqlserver.jdbc.{SQLServerCallableStatement, SQLServerDataTable}
 //import com.microsoft.sqlserver.jdbc.SQLServerDataTable
 import play.api.libs.concurrent.CustomExecutionContext
+import java.security.MessageDigest
+import javax.crypto.Cipher
 //import scala.util.control.Breaks
 //import scala.util.control.Breaks.break
 import oracle.jdbc.OracleTypes
@@ -277,59 +279,159 @@ class CbsEngine @Inject()
 
     // (a) convert AccountVerification fields to XML
     def toXml = {
-        <Document xmlns="urn:iso:std:iso:20022:tech:xsd:acmt.023.001.02">
-          <IdVrfctnReq>
-            <Assgnmt>
-              <MsgId>{assignmentInformation.messageIdentification}</MsgId>
-              <CreDtTm>{assignmentInformation.creationDateTime}</CreDtTm>
-              <FrstAgt>
-                <FinInstnId>
-                  <Othr>
-                    <Id>{assignmentInformation.firstAgentInformation.financialInstitutionIdentification}</Id>
-                  </Othr>
-                </FinInstnId>
-              </FrstAgt>
-              <Assgnr>
-                <Agt>
-                  <FinInstnId>
-                    <Othr>
-                      <Id>{assignmentInformation.assignerAgentInformation.financialInstitutionIdentification}</Id>
-                    </Othr>
-                  </FinInstnId>
-                </Agt>
-              </Assgnr>
-              <Assgne>
-                <Agt>
-                  <FinInstnId>
-                    <Othr>
-                      <Id>{assignmentInformation.assigneeAgentInformation.financialInstitutionIdentification}</Id>
-                    </Othr>
-                  </FinInstnId>
-                </Agt>
-              </Assgne>
-            </Assgnmt>
-            <Vrfctn>
-              <Id>{verificationInformation.identification}</Id>
-              <PtyAndAcctId>
-                <Acct>
-                  <Othr>
-                    <Id>{verificationInformation.partyAndAccountIdentificationInformation.accountInformation.accountIdentification}</Id>
-                    <SchmeNm>
-                      <Prtry>{verificationInformation.partyAndAccountIdentificationInformation.accountInformation.schemeName}</Prtry>
-                    </SchmeNm>
-                  </Othr>
-                </Acct>
-                <Agt>
-                  <FinInstnId>
-                    <Othr>
-                      <Id>{verificationInformation.partyAndAccountIdentificationInformation.agentInformation.financialInstitutionIdentification}</Id>
-                    </Othr>
-                  </FinInstnId>
-                </Agt>
-              </PtyAndAcctId>
-            </Vrfctn>
-          </IdVrfctnReq>
-        </Document>
+      val a = toXmlAssignmentInformation
+      val assignmentInfo: String = a.toString
+      val b = toXmlVerificationInformation
+      val verificationInfo = b.toString
+      val requestType: String = "accountverification"
+      val SignatureId: String = getSignatureId(requestType)
+      val myReferenceURI: String = getReferenceURI(requestType)
+      val myKeyInfoId: String = getKeyInfoId(requestType)
+      val myX509Certificate: String = getX509Certificate
+      val encodedX509Certificate: String = Base64.getEncoder.encodeToString(myX509Certificate.getBytes)
+
+      val c = {
+        "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:acmt.023.001.02\"><IdVrfctnReq>" +
+          assignmentInfo + System.lineSeparator() +
+          verificationInfo + System.lineSeparator() +
+          "</IdVrfctnReq></Document>"
+      }
+
+      val xmlData1: scala.xml.Node = scala.xml.XML.loadString(c)
+      val c1 = prettyPrinter.format(xmlData1)
+
+      val requestData: String = c1.toString
+      val myDigestValue: String = getDigestValue(requestData)
+      val encodedDigestValue: String = Base64.getEncoder.encodeToString(myDigestValue.getBytes)
+      val mySignatureValue: String = getSignatureValue(requestData)
+      val encodedSignatureValue: String = Base64.getEncoder.encodeToString(mySignatureValue.getBytes)
+
+      val d = toXmlSignatureInformation(SignatureId, encodedDigestValue, myReferenceURI, encodedSignatureValue, myKeyInfoId, encodedX509Certificate)
+      val signatureInfo = d.toString
+
+      val e = {
+        "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:acmt.023.001.02\"><IdVrfctnReq>" +
+          assignmentInfo + System.lineSeparator() +
+          verificationInfo + System.lineSeparator() +
+          "</IdVrfctnReq>" + System.lineSeparator() +
+          signatureInfo + System.lineSeparator() +
+          "</Document>"
+      }
+
+      val xmlData: scala.xml.Node = scala.xml.XML.loadString(e)
+      val accountVerification = prettyPrinter.format(xmlData)
+      accountVerification
+    }
+    def toXmlAssignmentInformation = {
+        <Assgnmt>
+          <MsgId>{assignmentInformation.messageIdentification}</MsgId>
+          <CreDtTm>{assignmentInformation.creationDateTime}</CreDtTm>
+          <FrstAgt>
+            <FinInstnId>
+              <Othr>
+                <Id>{assignmentInformation.firstAgentInformation.financialInstitutionIdentification}</Id>
+              </Othr>
+            </FinInstnId>
+          </FrstAgt>
+          <Assgnr>
+            <Agt>
+              <FinInstnId>
+                <Othr>
+                  <Id>{assignmentInformation.assignerAgentInformation.financialInstitutionIdentification}</Id>
+                </Othr>
+              </FinInstnId>
+            </Agt>
+          </Assgnr>
+          <Assgne>
+            <Agt>
+              <FinInstnId>
+                <Othr>
+                  <Id>{assignmentInformation.assigneeAgentInformation.financialInstitutionIdentification}</Id>
+                </Othr>
+              </FinInstnId>
+            </Agt>
+          </Assgne>
+        </Assgnmt>
+    }
+    private def toXmlVerificationInformation = {
+        <Vrfctn>
+          <Id>{verificationInformation.identification}</Id>
+          <PtyAndAcctId>
+            <Acct>
+              <Othr>
+                <Id>{verificationInformation.partyAndAccountIdentificationInformation.accountInformation.accountIdentification}</Id>
+                <SchmeNm>
+                  <Prtry>{verificationInformation.partyAndAccountIdentificationInformation.accountInformation.schemeName}</Prtry>
+                </SchmeNm>
+              </Othr>
+            </Acct>
+            <Agt>
+              <FinInstnId>
+                <Othr>
+                  <Id>{verificationInformation.partyAndAccountIdentificationInformation.agentInformation.financialInstitutionIdentification}</Id>
+                </Othr>
+              </FinInstnId>
+            </Agt>
+          </PtyAndAcctId>
+        </Vrfctn>
+    }
+    private def toXmlSignatureInformation(SignatureId: String, myDigestValue: String, myReferenceURI: String, mySignatureValue: String, myKeyInfoId: String, myX509Certificate: String) = {
+        <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id={SignatureId}>
+          <ds:SignedInfo>
+            <ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+            <ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+            <ds:Reference URI="">
+              <ds:Transforms>
+                <ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+                <ds:Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+              </ds:Transforms>
+              <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+              <ds:DigestValue>{myDigestValue}</ds:DigestValue>
+            </ds:Reference>
+            <ds:Reference URI={myReferenceURI}>
+              <ds:Transforms>
+                <ds:Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+              </ds:Transforms>
+              <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+              <ds:DigestValue>{myDigestValue}</ds:DigestValue>
+            </ds:Reference>
+          </ds:SignedInfo>
+          <ds:SignatureValue>{mySignatureValue}</ds:SignatureValue>
+          <ds:KeyInfo Id={myKeyInfoId}>
+            <ds:X509Data>
+              <ds:X509Certificate>{myX509Certificate}</ds:X509Certificate>
+            </ds:X509Data>
+          </ds:KeyInfo>
+        </ds:Signature>
+        /*
+        <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id={SignatureId}>
+        <ds:SignedInfo>
+          <ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"></ds:CanonicalizationMethod>
+          <ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"></ds:SignatureMethod>
+          <ds:Reference URI="">
+            <ds:Transforms>
+              <ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"></ds:Transform>
+              <ds:Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"></ds:Transform>
+            </ds:Transforms>
+            <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+            <ds:DigestValue>{myDigestValue}</ds:DigestValue>
+          </ds:Reference>
+          <ds:Reference URI={myReferenceURI}>
+            <ds:Transforms>
+              <ds:Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"></ds:Transform>
+            </ds:Transforms>
+            <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+            <ds:DigestValue>{myDigestValue}</ds:DigestValue>
+          </ds:Reference>
+        </ds:SignedInfo>
+        <ds:SignatureValue>{mySignatureValue}</ds:SignatureValue>
+        <ds:KeyInfo Id={myKeyInfoId}>
+          <ds:X509Data>
+            <ds:X509Certificate>{myX509Certificate}</ds:X509Certificate>
+          </ds:X509Data>
+        </ds:KeyInfo>
+      </ds:Signature>
+         */
     }
 
     override def toString =
@@ -518,165 +620,180 @@ class CbsEngine @Inject()
 
     // (a) convert SingleCreditTransfer fields to XML
     def toXml = {
-      <Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.09">
-        <FIToFICstmrCdtTrf>
-          <GrpHdr>
-            <MsgId>{groupHeaderInformation.messageidentification}</MsgId>
-            <CreDtTm>{groupHeaderInformation.creationdatetime}</CreDtTm>
-            <NbOfTxs>{groupHeaderInformation.numberoftransactions}</NbOfTxs>
-            <SttlmInf>
-              <SttlmMtd>{groupHeaderInformation.settlementinformation.settlementmethod}</SttlmMtd>
-              <ClrSys>
-                <Prtry>{groupHeaderInformation.settlementinformation.clearingSystem}</Prtry>
-              </ClrSys>
-            </SttlmInf>
-            <PmtTpInf>
-              <SvcLvl>
-                <Prtry>{groupHeaderInformation.paymenttypeinformation.servicelevel}</Prtry>
-              </SvcLvl>
-              <LclInstrm>
-                <Cd>{groupHeaderInformation.paymenttypeinformation.localinstrumentcode}</Cd>
-              </LclInstrm>
-              <CtgyPurp>
-                <Prtry>{groupHeaderInformation.paymenttypeinformation.categorypurpose}</Prtry>
-              </CtgyPurp>
-            </PmtTpInf>
-            <InstgAgt>
-              <FinInstnId>
+      val a = toXmlGroupHeaderInformation
+      val groupHeaderInfo: String = a.toString
+      val b = toXmlCreditTransferTransactionInformation
+      val creditTransferTransactionInfo = b.toString
+
+      val c = {
+        "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.008.001.09\"><FIToFICstmrCdtTrf>" +
+          groupHeaderInfo + System.lineSeparator() +
+          creditTransferTransactionInfo + System.lineSeparator() +
+          "</FIToFICstmrCdtTrf></Document>"
+      }
+
+      val xmlData: scala.xml.Node = scala.xml.XML.loadString(c)
+      val accountVerification = prettyPrinter.format(xmlData)
+      accountVerification
+    }
+    def toXmlGroupHeaderInformation = {
+        <GrpHdr>
+          <MsgId>{groupHeaderInformation.messageidentification}</MsgId>
+          <CreDtTm>{groupHeaderInformation.creationdatetime}</CreDtTm>
+          <NbOfTxs>{groupHeaderInformation.numberoftransactions}</NbOfTxs>
+          <SttlmInf>
+            <SttlmMtd>{groupHeaderInformation.settlementinformation.settlementmethod}</SttlmMtd>
+            <ClrSys>
+              <Prtry>{groupHeaderInformation.settlementinformation.clearingSystem}</Prtry>
+            </ClrSys>
+          </SttlmInf>
+          <PmtTpInf>
+            <SvcLvl>
+              <Prtry>{groupHeaderInformation.paymenttypeinformation.servicelevel}</Prtry>
+            </SvcLvl>
+            <LclInstrm>
+              <Cd>{groupHeaderInformation.paymenttypeinformation.localinstrumentcode}</Cd>
+            </LclInstrm>
+            <CtgyPurp>
+              <Prtry>{groupHeaderInformation.paymenttypeinformation.categorypurpose}</Prtry>
+            </CtgyPurp>
+          </PmtTpInf>
+          <InstgAgt>
+            <FinInstnId>
+              <Othr>
+                <Id>{groupHeaderInformation.instructingagentinformation.financialInstitutionIdentification}</Id>
+              </Othr>
+            </FinInstnId>
+          </InstgAgt>
+          <InstdAgt>
+            <FinInstnId>
+              <Othr>
+                <Id>{groupHeaderInformation.instructedagentinformation.financialInstitutionIdentification}</Id>
+              </Othr>
+            </FinInstnId>
+          </InstdAgt>
+        </GrpHdr>
+    }
+    def toXmlCreditTransferTransactionInformation = {
+        <CdtTrfTxInf>
+          <PmtId>
+            <EndToEndId>{creditTransferTransactionInformation.paymentendtoendidentification}</EndToEndId>
+          </PmtId>
+          <IntrBkSttlmAmt>{creditTransferTransactionInformation.interbanksettlementamount}</IntrBkSttlmAmt>
+          <AccptncDtTm>{creditTransferTransactionInformation.acceptancedatetime}</AccptncDtTm>
+          <ChrgBr>{creditTransferTransactionInformation.chargebearer}</ChrgBr>
+          <MndtRltdInf>
+            <MndtId>{creditTransferTransactionInformation.mandaterelatedinformation.mandateidentification}</MndtId>
+          </MndtRltdInf>
+          <UltmtDbtr>
+            <Nm>{creditTransferTransactionInformation.ultimatedebtorinformation.debtorname}</Nm>
+            <Id>
+              <OrgId>
                 <Othr>
-                  <Id>{groupHeaderInformation.instructingagentinformation.financialInstitutionIdentification}</Id>
+                  <Id>{creditTransferTransactionInformation.ultimatedebtorinformation.debtororganisationidentification}</Id>
                 </Othr>
-              </FinInstnId>
-            </InstgAgt>
-            <InstdAgt>
-              <FinInstnId>
+              </OrgId>
+            </Id>
+            <CtctDtls>
+              <PhneNb>{creditTransferTransactionInformation.ultimatedebtorinformation.debtorcontactphonenumber}</PhneNb>
+            </CtctDtls>
+          </UltmtDbtr>
+          <InitgPty>
+            <Id>
+              <OrgId>
                 <Othr>
-                  <Id>{groupHeaderInformation.instructedagentinformation.financialInstitutionIdentification}</Id>
+                  <Id>{creditTransferTransactionInformation.initiatingpartyinformation.organisationidentification}</Id>
                 </Othr>
-              </FinInstnId>
-            </InstdAgt>
-          </GrpHdr>
-          <CdtTrfTxInf>
-            <PmtId>
-              <EndToEndId>{creditTransferTransactionInformation.paymentendtoendidentification}</EndToEndId>
-            </PmtId>
-            <IntrBkSttlmAmt>{creditTransferTransactionInformation.interbanksettlementamount}</IntrBkSttlmAmt>
-            <AccptncDtTm>{creditTransferTransactionInformation.acceptancedatetime}</AccptncDtTm>
-            <ChrgBr>{creditTransferTransactionInformation.chargebearer}</ChrgBr>
-            <MndtRltdInf>
-              <MndtId>{creditTransferTransactionInformation.mandaterelatedinformation.mandateidentification}</MndtId>
-            </MndtRltdInf>
-            <UltmtDbtr>
-              <Nm>{creditTransferTransactionInformation.ultimatedebtorinformation.debtorname}</Nm>
-              <Id>
-                <OrgId>
-                  <Othr>
-                    <Id>{creditTransferTransactionInformation.ultimatedebtorinformation.debtororganisationidentification}</Id>
-                  </Othr>
-                </OrgId>
-              </Id>
-              <CtctDtls>
-                <PhneNb>{creditTransferTransactionInformation.ultimatedebtorinformation.debtorcontactphonenumber}</PhneNb>
-              </CtctDtls>
-            </UltmtDbtr>
-            <InitgPty>
-              <Id>
-                <OrgId>
-                  <Othr>
-                    <Id>{creditTransferTransactionInformation.initiatingpartyinformation.organisationidentification}</Id>
-                  </Othr>
-                </OrgId>
-              </Id>
-            </InitgPty>
-            <Dbtr>
-              <Nm>{creditTransferTransactionInformation.debtorinformation.debtorname}</Nm>
-              <Id>
-                <OrgId>
-                  <Othr>
-                    <Id>{creditTransferTransactionInformation.debtorinformation.debtororganisationidentification}</Id>
-                  </Othr>
-                </OrgId>
-              </Id>
-              <CtctDtls>
-                <PhneNb>{creditTransferTransactionInformation.debtorinformation.debtorcontactphonenumber}</PhneNb>
-              </CtctDtls>
-            </Dbtr>
-            <DbtrAcct>
-              <Id>
+              </OrgId>
+            </Id>
+          </InitgPty>
+          <Dbtr>
+            <Nm>{creditTransferTransactionInformation.debtorinformation.debtorname}</Nm>
+            <Id>
+              <OrgId>
                 <Othr>
-                  <Id>{creditTransferTransactionInformation.debtoraccountinformation.debtoraccountidentification}</Id>
-                  <SchmeNm>
-                    <Prtry>{creditTransferTransactionInformation.debtoraccountinformation.debtoraccountschemename}</Prtry>
-                  </SchmeNm>
+                  <Id>{creditTransferTransactionInformation.debtorinformation.debtororganisationidentification}</Id>
                 </Othr>
-              </Id>
-              <Nm>{creditTransferTransactionInformation.debtoraccountinformation.debtoraccountname}</Nm>
-            </DbtrAcct>
-            <DbtrAgt>
-              <FinInstnId>
+              </OrgId>
+            </Id>
+            <CtctDtls>
+              <PhneNb>{creditTransferTransactionInformation.debtorinformation.debtorcontactphonenumber}</PhneNb>
+            </CtctDtls>
+          </Dbtr>
+          <DbtrAcct>
+            <Id>
+              <Othr>
+                <Id>{creditTransferTransactionInformation.debtoraccountinformation.debtoraccountidentification}</Id>
+                <SchmeNm>
+                  <Prtry>{creditTransferTransactionInformation.debtoraccountinformation.debtoraccountschemename}</Prtry>
+                </SchmeNm>
+              </Othr>
+            </Id>
+            <Nm>{creditTransferTransactionInformation.debtoraccountinformation.debtoraccountname}</Nm>
+          </DbtrAcct>
+          <DbtrAgt>
+            <FinInstnId>
+              <Othr>
+                <Id>{creditTransferTransactionInformation.debtoragentinformation.financialInstitutionIdentification}</Id>
+              </Othr>
+            </FinInstnId>
+          </DbtrAgt>
+          <CdtrAgt>
+            <FinInstnId>
+              <Othr>
+                <Id>{creditTransferTransactionInformation.creditoragentinformation.financialInstitutionIdentification}</Id>
+              </Othr>
+            </FinInstnId>
+          </CdtrAgt>
+          <Cdtr>
+            <Nm>{creditTransferTransactionInformation.creditorinformation.creditorname}</Nm>
+            <Id>
+              <OrgId>
                 <Othr>
-                  <Id>{creditTransferTransactionInformation.debtoragentinformation.financialInstitutionIdentification}</Id>
+                  <Id>{creditTransferTransactionInformation.creditorinformation.creditororganisationidentification}</Id>
                 </Othr>
-              </FinInstnId>
-            </DbtrAgt>
-            <CdtrAgt>
-              <FinInstnId>
+              </OrgId>
+            </Id>
+            <CtctDtls>
+              <PhneNb>{creditTransferTransactionInformation.creditorinformation.creditorcontactphonenumber}</PhneNb>
+            </CtctDtls>
+          </Cdtr>
+          <CdtrAcct>
+            <Id>
+              <Othr>
+                <Id>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccountidentification}</Id>
+                <SchmeNm>
+                  <Prtry>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccountschemename}</Prtry>
+                </SchmeNm>
+              </Othr>
+            </Id>
+            <Nm>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccountname}</Nm>
+          </CdtrAcct>
+          <UltmtCdtr>
+            <Nm>{creditTransferTransactionInformation.ultimatecreditorinformation.creditorname}</Nm>
+            <Id>
+              <OrgId>
                 <Othr>
-                  <Id>{creditTransferTransactionInformation.creditoragentinformation.financialInstitutionIdentification}</Id>
+                  <Id>{creditTransferTransactionInformation.ultimatecreditorinformation.creditororganisationidentification}</Id>
                 </Othr>
-              </FinInstnId>
-            </CdtrAgt>
-            <Cdtr>
-              <Nm>{creditTransferTransactionInformation.creditorinformation.creditorname}</Nm>
-              <Id>
-                <OrgId>
-                  <Othr>
-                    <Id>{creditTransferTransactionInformation.creditorinformation.creditororganisationidentification}</Id>
-                  </Othr>
-                </OrgId>
-              </Id>
-              <CtctDtls>
-                <PhneNb>{creditTransferTransactionInformation.creditorinformation.creditorcontactphonenumber}</PhneNb>
-              </CtctDtls>
-            </Cdtr>
-            <CdtrAcct>
-              <Id>
-                <Othr>
-                  <Id>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccountidentification}</Id>
-                  <SchmeNm>
-                    <Prtry>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccountschemename}</Prtry>
-                  </SchmeNm>
-                </Othr>
-              </Id>
-              <Nm>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccountname}</Nm>
-            </CdtrAcct>
-            <UltmtCdtr>
-              <Nm>{creditTransferTransactionInformation.ultimatecreditorinformation.creditorname}</Nm>
-              <Id>
-                <OrgId>
-                  <Othr>
-                    <Id>{creditTransferTransactionInformation.ultimatecreditorinformation.creditororganisationidentification}</Id>
-                  </Othr>
-                </OrgId>
-              </Id>
-              <CtctDtls>
-                <PhneNb>{creditTransferTransactionInformation.ultimatecreditorinformation.creditorcontactphonenumber}</PhneNb>
-              </CtctDtls>
-            </UltmtCdtr>
-            <Purp>
-              <Prtry>{creditTransferTransactionInformation.purposeinformation.purposecode}</Prtry>
-            </Purp>
-            <RmtInf>
-              <Ustrd>{creditTransferTransactionInformation.remittanceinformation.unstructured}</Ustrd>
-              <Strd>
-                <TaxRmt>
-                  <RefNb>{creditTransferTransactionInformation.remittanceinformation.taxremittancereferencenumber}</RefNb>
-                </TaxRmt>
-              </Strd>
-            </RmtInf>
-          </CdtTrfTxInf>
-        </FIToFICstmrCdtTrf>
-      </Document>
+              </OrgId>
+            </Id>
+            <CtctDtls>
+              <PhneNb>{creditTransferTransactionInformation.ultimatecreditorinformation.creditorcontactphonenumber}</PhneNb>
+            </CtctDtls>
+          </UltmtCdtr>
+          <Purp>
+            <Prtry>{creditTransferTransactionInformation.purposeinformation.purposecode}</Prtry>
+          </Purp>
+          <RmtInf>
+            <Ustrd>{creditTransferTransactionInformation.remittanceinformation.unstructured}</Ustrd>
+            <Strd>
+              <TaxRmt>
+                <RefNb>{creditTransferTransactionInformation.remittanceinformation.taxremittancereferencenumber}</RefNb>
+              </TaxRmt>
+            </Strd>
+          </RmtInf>
+        </CdtTrfTxInf>
     }
 
     override def toString =
@@ -1052,6 +1169,28 @@ class CbsEngine @Inject()
   val serviceLevel: String = "P2PT"
   val localInstrumentCode: String = "INST"
   val categoryPurpose: String = "IBNK"
+  val messageDigest = MessageDigest.getInstance("SHA-256")
+
+  import java.io.FileInputStream
+  import java.security.KeyStore
+  import java.security.PublicKey
+  import java.security.PrivateKey
+
+  val keystore_type: String = "PKCS12"
+  val sender_keystore_path: String = "certsconf/sender_keystore.p12"
+  val senderKeyPairName: String = "senderKeyPair"
+  val senderKeyStorePwd: String = "WNZ3?4z#W!jUA*3g"
+  val senderKeyStorePwdCharArray = senderKeyStorePwd.toCharArray()
+  //val senderKeyStore: KeyStore = getSenderKeyStore()
+  val privateKey: PrivateKey = getPrivateKey()
+
+  val receiver_keystore_path: String = "certsconf/receiver_keystore.p12"
+  val receiverKeyPairName: String = "receiverKeyPair"
+  val receiverKeyStorePwd: String = "WNZ3?4z#W!jUA*3g"
+  val receiverKeyStorePwdCharArray = receiverKeyStorePwd.toCharArray()
+  //val receiverKeyStore: KeyStore = getReceiverKeyStore()
+  val publicKey: PublicKey = getPublicKey()
+  val cipher = Cipher.getInstance("RSA")
 
   def addSingleCreditTransferPaymentDetails = Action.async { request =>
     Future {
@@ -10458,6 +10597,365 @@ class CbsEngine @Inject()
     }
 
     strOutput
+  }
+  def getSignatureId(requestType: String) : String = {
+    var signatureId: String = ""
+    val strApifunction: String = "getSignatureId"
+
+    //val strSQL : String = "{ call dbo.GetReturnDate_BVS(?) }"
+    try {
+      if (requestType == null) return signatureId
+      if (requestType.replace(" ","").trim.length == 0) return signatureId
+      /*
+      if (requestType.equalsIgnoreCase("accountverification")){
+        signatureId = "_4614c57e-40ae-4cc2-aeb5-6e93ba1be1eb"
+      }
+
+      if (requestType.equalsIgnoreCase("singlecredittransfer")){
+        signatureId = ""
+      }
+
+      if (requestType.equalsIgnoreCase("bulkcredittransfer")){
+        signatureId = ""
+      }
+      */
+      signatureId = {
+        requestType.replace(" ","").trim.toLowerCase match {
+          case "accountverification" => "_4614c57e-40ae-4cc2-aeb5-6e93ba1be1eb"
+          case "singlecredittransfer" => ""
+          case "bulkcredittransfer" => ""
+          case _ => ""
+        }
+      }
+      /*
+      myDB.withConnection { implicit myconn =>
+
+        try{
+          val mystmt: CallableStatement = myconn.prepareCall(strSQL)
+          mystmt.registerOutParameter("ReturnDate", java.sql.Types.VARCHAR)
+          mystmt.execute()
+          strReturnDate = mystmt.getString("ReturnDate")
+        }
+        catch{
+          case ex : Exception =>
+            log_errors("getReturnDate_BVS : " + ex.getMessage + " - ex exception error occured." + " ReturnDate - " + strReturnDate.toString())
+          case t: Throwable =>
+            log_errors("getReturnDate_BVS : " + t.getMessage + " exception error occured." + " ReturnDate - " + strReturnDate.toString())
+        }
+
+      }
+      */
+    }catch {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured." + " requestType - " + requestType)
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " requestType - " + requestType)
+    }
+
+    signatureId
+  }
+  def getDigestValue(requestData: String) : String = {
+    val strApifunction: String = "getDigestValue"
+
+    try {
+      if (requestData == null) return ""
+      if (requestData.replace(" ","").trim.length == 0) return ""
+      /*
+      val byteArray = requestData.getBytes
+      val messageHash = messageDigest.digest(byteArray)
+      digestValue = new String(messageHash)
+      */
+      //println("digestValue - " + digestValue)
+      //import java.nio.charset.StandardCharsets
+      //val str = new String(messageHash, StandardCharsets.UTF_8)
+      //println("digestValue 2 - " + str)
+      val messageHash = getMessageHash(requestData)
+      val digestValue: String = new String(messageHash)
+      return digestValue
+    }catch {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured." + " requestData - " + requestData)
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " requestData - " + requestData)
+    }
+
+    return ""
+  }
+  def getReferenceURI(requestType: String) : String = {
+    var referenceURI: String = ""
+    val strApifunction: String = "getReferenceURI"
+
+    //val strSQL : String = "{ call dbo.GetReturnDate_BVS(?) }"
+    try {
+      if (requestType == null) return referenceURI
+      if (requestType.replace(" ","").trim.length == 0) return referenceURI
+      /*
+      if (requestType.equalsIgnoreCase("accountverification")){
+        signatureId = "_4614c57e-40ae-4cc2-aeb5-6e93ba1be1eb"
+      }
+
+      if (requestType.equalsIgnoreCase("singlecredittransfer")){
+        signatureId = ""
+      }
+
+      if (requestType.equalsIgnoreCase("bulkcredittransfer")){
+        signatureId = ""
+      }
+      */
+      referenceURI = {
+        requestType.replace(" ","").trim.toLowerCase match {
+          case "accountverification" => "#_8401036a-cd29-4f5b-a48a-9ecf4d515d98"
+          case "singlecredittransfer" => ""
+          case "bulkcredittransfer" => ""
+          case _ => ""
+        }
+      }
+      /*
+      myDB.withConnection { implicit myconn =>
+
+        try{
+          val mystmt: CallableStatement = myconn.prepareCall(strSQL)
+          mystmt.registerOutParameter("ReturnDate", java.sql.Types.VARCHAR)
+          mystmt.execute()
+          strReturnDate = mystmt.getString("ReturnDate")
+        }
+        catch{
+          case ex : Exception =>
+            log_errors("getReturnDate_BVS : " + ex.getMessage + " - ex exception error occured." + " ReturnDate - " + strReturnDate.toString())
+          case t: Throwable =>
+            log_errors("getReturnDate_BVS : " + t.getMessage + " exception error occured." + " ReturnDate - " + strReturnDate.toString())
+        }
+
+      }
+      */
+    }catch {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured." + " requestType - " + requestType)
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " requestType - " + requestType)
+    }
+
+    referenceURI
+  }
+  def getSignatureValue(requestData: String) : String = {
+    val strApifunction: String = "getSignatureValue"
+
+    try {
+      if (requestData == null) return ""
+      if (requestData.replace(" ","").trim.length == 0) return ""
+
+      val messageHash = getMessageHash(requestData)
+
+      cipher.init(Cipher.ENCRYPT_MODE, privateKey)
+      val signatureByteArray = cipher.doFinal(messageHash)
+      val signatureValue: String = new String(signatureByteArray)
+      //println("requestData - " + requestData)
+      //println("messageHash - " + new String(messageHash))
+      //println("signatureValue - " + signatureValue)
+      return signatureValue
+    }catch {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured." + " requestData - " + requestData)
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " requestData - " + requestData)
+    }
+
+    return ""
+  }
+  def getKeyInfoId(requestType: String) : String = {
+    var keyInfoId: String = ""
+    val strApifunction: String = "getKeyInfoId"
+
+    //val strSQL : String = "{ call dbo.GetReturnDate_BVS(?) }"
+    try {
+      if (requestType == null) return keyInfoId
+      if (requestType.replace(" ","").trim.length == 0) return keyInfoId
+      /*
+      if (requestType.equalsIgnoreCase("accountverification")){
+        signatureId = "_4614c57e-40ae-4cc2-aeb5-6e93ba1be1eb"
+      }
+
+      if (requestType.equalsIgnoreCase("singlecredittransfer")){
+        signatureId = ""
+      }
+
+      if (requestType.equalsIgnoreCase("bulkcredittransfer")){
+        signatureId = ""
+      }
+      */
+      keyInfoId = {
+        requestType.replace(" ","").trim.toLowerCase match {
+          case "accountverification" => "_8401036a-cd29-4f5b-a48a-9ecf4d515d98"
+          case "singlecredittransfer" => ""
+          case "bulkcredittransfer" => ""
+          case _ => ""
+        }
+      }
+      /*
+      myDB.withConnection { implicit myconn =>
+
+        try{
+          val mystmt: CallableStatement = myconn.prepareCall(strSQL)
+          mystmt.registerOutParameter("ReturnDate", java.sql.Types.VARCHAR)
+          mystmt.execute()
+          strReturnDate = mystmt.getString("ReturnDate")
+        }
+        catch{
+          case ex : Exception =>
+            log_errors("getReturnDate_BVS : " + ex.getMessage + " - ex exception error occured." + " ReturnDate - " + strReturnDate.toString())
+          case t: Throwable =>
+            log_errors("getReturnDate_BVS : " + t.getMessage + " exception error occured." + " ReturnDate - " + strReturnDate.toString())
+        }
+
+      }
+      */
+    }catch {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured." + " requestType - " + requestType)
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " requestType - " + requestType)
+    }
+
+    keyInfoId
+  }
+  def getX509Certificate() : String = {
+    var strX509Certificate: String = ""
+    val strApifunction: String = "getX509Certificate"
+
+    //val strSQL : String = "{ call dbo.GetReturnDate_BVS(?) }"
+    try {
+      //if (requestType == null) return strX509Certificate
+      //if (requestType.replace(" ","").trim.length == 0) return strX509Certificate
+      /*
+      if (requestType.equalsIgnoreCase("accountverification")){
+        signatureId = "_4614c57e-40ae-4cc2-aeb5-6e93ba1be1eb"
+      }
+
+      if (requestType.equalsIgnoreCase("singlecredittransfer")){
+        signatureId = ""
+      }
+
+      if (requestType.equalsIgnoreCase("bulkcredittransfer")){
+        signatureId = ""
+      }
+      */
+      /* contents of public certificate are assigned to var certificateData */
+      val certificateData: String = "MIICuzCCAaOgAwIBAgIEDHHXijANBgkqhkiG9w0BAQsFADAOMQwwCgYDVQQDEwNE\nTVQwHhcNMjEwNDIxMDgxMzAyWhcNMjIwNDIxMDgxMzAyWjAOMQwwCgYDVQQDEwNE\nTVQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCyH2Pko8qpq+UKuJiU\n4kGz9tl8+6vaQtrHy+Pt6QqNi1y3L7qxCSkdRicQFJYRxLBwlz7Ri5C0D7GUCQ7o\n3/iKTQZX/yz/VhS7lVNi0K6zAvckBhgTJc0xJGgjSQgHuWKY7IYqiCIZyOvjPAb3\nFw2UWaeCEiLojG1z4Q4kNrGm8smmL4E51Y55N6AmJ/KOh/o9QrTa37dwiaKmdXbw\n2ZjrIHe3c7rQl4oSaeTq4AolbM9GUGywreZTHROb8IT0/pjymrdlmx1WA25acrAx\nj8tT6edDoNSqDvv9y6Tvxh1CxJiwZZCOlb8PVCFrhqSgUspx8fFQQ1ZFHpzr7K8l\nE3xRAgMBAAGjITAfMB0GA1UdDgQWBBTTbHcCrp0I71O7mV6qfwB0hchXSjANBgkq\nhkiG9w0BAQsFAAOCAQEAbswVclSDdPW0UHMAHjhZc1kjUH1YYgq7fl8FU9ovk0d4\ncyJ5kW62OS+1V+JE+4TNNcQKFFdQzW+/hev42aXIWzjSosWDQ727mHt3oQgfohMf\nRTCq04LxLVVeEaFMnbpP4eWhCBfV7pJlo/DeILsa2UuonyIaDV4hxBTzRu3d6r1l\nVk/KM7nGUEWTRaU/jq1M6W5SY+hgyNHsD/vz8lIItSprkcL2lFFmweR5RVBWeXzD\nZyWvELHOH9CRZi0x6jNIIM14J9CIIW6Zubd+bpwEcPDVJfVX0FxT7XnPK1fGU1Q/\nZQnP838LmG3FOz5Q0VvWTommrktY45QfX0uSvGR52w=="
+      val byteArray = certificateData.getBytes
+      val messageHash = messageDigest.digest(byteArray)
+      strX509Certificate = new String(messageHash)
+      //println("certificateData - " + certificateData)
+      //println("X509Certificate - " + strX509Certificate)
+      /*
+      myDB.withConnection { implicit myconn =>
+
+        try{
+          val mystmt: CallableStatement = myconn.prepareCall(strSQL)
+          mystmt.registerOutParameter("ReturnDate", java.sql.Types.VARCHAR)
+          mystmt.execute()
+          strReturnDate = mystmt.getString("ReturnDate")
+        }
+        catch{
+          case ex : Exception =>
+            log_errors("getReturnDate_BVS : " + ex.getMessage + " - ex exception error occured." + " ReturnDate - " + strReturnDate.toString())
+          case t: Throwable =>
+            log_errors("getReturnDate_BVS : " + t.getMessage + " exception error occured." + " ReturnDate - " + strReturnDate.toString())
+        }
+
+      }
+      */
+    }catch {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured.")
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured.")
+    }
+
+    strX509Certificate
+  }
+  def getSenderKeyStore() : KeyStore = {
+    val strApifunction: String = "getSenderKeyStore"
+
+    try {
+      val keyStore: KeyStore = KeyStore.getInstance(keystore_type)
+      keyStore.load(new FileInputStream(sender_keystore_path), senderKeyStorePwdCharArray)
+      return keyStore
+    }catch {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured.")
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured.")
+    }
+
+    return null
+  }
+  def getPrivateKey() : PrivateKey = {
+    val strApifunction: String = "getPrivateKey"
+
+    try {
+      val senderKeyStore: KeyStore = getSenderKeyStore()
+      val privateKey: PrivateKey = senderKeyStore.getKey(senderKeyPairName, senderKeyStorePwdCharArray).asInstanceOf[PrivateKey]
+      return privateKey
+    }catch {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured.")
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured.")
+    }
+
+    return null
+  }
+  def getReceiverKeyStore() : KeyStore = {
+    val strApifunction: String = "getReceiverKeyStore"
+
+    try {
+      val keyStore: KeyStore = KeyStore.getInstance(keystore_type)
+      keyStore.load(new FileInputStream(receiver_keystore_path), receiverKeyStorePwdCharArray)
+      return keyStore
+    }catch {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured.")
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured.")
+    }
+
+    return null
+  }
+  def getPublicKey() : PublicKey = {
+    val strApifunction: String = "getPublicKey"
+
+    try {
+      val receiverKeyStore: KeyStore = getReceiverKeyStore()
+      val certificate = receiverKeyStore.getCertificate(receiverKeyPairName)
+      val publicKey = certificate.getPublicKey
+      return publicKey
+    }catch {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured.")
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured.")
+    }
+
+    return null
+  }
+  def getMessageHash(messageData: String) : Array[Byte] = {
+    val strApifunction: String = "getMessageHash"
+
+    try {
+      if (messageData == null) return null
+      if (messageData.replace(" ","").trim.length == 0) return null
+
+      val byteArray = messageData.getBytes
+      val messageHash = messageDigest.digest(byteArray)
+      return messageHash
+    }catch {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured." + " messageData - " + messageData)
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " messageData - " + messageData)
+    }
+
+    return null
   }
   def log_data(mydetail : String) : Unit = {
     //var strpath_file2 : String = "C:\\Program Files\\Biometric_System\\mps1\\Logs.txt"
