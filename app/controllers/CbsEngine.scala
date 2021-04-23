@@ -38,6 +38,10 @@ import scala.util.{Failure, Success}
 import play.api.libs.concurrent.CustomExecutionContext
 import java.security.MessageDigest
 import javax.crypto.Cipher
+import java.io.FileInputStream
+import java.security.KeyStore
+import java.security.PublicKey
+import java.security.PrivateKey
 //import scala.util.control.Breaks
 //import scala.util.control.Breaks.break
 import oracle.jdbc.OracleTypes
@@ -200,7 +204,8 @@ class CbsEngine @Inject()
 
   /*** Xml data ***/
   //val prettyPrinter = new scala.xml.PrettyPrinter(80, 2)
-  val prettyPrinter = new scala.xml.PrettyPrinter(80, 4)
+  //val prettyPrinter = new scala.xml.PrettyPrinter(80, 4)
+  val prettyPrinter = new scala.xml.PrettyPrinter(400, 4)//set it this was because one of the fields has a length of 344
   /* AccountVerification */
   case class FirstAgentInformation(financialInstitutionIdentification: String)
   case class AssignerAgentInformation(financialInstitutionIdentification: String)
@@ -289,26 +294,55 @@ class CbsEngine @Inject()
       val myKeyInfoId: String = getKeyInfoId(requestType)
       val myX509Certificate: String = getX509Certificate
       val encodedX509Certificate: String = Base64.getEncoder.encodeToString(myX509Certificate.getBytes)
-
+	  	/*
       val c = {
         "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:acmt.023.001.02\"><IdVrfctnReq>" +
           assignmentInfo + System.lineSeparator() +
           verificationInfo + System.lineSeparator() +
           "</IdVrfctnReq></Document>"
       }
+	    */
 
-      val xmlData1: scala.xml.Node = scala.xml.XML.loadString(c)
-      val c1 = prettyPrinter.format(xmlData1)
+      val c = {
+        "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:acmt.023.001.02\"><IdVrfctnReq>" +
+          assignmentInfo +
+          verificationInfo +
+          "</IdVrfctnReq></Document>"
+      }
 
-      val requestData: String = c1.toString
+      val xmlData1: scala.xml.Node = scala.xml.XML.loadString(c)//c.replaceAll("\n","")
+      val requestData: String = prettyPrinter.format(xmlData1)
+
       val myDigestValue: String = getDigestValue(requestData)
       val encodedDigestValue: String = Base64.getEncoder.encodeToString(myDigestValue.getBytes)
-      val mySignatureValue: String = getSignatureValue(requestData)
-      val encodedSignatureValue: String = Base64.getEncoder.encodeToString(mySignatureValue.getBytes)
-
+      val mySignatureValue = getSignatureValue(requestData)
+      val myEncodedSignatureValue: String = Base64.getEncoder.encodeToString(mySignatureValue)
+	    val encodedSignatureValue: String = myEncodedSignatureValue.replace(" ","").trim
+      println("encodedSignatureValue - " + encodedSignatureValue.length)
+      println("encodedSignatureValue 2 - " + encodedSignatureValue.replace(" ","").trim.length)
+      //val encodedSignatureValue: String = new String(Base64.getEncoder().encode(mySignatureValue.getBytes(StandardCharsets.UTF_8)))
+      //val encodedSignatureValue: String = Base64.getEncoder.encodeToString(mySignatureValue.getBytes(StandardCharsets.UTF_8))
+      /*** Tests only ***/
+        /*
+      val decodedWithMime = Base64.getMimeDecoder.decode(encodedSignatureValue)
+      val mySignatureValue2: String = decodedWithMime.map(_.toChar).mkString
+      val decryptedMessageHash = decryptedSignatureValue(mySignatureValue)
+      */
+        //val myVar1 = getSignatureValue_test(requestData)
+        //val encodedSignatureValue1: String = Base64.getEncoder.encodeToString(myVar1)
+        //val myVar1 = mySignatureValue.getBytes("UTF-8")
+        //val myVar2 =  new String(myVar1, "UTF-8")
+        //val myVar2 = myVar1.map(_.toChar).mkString
+        //val myVar3 =  myVar2.getBytes(StandardCharsets.UTF_8)//("UTF-8")
+        val myVar2 = Base64.getDecoder.decode(encodedSignatureValue)
+        val decryptedMessageHash = decryptedSignatureValue(myVar2)
+        val originalMessageHash = getMessageHash(requestData)
+        var isVerified: Boolean = verifyMessageHash(originalMessageHash, decryptedMessageHash)
+        println("isVerified - " + isVerified)
+      /*** Tests only ***/
       val d = toXmlSignatureInformation(SignatureId, encodedDigestValue, myReferenceURI, encodedSignatureValue, myKeyInfoId, encodedX509Certificate)
       val signatureInfo = d.toString
-
+      /*
       val e = {
         "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:acmt.023.001.02\"><IdVrfctnReq>" +
           assignmentInfo + System.lineSeparator() +
@@ -317,8 +351,16 @@ class CbsEngine @Inject()
           signatureInfo + System.lineSeparator() +
           "</Document>"
       }
-
-      val xmlData: scala.xml.Node = scala.xml.XML.loadString(e)
+      */
+      val finalRequestData = {
+        "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:acmt.023.001.02\"><IdVrfctnReq>" +
+          assignmentInfo +
+          verificationInfo +
+          "</IdVrfctnReq>" +
+          signatureInfo +
+          "</Document>"
+      }
+      val xmlData: scala.xml.Node = scala.xml.XML.loadString(finalRequestData)
       val accountVerification = prettyPrinter.format(xmlData)
       accountVerification
     }
@@ -1169,28 +1211,21 @@ class CbsEngine @Inject()
   val serviceLevel: String = "P2PT"
   val localInstrumentCode: String = "INST"
   val categoryPurpose: String = "IBNK"
-  val messageDigest = MessageDigest.getInstance("SHA-256")
-
-  import java.io.FileInputStream
-  import java.security.KeyStore
-  import java.security.PublicKey
-  import java.security.PrivateKey
 
   val keystore_type: String = "PKCS12"
+  val encryptionAlgorithm: String = "RSA"
+  val messageHashAlgorithm: String = "SHA-256"
   val sender_keystore_path: String = "certsconf/sender_keystore.p12"
   val senderKeyPairName: String = "senderKeyPair"
-  val senderKeyStorePwd: String = "WNZ3?4z#W!jUA*3g"
+  val senderKeyStorePwd: String = "CYv.BF33*cpb%s4U"
   val senderKeyStorePwdCharArray = senderKeyStorePwd.toCharArray()
-  //val senderKeyStore: KeyStore = getSenderKeyStore()
   val privateKey: PrivateKey = getPrivateKey()
 
   val receiver_keystore_path: String = "certsconf/receiver_keystore.p12"
   val receiverKeyPairName: String = "receiverKeyPair"
-  val receiverKeyStorePwd: String = "WNZ3?4z#W!jUA*3g"
+  val receiverKeyStorePwd: String = "5{zN5,4UMf-ZST+5"
   val receiverKeyStorePwdCharArray = receiverKeyStorePwd.toCharArray()
-  //val receiverKeyStore: KeyStore = getReceiverKeyStore()
   val publicKey: PublicKey = getPublicKey()
-  val cipher = Cipher.getInstance("RSA")
 
   def addSingleCreditTransferPaymentDetails = Action.async { request =>
     Future {
@@ -10671,6 +10706,7 @@ class CbsEngine @Inject()
       //println("digestValue 2 - " + str)
       val messageHash = getMessageHash(requestData)
       val digestValue: String = new String(messageHash)
+	  println("digestValue - " + digestValue)
       return digestValue
     }catch {
       case ex: Exception =>
@@ -10737,21 +10773,18 @@ class CbsEngine @Inject()
 
     referenceURI
   }
-  def getSignatureValue(requestData: String) : String = {
+  def getSignatureValue(requestData: String) : Array[Byte] = {
     val strApifunction: String = "getSignatureValue"
 
     try {
-      if (requestData == null) return ""
-      if (requestData.replace(" ","").trim.length == 0) return ""
+      if (requestData == null) return null
+      if (requestData.replace(" ","").trim.length == 0) return null
 
       val messageHash = getMessageHash(requestData)
+      val cipher = Cipher.getInstance(encryptionAlgorithm)
 
       cipher.init(Cipher.ENCRYPT_MODE, privateKey)
-      val signatureByteArray = cipher.doFinal(messageHash)
-      val signatureValue: String = new String(signatureByteArray)
-      //println("requestData - " + requestData)
-      //println("messageHash - " + new String(messageHash))
-      //println("signatureValue - " + signatureValue)
+      val signatureValue = cipher.doFinal(messageHash)
       return signatureValue
     }catch {
       case ex: Exception =>
@@ -10760,7 +10793,7 @@ class CbsEngine @Inject()
         log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " requestData - " + requestData)
     }
 
-    return ""
+    return null
   }
   def getKeyInfoId(requestType: String) : String = {
     var keyInfoId: String = ""
@@ -10840,6 +10873,7 @@ class CbsEngine @Inject()
       }
       */
       /* contents of public certificate are assigned to var certificateData */
+	  val messageDigest = MessageDigest.getInstance(messageHashAlgorithm)
       val certificateData: String = "MIICuzCCAaOgAwIBAgIEDHHXijANBgkqhkiG9w0BAQsFADAOMQwwCgYDVQQDEwNE\nTVQwHhcNMjEwNDIxMDgxMzAyWhcNMjIwNDIxMDgxMzAyWjAOMQwwCgYDVQQDEwNE\nTVQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCyH2Pko8qpq+UKuJiU\n4kGz9tl8+6vaQtrHy+Pt6QqNi1y3L7qxCSkdRicQFJYRxLBwlz7Ri5C0D7GUCQ7o\n3/iKTQZX/yz/VhS7lVNi0K6zAvckBhgTJc0xJGgjSQgHuWKY7IYqiCIZyOvjPAb3\nFw2UWaeCEiLojG1z4Q4kNrGm8smmL4E51Y55N6AmJ/KOh/o9QrTa37dwiaKmdXbw\n2ZjrIHe3c7rQl4oSaeTq4AolbM9GUGywreZTHROb8IT0/pjymrdlmx1WA25acrAx\nj8tT6edDoNSqDvv9y6Tvxh1CxJiwZZCOlb8PVCFrhqSgUspx8fFQQ1ZFHpzr7K8l\nE3xRAgMBAAGjITAfMB0GA1UdDgQWBBTTbHcCrp0I71O7mV6qfwB0hchXSjANBgkq\nhkiG9w0BAQsFAAOCAQEAbswVclSDdPW0UHMAHjhZc1kjUH1YYgq7fl8FU9ovk0d4\ncyJ5kW62OS+1V+JE+4TNNcQKFFdQzW+/hev42aXIWzjSosWDQ727mHt3oQgfohMf\nRTCq04LxLVVeEaFMnbpP4eWhCBfV7pJlo/DeILsa2UuonyIaDV4hxBTzRu3d6r1l\nVk/KM7nGUEWTRaU/jq1M6W5SY+hgyNHsD/vz8lIItSprkcL2lFFmweR5RVBWeXzD\nZyWvELHOH9CRZi0x6jNIIM14J9CIIW6Zubd+bpwEcPDVJfVX0FxT7XnPK1fGU1Q/\nZQnP838LmG3FOz5Q0VvWTommrktY45QfX0uSvGR52w=="
       val byteArray = certificateData.getBytes
       val messageHash = messageDigest.digest(byteArray)
@@ -10945,6 +10979,7 @@ class CbsEngine @Inject()
       if (messageData == null) return null
       if (messageData.replace(" ","").trim.length == 0) return null
 
+	    val messageDigest = MessageDigest.getInstance(messageHashAlgorithm)
       val byteArray = messageData.getBytes
       val messageHash = messageDigest.digest(byteArray)
       return messageHash
@@ -10956,6 +10991,44 @@ class CbsEngine @Inject()
     }
 
     return null
+  }
+  def decryptedSignatureValue(messageData: Array[Byte]) : Array[Byte] = {
+    val strApifunction: String = "decryptedSignatureValue"
+
+    try {
+      if (messageData == null) return null
+
+      val cipher = Cipher.getInstance(encryptionAlgorithm)
+
+      cipher.init(Cipher.DECRYPT_MODE, publicKey)
+      val decryptedMessageHash = cipher.doFinal(messageData)
+      return decryptedMessageHash
+    }catch {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured." + " requestData - " + messageData)
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " requestData - " + messageData)
+    }
+
+    return null
+  }
+  def verifyMessageHash(originalMessageHash: Array[Byte], decryptedMessageHash: Array[Byte]) : Boolean = {
+    val strApifunction: String = "verifyMessageHash"
+    var isVerified: Boolean = false
+
+    try {
+      if (originalMessageHash == null) return isVerified
+      if (decryptedMessageHash == null) return isVerified
+
+      isVerified = java.util.Arrays.equals(decryptedMessageHash, originalMessageHash)
+    }catch {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured." + " isVerified - " + isVerified)
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " isVerified - " + isVerified)
+    }
+
+    return isVerified
   }
   def log_data(mydetail : String) : Unit = {
     //var strpath_file2 : String = "C:\\Program Files\\Biometric_System\\mps1\\Logs.txt"
