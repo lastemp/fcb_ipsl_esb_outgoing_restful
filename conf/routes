@@ -2,9 +2,6 @@ GET        /                               controllers.HomeController.index
 #FUNDMASTER-ESB REQUESTS
 # Disable csrf
 #+NOCSRF
-POST        /addinternaltransferpaymentdetailscoopbank              controllers.CbsEngine.addInternalTransferPaymentDetailsCoopBank
-POST        /addacctopesalinktransferpaymentdetailscoopbank              controllers.CbsEngine.addAccountToPesalinkTransferPaymentDetailsCoopBank
-POST        /addacctompesatransferpaymentdetailscoopbank              controllers.CbsEngine.addAccountToMpesaTransferPaymentDetailsCoopBank
 # Test IPSL APIs: ESB system will invoke these APIs by posting outgoing requests.
 POST        /iso20022/v1/verification-request              controllers.IpslEngine.getAccountVerificationResponseDetails
 POST        /getsinglecredittransferresponsedetails              controllers.IpslEngine.getSingleCreditTransferResponseDetails
@@ -19,5 +16,5 @@ POST        /v1/addbulkcredittransferpaymentdetails              controllers.Cbs
 POST        /addaccountverificationreesponsebcbs              controllers.IpslEngine.addAccountVerificationResponseEsbCbs
 # ESB-CBS APIs. Was meant for callback processing for esb-cbs.
 # These approach of callback has been abandoned.
-POST        /addaccountverificationrequestesbcbs              controllers.IpslEngine.addAccountVerificationRequestEsbCbs
-POST        /addcredittransferrequestesbcbs              controllers.IpslEngine.addCreditTransferRequestEsbCbs
+# POST        /addaccountverificationrequestesbcbs              controllers.IpslEngine.addAccountVerificationRequestEsbCbs
+# POST        /addcredittransferrequestesbcbs              controllers.IpslEngine.addCreditTransferRequestEsbCbs

@@ -1,9 +1,9 @@
 package controllers
 
 import java.io.{BufferedWriter, FileWriter, IOException, PrintWriter}
-import java.nio.charset.{Charset, StandardCharsets}
+import java.nio.charset.{StandardCharsets}//Charset,
 import java.nio.file.{Files, Paths}
-import java.sql.{CallableStatement, ResultSet}
+import java.sql.{CallableStatement}//, ResultSet
 import java.text.SimpleDateFormat
 
 import play.api.mvc._
@@ -12,24 +12,24 @@ import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 import play.api.db.{Database, NamedDatabase}
 import javax.inject.Inject
-import java.util.{Base64, Date}
+import java.util.{Base64}//, Date
 
 import play.api.mvc.{AbstractController, ControllerComponents}
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.HttpMethods._
-import akka.http.scaladsl.model.headers.RawHeader
+//import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.http.scaladsl.model.headers.{BasicHttpCredentials, RawHeader}
+import akka.http.scaladsl.model.headers.{RawHeader}//BasicHttpCredentials, 
 import akka.stream.ActorMaterializer
-import akka.util.Timeout
+//import akka.util.Timeout
 import com.google.inject.AbstractModule
 import com.microsoft.sqlserver.jdbc.SQLServerDataTable
 import spray.json.DefaultJsonProtocol
 
-import scala.collection.mutable.ArrayBuffer
+//import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -44,7 +44,7 @@ import java.security.PublicKey
 import java.security.PrivateKey
 //import scala.util.control.Breaks
 //import scala.util.control.Breaks.break
-import oracle.jdbc.OracleTypes
+//import oracle.jdbc.OracleTypes
 //import com.microsoft.sqlserver.jdbc.SQLServerDataTable
 //(cc: ControllerComponents,myDB : Database,myExecutionContext: MyExecutionContext)
 trait MyExecutionContext extends ExecutionContext
@@ -172,7 +172,7 @@ class CbsEngine @Inject()
 
   //AccountVerification Details i.e AccountVerification request to IPSL through ESB
   //The request is initiated from ESB-CBS/Other CHannels
-  case class AccountVerificationDetails_Request(transactionreference: Option[JsValue], accountnumber: Option[JsValue], schememode: Option[JsValue], bankcode: Option[JsValue])
+  case class AccountVerificationDetails_Request(transactionreference: Option[JsValue], accountnumber: Option[JsValue], schemename: Option[JsValue], bankcode: Option[JsValue])
   case class AccountVerificationDetails_BatchRequest(messagereference: Option[JsValue], accountdata: AccountVerificationDetails_Request)
   case class AccountVerificationDetailsResponse_Batch(transactionreference: String, accountnumber: String, accountname: String, bankcode: String)
   case class AccountVerificationDetailsResponse_BatchData(messagereference: String, statuscode: Int, statusdescription: String, accountdata: AccountVerificationDetailsResponse_Batch)
@@ -280,7 +280,7 @@ class CbsEngine @Inject()
   }
   //AccountVerification
   //class AccountVerification(var assignmentInformation: AssignmentInformation, var verificationInformation: VerificationInformation) {
-  class AccountVerification(val assignmentInformation: AssignmentInformation, val verificationInformation: VerificationInformation) {
+  class AccountVerification(val assignmentInformation: AssignmentInformation, val verificationInformation: VerificationInformation, val isAccSchemeName: Boolean) {
 
     // (a) convert AccountVerification fields to XML
     def toXml = {
@@ -292,7 +292,7 @@ class CbsEngine @Inject()
       val SignatureId: String = getSignatureId(requestType)
       val myReferenceURI: String = getReferenceURI(requestType)
       val myKeyInfoId: String = getKeyInfoId(requestType)
-      val myX509Certificate: String = getX509Certificate
+      val myX509Certificate: String = getX509Certificate()
       val encodedX509Certificate: String = Base64.getEncoder.encodeToString(myX509Certificate.getBytes)
 	  	/*
       val c = {
@@ -401,10 +401,7 @@ class CbsEngine @Inject()
           <PtyAndAcctId>
             <Acct>
               <Othr>
-                <Id>{verificationInformation.partyAndAccountIdentificationInformation.accountInformation.accountIdentification}</Id>
-                <SchmeNm>
-                  <Prtry>{verificationInformation.partyAndAccountIdentificationInformation.accountInformation.schemeName}</Prtry>
-                </SchmeNm>
+                {getAccountIdentification(isAccSchemeName)}
               </Othr>
             </Acct>
             <Agt>
@@ -416,6 +413,22 @@ class CbsEngine @Inject()
             </Agt>
           </PtyAndAcctId>
         </Vrfctn>
+    }
+    private def getAccountIdentification(isAccSchemeName: Boolean) = {
+      val accountIdentification = 
+      {
+        if (isAccSchemeName){//Only show these details where "account scheme" is specified i.e ACC
+        <Id>{verificationInformation.partyAndAccountIdentificationInformation.accountInformation.accountIdentification}</Id>
+        }
+        else
+        {//Only show these other details where "account scheme" is not specified i.e PHNE
+          <Id>{verificationInformation.partyAndAccountIdentificationInformation.accountInformation.accountIdentification}</Id>
+          <SchmeNm>
+            <Prtry>{verificationInformation.partyAndAccountIdentificationInformation.accountInformation.schemeName}</Prtry>
+          </SchmeNm>
+        }
+      }
+      accountIdentification
     }
     private def toXmlSignatureInformation(SignatureId: String, myDigestValue: String, myReferenceURI: String, mySignatureValue: String, myKeyInfoId: String, myX509Certificate: String) = {
         <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id={SignatureId}>
@@ -506,7 +519,7 @@ class CbsEngine @Inject()
       val agentInformation: AgentInformation = AgentInformation(agentIdentification)
       val partyAndAccountIdentificationInformation: PartyAndAccountIdentificationInformation = PartyAndAccountIdentificationInformation(accountInformation, agentInformation)
       val verificationInformation: VerificationInformation = VerificationInformation(identification, partyAndAccountIdentificationInformation)
-      new AccountVerification(assignmentInformation, verificationInformation)
+      new AccountVerification(assignmentInformation, verificationInformation, false)
     }
 
   }
@@ -1233,9 +1246,21 @@ class CbsEngine @Inject()
       var entryID: Int = 0
       var responseCode: Int = 1
       var responseMessage: String = "Error occured during processing, please try again."
-      var myS2B_PaymentDetailsResponse_BatchData: Seq[S2B_PaymentDetailsResponse_Batch] = Seq.empty[S2B_PaymentDetailsResponse_Batch]
+      //var myS2B_PaymentDetailsResponse_BatchData: Seq[S2B_PaymentDetailsResponse_Batch] = Seq.empty[S2B_PaymentDetailsResponse_Batch]
       val strApifunction: String = "addsinglecredittransferpaymentdetails"
       var myHttpStatusCode = HttpStatusCode.BadRequest
+      var isValidMessageReference: Boolean = false
+      var isValidTransactionReference: Boolean = false
+      var isMatchingReference: Boolean = false
+      var isValidSchemeName: Boolean = false
+      var isValidAmount: Boolean = false
+      var isValidDebitAccount: Boolean = false
+      var isValidDebitAccountName: Boolean = false
+      var isValidDebitPhoneNumber: Boolean = false
+      var isValidCreditAccount: Boolean = false
+      var isValidCreditAccountName: Boolean = false
+      var isValidCreditBankCode: Boolean = false
+      var isValidCreditPhoneNumber: Boolean = false
 
       try
       {
@@ -1459,7 +1484,7 @@ class CbsEngine @Inject()
                   entryID = 0
                   //myBatchSize = myS2B_PaymentDetails_BatchRequest.paymentdata.length
                   strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
-                  val myBatchReference : java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
+                  //val myBatchReference : java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
 
                   try{
 
@@ -1491,12 +1516,12 @@ class CbsEngine @Inject()
                     var mandateidentification: String = ""
                     //debtor
                     var debtorinformationdebtorname: String = ""
-                    val debtorinformationdebtororganisationidentification: String = firstAgentIdentification
+                    //val debtorinformationdebtororganisationidentification: String = firstAgentIdentification
                     var debtorinformationdebtorcontactphonenumber: String = ""
                     var debtoraccountinformationdebtoraccountidentification: String = ""
-                    val debtoraccountinformationdebtoraccountschemename: String = SchemeName.ACC.toString.toUpperCase
+                    //val debtoraccountinformationdebtoraccountschemename: String = SchemeName.ACC.toString.toUpperCase
                     var debtoraccountinformationdebtoraccountname: String = ""
-                    val debtoragentinformationfinancialInstitutionIdentification: String = firstAgentIdentification
+                    //val debtoragentinformationfinancialInstitutionIdentification: String = firstAgentIdentification
                     //creditor
                     var creditoragentinformationfinancialInstitutionIdentification: String = ""
                     var creditorinformationcreditorname: String = ""
@@ -1510,15 +1535,15 @@ class CbsEngine @Inject()
                     var remittanceinformationunstructured: String = ""
                     var remittanceinformationtaxremittancereferencenumber: String = ""
                     //default values
-                    val instructingagentinformationfinancialInstitutionIdentification: String = firstAgentIdentification
-                    val instructedagentinformationfinancialInstitutionIdentification: String = assigneeAgentIdentification //i.e IPSL
-                    val initiatingpartyinformationorganisationidentification: String = firstAgentIdentification
-                    val chargebearer: String = chargeBearer
-                    val settlementmethod: String = settlementMethod
-                    val clearingsystem: String = clearingSystem
-                    val servicelevel: String = serviceLevel
-                    val localinstrumentcode: String = localInstrumentCode
-                    val categorypurpose: String = categoryPurpose
+                    //val instructingagentinformationfinancialInstitutionIdentification: String = firstAgentIdentification
+                    //val instructedagentinformationfinancialInstitutionIdentification: String = assigneeAgentIdentification //i.e IPSL
+                    //val initiatingpartyinformationorganisationidentification: String = firstAgentIdentification
+                    //val chargebearer: String = chargeBearer
+                    //val settlementmethod: String = settlementMethod
+                    //val clearingsystem: String = clearingSystem
+                    //val servicelevel: String = serviceLevel
+                    //val localinstrumentcode: String = localInstrumentCode
+                    //val categorypurpose: String = categoryPurpose
 
                     val creationDateTime: String = new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
                     /*
@@ -1534,7 +1559,7 @@ class CbsEngine @Inject()
                     }
                     */
                     val numberoftransactions: Int = 1
-                    val acceptancedatetime: String = new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
+                    //val acceptancedatetime: String = new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
 
                     val accSchemeName: String = SchemeName.ACC.toString.toUpperCase
                     val phneSchemeName: String = SchemeName.PHNE.toString.toUpperCase
@@ -1574,6 +1599,19 @@ class CbsEngine @Inject()
                     purposeinformationpurposecode = ""
                     remittanceinformationunstructured = ""
                     remittanceinformationtaxremittancereferencenumber = ""
+
+                    isValidMessageReference = false
+                    isValidTransactionReference = false
+                    isMatchingReference = false
+                    isValidSchemeName = false
+                    isValidAmount = false
+                    isValidDebitAccount = false
+                    isValidDebitAccountName = false
+                    isValidDebitPhoneNumber = false
+                    isValidCreditAccount = false
+                    isValidCreditAccountName = false
+                    isValidCreditBankCode = false
+                    isValidCreditPhoneNumber = false
 
                     try{
                       //messageidentification
@@ -1899,7 +1937,7 @@ class CbsEngine @Inject()
                       }
                     }
                     */
-                    val isValidSchemeName: Boolean = {
+                    isValidSchemeName = {
                       var isValid: Boolean = false
                       if (creditoraccountinformationcreditoraccountschemename.length == 0 || accSchemeName.length == 0){
                         isValid = false
@@ -1916,7 +1954,134 @@ class CbsEngine @Inject()
                       isValid
                     }
 
-                    if (debtoraccountinformationdebtoraccountidentification.length > 0 && creditoraccountinformationcreditoraccountidentification.length > 0 && isValidSchemeName){
+                    isValidMessageReference = {
+                      var isValid: Boolean = false
+                      if (messageidentification.length > 0 && messageidentification.length <= 35){
+                        val isNumeric: Boolean = messageidentification.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
+                        if (isNumeric){
+                          val myMessageidentification = messageidentification.toInt
+                          if (myMessageidentification > 0){isValid = true}
+                        }
+                        else{
+                          isValid = true
+                        }
+                      }
+                      isValid
+                    }
+
+                    isValidTransactionReference = {
+                      var isValid: Boolean = false
+                      if (paymentendtoendidentification.length > 0 && paymentendtoendidentification.length <= 35){
+                        val isNumeric: Boolean = paymentendtoendidentification.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
+                        if (isNumeric){
+                          val myPaymentendtoendidentification = paymentendtoendidentification.toInt
+                          if (myPaymentendtoendidentification > 0){isValid = true}
+                        }
+                        else{
+                          isValid = true
+                        }
+                      }
+                      isValid
+                    }
+
+                    isMatchingReference = {
+                      var isValid: Boolean = false
+                      if (isValidMessageReference && isValidTransactionReference) {
+                        if (messageidentification.equalsIgnoreCase(paymentendtoendidentification)){
+                          isValid = true  
+                        }  
+                      }
+                      isValid
+                    }
+
+                    isValidAmount = {
+                      if (myAmount > 0){true}
+                      else {false}
+                    }
+
+                    isValidDebitAccount = {
+                      var isValid: Boolean = false
+                      if (debtoraccountinformationdebtoraccountidentification.length > 0 && debtoraccountinformationdebtoraccountidentification.length <= 35){
+                        val isNumeric: Boolean = debtoraccountinformationdebtoraccountidentification.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
+                        if (isNumeric){
+                          val myDebtoraccount = debtoraccountinformationdebtoraccountidentification.toInt
+                          if (myDebtoraccount > 0){isValid = true}
+                        }
+                        else{
+                          isValid = true
+                        }
+                      }
+                      isValid
+                    }
+
+                    isValidDebitAccountName = {
+                      var isValid: Boolean = false
+                      if (debtoraccountinformationdebtoraccountname.length > 0 && debtoraccountinformationdebtoraccountname.length <= 140){
+                        isValid = true
+                      }
+                      isValid
+                    }
+
+                    isValidDebitPhoneNumber = {
+                      var isValid: Boolean = false
+                      if (debtorinformationdebtorcontactphonenumber.length > 0 && debtorinformationdebtorcontactphonenumber.length <= 12){
+                        val isNumeric: Boolean = debtorinformationdebtorcontactphonenumber.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
+                        if (isNumeric){
+                          val myPhonenumber = debtorinformationdebtorcontactphonenumber.toInt
+                          if (myPhonenumber > 0){isValid = true}
+                        }
+                      }
+                      isValid
+                    }
+
+                    isValidCreditAccount = {
+                      var isValid: Boolean = false
+                      if (creditoraccountinformationcreditoraccountidentification.length > 0 && creditoraccountinformationcreditoraccountidentification.length <= 35){
+                        val isNumeric: Boolean = creditoraccountinformationcreditoraccountidentification.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
+                        if (isNumeric){
+                          val myCreditoraccount = creditoraccountinformationcreditoraccountidentification.toInt
+                          if (myCreditoraccount > 0){isValid = true}
+                        }
+                        else{
+                          isValid = true
+                        }
+                      }
+                      isValid
+                    }
+
+                    isValidCreditAccountName = {
+                      var isValid: Boolean = false
+                      if (creditoraccountinformationcreditoraccountname.length > 0 && creditoraccountinformationcreditoraccountname.length <= 140){
+                        isValid = true
+                      }
+                      isValid
+                    }
+
+                    isValidCreditBankCode = {
+                      var isValid: Boolean = false
+                      if (creditoragentinformationfinancialInstitutionIdentification.length > 0 && creditoragentinformationfinancialInstitutionIdentification.length <= 35){
+                        val isNumeric: Boolean = creditoragentinformationfinancialInstitutionIdentification.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
+                        if (isNumeric){
+                          val myCreditoragent = creditoragentinformationfinancialInstitutionIdentification.toInt
+                          if (myCreditoragent > 0){isValid = true}
+                        }
+                      }
+                      isValid
+                    }
+
+                    isValidCreditPhoneNumber = {
+                      var isValid: Boolean = false
+                      if (creditorinformationcreditorcontactphonenumber.length > 0 && creditorinformationcreditorcontactphonenumber.length <= 12){
+                        val isNumeric: Boolean = creditorinformationcreditorcontactphonenumber.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
+                        if (isNumeric){
+                          val myPhonenumber = creditorinformationcreditorcontactphonenumber.toInt
+                          if (myPhonenumber > 0){isValid = true}
+                        }
+                      }
+                      isValid
+                    }
+
+                    if (isValidMessageReference && isValidTransactionReference && !isMatchingReference && isValidSchemeName && isValidAmount && isValidDebitAccount && isValidDebitAccountName && isValidDebitPhoneNumber && isValidCreditAccount && isValidCreditAccountName && isValidCreditBankCode &&isValidCreditPhoneNumber){
                       isValidInputData = true
                       myHttpStatusCode = HttpStatusCode.Accepted //TESTS ONLY
                       responseCode = 0
@@ -1940,7 +2105,8 @@ class CbsEngine @Inject()
                         }
                       }
                       */
-                      val schemeName: String = {
+                      if (isValidInputData){
+                        val schemeName: String = {
                         var scheme: String = ""
                         if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(accSchemeName)){
                           scheme = accSchemeName
@@ -1949,27 +2115,27 @@ class CbsEngine @Inject()
                           scheme = phneSchemeName
                         }
                         scheme
+                        }
+
+                        creditoraccountinformationcreditoraccountschemename = schemeName
+
+                        val transferDefaultInfo = TransferDefaultInfo(firstAgentIdentification, assigneeAgentIdentification, chargeBearer, settlementMethod, clearingSystem, serviceLevel, localInstrumentCode, categoryPurpose)
+                        val debitcontactinformation = ContactInfo(debtorinformationdebtorcontactphonenumber)
+                        val debitAccountInfo = DebitAccountInfo(debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, debitcontactinformation, SchemeName.ACC.toString.toUpperCase)
+                        val creditcontactinformation = ContactInfo(creditorinformationcreditorcontactphonenumber)
+                        val creditAccountInfo = CreditAccountInfo(creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoraccountinformationcreditoraccountschemename, creditoragentinformationfinancialInstitutionIdentification, creditcontactinformation)
+                        val purposeInfo = TransferPurposeInfo(purposeinformationpurposecode)
+                        val remittanceInfo = TransferRemittanceInfo(remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber)
+                        val mandateInfo = TransferMandateInfo(mandateidentification)
+                        val paymentdata = CreditTransferPaymentInfo(paymentendtoendidentification, interbanksettlementamount, debitAccountInfo, creditAccountInfo, mandateInfo, remittanceInfo, purposeInfo, transferDefaultInfo)
+                        val singleCreditTransferPaymentInfo = SingleCreditTransferPaymentInfo(messageidentification, creationDateTime, numberoftransactions, totalinterbanksettlementamount, paymentdata)
+
+                        val f = Future {
+                          println("singleCreditTransferPaymentInfo - " + singleCreditTransferPaymentInfo)
+                          val myRespData: String = getSingleCreditTransferDetails(singleCreditTransferPaymentInfo)
+                          sendSingleCreditTransferRequestsIpsl(myRespData)
+                        }  
                       }
-
-                      creditoraccountinformationcreditoraccountschemename = schemeName
-
-                      val transferDefaultInfo = TransferDefaultInfo(firstAgentIdentification, assigneeAgentIdentification, chargeBearer, settlementMethod, clearingSystem, serviceLevel, localInstrumentCode, categoryPurpose)
-                      val debitcontactinformation = ContactInfo(debtorinformationdebtorcontactphonenumber)
-                      val debitAccountInfo = DebitAccountInfo(debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, debitcontactinformation, SchemeName.ACC.toString.toUpperCase)
-                      val creditcontactinformation = ContactInfo(creditorinformationcreditorcontactphonenumber)
-                      val creditAccountInfo = CreditAccountInfo(creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoraccountinformationcreditoraccountschemename, creditoragentinformationfinancialInstitutionIdentification, creditcontactinformation)
-                      val purposeInfo = TransferPurposeInfo(purposeinformationpurposecode)
-                      val remittanceInfo = TransferRemittanceInfo(remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber)
-                      val mandateInfo = TransferMandateInfo(mandateidentification)
-                      val paymentdata = CreditTransferPaymentInfo(paymentendtoendidentification, interbanksettlementamount, debitAccountInfo, creditAccountInfo, mandateInfo, remittanceInfo, purposeInfo, transferDefaultInfo)
-                      val singleCreditTransferPaymentInfo = SingleCreditTransferPaymentInfo(messageidentification, creationDateTime, numberoftransactions, totalinterbanksettlementamount, paymentdata)
-
-                      val f = Future {
-                        println("singleCreditTransferPaymentInfo - " + singleCreditTransferPaymentInfo)
-                        val myRespData: String = getSingleCreditTransferDetails(singleCreditTransferPaymentInfo)
-                        sendSingleCreditTransferRequestsIpsl(myRespData)
-                      }
-
                     }
                     catch {
                       case io: Throwable =>
@@ -2049,25 +2215,42 @@ class CbsEngine @Inject()
                       }
                       else{
                         responseMessage = "Invalid Input Data length"
-                        /*
-                        if (isValidLength == true){
-                          responseMessage = "Invalid Input Data length"
+                        if (!isValidMessageReference){
+                          responseMessage = "Invalid Input Data. messagereference"
                         }
-                        else{
-                          if (isValidDate1 == true && isValidDate2 == true){
-                            responseMessage = "Invalid Input Data - wrong date format. Expected format - " + strDateFormat
-                          }
-                          else if (isValidDate1 == false && isValidDate2 == true){
-                            responseMessage = "Invalid Input Data - wrong start date format. Expected format - " + strDateFormat
-                          }
-                          else if (isValidDate1 == true && isValidDate2 == false){
-                            responseMessage = "Invalid Input Data - wrong stop date format. Expected format - " + strDateFormat
-                          }
-                          else {
-                            responseMessage = "Invalid Input Data - wrong date format. Expected format - " + strDateFormat
-                          }
+                        else if (!isValidTransactionReference){
+                          responseMessage = "Invalid Input Data. transactionreference"
                         }
-                        */
+                        else if (isMatchingReference){
+                          responseMessage = "Invalid Input Data. messagereference and transactionreference should have different values"
+                        }
+                        else if (!isValidSchemeName){
+                          responseMessage = "Invalid Input Data. schemename"
+                        }
+                        else if (!isValidAmount){
+                          responseMessage = "Invalid Input Data. amount"
+                        }
+                        else if (!isValidDebitAccount){
+                          responseMessage = "Invalid Input Data. debitaccountnumber"
+                        }
+                        else if (!isValidDebitAccountName){
+                          responseMessage = "Invalid Input Data. debitaccountname"
+                        }
+                        else if (!isValidDebitPhoneNumber){
+                          responseMessage = "Invalid Input Data. debit phonenumber"
+                        }
+                        else if (!isValidCreditAccount){
+                          responseMessage = "Invalid Input Data. creditaccountnumber"
+                        }
+                        else if (!isValidCreditAccountName){
+                          responseMessage = "Invalid Input Data. creditaccountname"
+                        }
+                        else if (!isValidCreditBankCode){
+                          responseMessage = "Invalid Input Data. credit bankcode"
+                        }
+                        else if (!isValidCreditPhoneNumber){
+                          responseMessage = "Invalid Input Data. credit phonenumber"
+                        }
                       }
                     }
                     catch {
@@ -2120,7 +2303,6 @@ class CbsEngine @Inject()
           else{
             myHttpStatusCode = HttpStatusCode.Unauthorized
           }
-
         }
         else {
           if (!isDataFound) {
@@ -2133,7 +2315,6 @@ class CbsEngine @Inject()
             responseMessage = "Invalid Request Data"
           }
         }
-
       }
       catch
         {
@@ -3079,7 +3260,7 @@ class CbsEngine @Inject()
 
       val myPaymentDetailsResponse = new S2B_ForexPaymentDetailsResponse_BatchData(myS2B_ForexPaymentDetailsResponse_BatchData)
 
-      val jsonResponse = Json.toJson(myPaymentDetailsResponse)
+      //val jsonResponse = Json.toJson(myPaymentDetailsResponse)
       /*
       try{
         log_data(strApifunction + " : " + "response - " + jsonResponse.toString() + " , remoteAddress - " + request.remoteAddress)
@@ -3098,7 +3279,7 @@ class CbsEngine @Inject()
       */
       //implicit val response_processUssdActions_Writes = Json.writes[response_processUssdActions]
 
-      val myRespData: String = getBulkCreditTransferDetails
+      val myRespData: String = getBulkCreditTransferDetails()
       //val myresponse_processUssdActions = new response_processUssdActions(myData)
 
       //TESTS ONLY
@@ -3131,14 +3312,17 @@ class CbsEngine @Inject()
       val strApifunction: String = "addaccountverificationdetails"
 
       var myBankCode: Int = 0
-      var mySchemeMode: Int = 0
       var strMessageReference: String = ""
       var strTransactionReference: String = ""
       var strAccountNumber: String = ""
-      var strSchemeMode: String = ""
+      var strSchemeName: String = ""
       var strBankCode : String = ""
-      //var strAccountname: String = ""
-      var isValidSchemeMode: Boolean = false
+      var isValidMessageReference: Boolean = false
+      var isValidTransactionReference: Boolean = false
+      var isMatchingReference: Boolean = false
+      var isValidSchemeName: Boolean = false
+	    val accSchemeName: String = SchemeName.ACC.toString.toUpperCase
+      val phneSchemeName: String = SchemeName.PHNE.toString.toUpperCase
 
       try
       {
@@ -3302,7 +3486,7 @@ class CbsEngine @Inject()
             implicit val AccountVerificationDetails_Request_Reads: Reads[AccountVerificationDetails_Request] = (
               (JsPath \ "transactionreference").readNullable[JsValue] and
                 (JsPath \ "accountnumber").readNullable[JsValue] and
-                (JsPath \ "schememode").readNullable[JsValue] and
+                (JsPath \ "schemename").readNullable[JsValue] and
                 (JsPath \ "bankcode").readNullable[JsValue]
               )(AccountVerificationDetails_Request.apply _)
 
@@ -3316,7 +3500,7 @@ class CbsEngine @Inject()
 
                 var isValidInputData : Boolean = false
                 //val myBatchSize : Integer = 1
-                var strBatchReference : String = ""
+                //var strBatchReference : String = ""
                 var strRequestData : String = ""
 
                 try
@@ -3354,12 +3538,15 @@ class CbsEngine @Inject()
 
 
                     myBankCode = 0
-                    mySchemeMode = 0
                     strMessageReference = ""
                     strTransactionReference = ""
                     strAccountNumber = ""
-                    strSchemeMode = ""
+                    strSchemeName = ""
                     strBankCode = ""
+                    isValidMessageReference = false
+                    isValidTransactionReference = false
+                    isMatchingReference = false
+                    isValidSchemeName = false
 
                     try{
                       //strMessageReference
@@ -3413,24 +3600,18 @@ class CbsEngine @Inject()
                         }
                       }
 
-                      //strSchemeMode
-                      if (myPaymentDetails.accountdata.schememode != None) {
-                        if (myPaymentDetails.accountdata.schememode.get != None) {
-                          val myData = myPaymentDetails.accountdata.schememode.get
-                          strSchemeMode = myData.toString()
-                          if (strSchemeMode != null && strSchemeMode != None){
-                            strSchemeMode = strSchemeMode.trim
-                            if (strSchemeMode.length > 0){
-                              strSchemeMode = strSchemeMode.replace("'","")//Remove apostrophe
-                              strSchemeMode = strSchemeMode.replace(" ","")//Remove spaces
-                              strSchemeMode = strSchemeMode.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                              strSchemeMode = strSchemeMode.trim
-                              if (strSchemeMode.length > 0){
-                                val isNumeric: Boolean = strSchemeMode.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
-                                if (isNumeric){
-                                  mySchemeMode = strSchemeMode.toInt
-                                }
-                              }
+                      //strSchemeName
+                      if (myPaymentDetails.accountdata.schemename != None) {
+                        if (myPaymentDetails.accountdata.schemename.get != None) {
+                          val myData = myPaymentDetails.accountdata.schemename.get
+                          strSchemeName = myData.toString()
+                          if (strSchemeName != null && strSchemeName != None){
+                            strSchemeName = strSchemeName.trim
+                            if (strSchemeName.length > 0){
+                              strSchemeName = strSchemeName.replace("'","")//Remove apostrophe
+                              strSchemeName = strSchemeName.replace(" ","")//Remove spaces
+                              strSchemeName = strSchemeName.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strSchemeName = strSchemeName.trim
                             }
                           }
                         }
@@ -3467,13 +3648,65 @@ class CbsEngine @Inject()
                         log_errors(strApifunction + " : " + ex.getMessage())
                     }
 
-                     isValidSchemeMode = {
-                      if (mySchemeMode == 0 || mySchemeMode == 1){true}
-                      else {false}
+					          isValidSchemeName = {
+                      var isValid: Boolean = false
+                      if (strSchemeName.length == 0 || accSchemeName.length == 0){
+                        isValid = false
+                      }
+                      else if (strSchemeName.equalsIgnoreCase(accSchemeName)){
+                        isValid = true
+                      }
+                      else if (strSchemeName.equalsIgnoreCase(phneSchemeName)){
+                        isValid = true
+                      }
+                      else {
+                        isValid = false
+                      }
+                      isValid
+                    }
+
+                    isValidMessageReference = {
+                      var isValid: Boolean = false
+                      if (strMessageReference.length > 0 && strMessageReference.length <= 35){
+                        val isNumeric: Boolean = strMessageReference.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
+                        if (isNumeric){
+                          val myMessageReference = strMessageReference.toInt
+                          if (myMessageReference > 0){isValid = true}
+                        }
+                        else{
+                          isValid = true
+                        }
+                      }
+                      isValid
+                    }
+
+                    isValidTransactionReference = {
+                      var isValid: Boolean = false
+                      if (strTransactionReference.length > 0 && strTransactionReference.length <= 35){
+                        val isNumeric: Boolean = strTransactionReference.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
+                        if (isNumeric){
+                          val myTransactionReference = strTransactionReference.toInt
+                          if (myTransactionReference > 0){isValid = true}
+                        }
+                        else{
+                          isValid = true
+                        }
+                      }
+                      isValid
+                    }
+
+                    isMatchingReference = {
+                      var isValid: Boolean = false
+                      if (isValidMessageReference && isValidTransactionReference) {
+                        if (strMessageReference.equalsIgnoreCase(strTransactionReference)){
+                          isValid = true  
+                        }  
+                      }
+                      isValid
                     }
 
                     /* Lets set var isValidInputData to true if valid data is received from e-Channels/ESB-CBS System */
-                    if (strMessageReference.length > 0 && strTransactionReference.length > 0 && strAccountNumber.length > 0 && isValidSchemeMode && myBankCode > 0){
+                    if (isValidMessageReference && isValidTransactionReference && strAccountNumber.length > 0 && isValidSchemeName && myBankCode > 0 && !isMatchingReference){
                       isValidInputData = true
                       myHttpStatusCode = HttpStatusCode.Accepted //TESTS ONLY
                       responseCode = 0
@@ -3552,43 +3785,26 @@ class CbsEngine @Inject()
                           */
                         }
                       }
-
                       else{
                         responseMessage = "Invalid Input Data length"
-                        if (strMessageReference.length == 0){
+                        if (!isValidMessageReference){
                           responseMessage = "Invalid Input Data. messagereference"
                         }
-                        else if (strTransactionReference.length == 0){
+                        else if (!isValidTransactionReference){
                           responseMessage = "Invalid Input Data. transactionreference"
                         }
                         else if (strAccountNumber.length == 0){
                           responseMessage = "Invalid Input Data. accountnumber"
                         }
-                        else if (!isValidSchemeMode){
-                          responseMessage = "Invalid Input Data. schememode"
+                        else if (!isValidSchemeName){
+                          responseMessage = "Invalid Input Data. schemename"
                         }
                         else if (myBankCode == 0){
                           responseMessage = "Invalid Input Data. bankcode"
                         }
-                        /*
-                        if (isValidLength == true){
-                          responseMessage = "Invalid Input Data length"
+                        else if (isMatchingReference){
+                          responseMessage = "Invalid Input Data. messagereference and transactionreference should have different values"
                         }
-                        else{
-                          if (isValidDate1 == true && isValidDate2 == true){
-                            responseMessage = "Invalid Input Data - wrong date format. Expected format - " + strDateFormat
-                          }
-                          else if (isValidDate1 == false && isValidDate2 == true){
-                            responseMessage = "Invalid Input Data - wrong start date format. Expected format - " + strDateFormat
-                          }
-                          else if (isValidDate1 == true && isValidDate2 == false){
-                            responseMessage = "Invalid Input Data - wrong stop date format. Expected format - " + strDateFormat
-                          }
-                          else {
-                            responseMessage = "Invalid Input Data - wrong date format. Expected format - " + strDateFormat
-                          }
-                        }
-                        */
                       }
                     }
                     catch {
@@ -3643,70 +3859,54 @@ class CbsEngine @Inject()
 
       }
       catch
-        {
-          case ex: Exception =>
-            responseMessage = "Error occured during processing, please try again."
-            log_errors(strApifunction + " : " + ex.getMessage())
-          case tr: Throwable =>
-            responseMessage = "Error occured during processing, please try again."
-            log_errors(strApifunction + " : " + tr.getMessage())
-        }
-      /*
-      implicit val response_processUssdActions_Writes = Json.writes[response_processUssdActions]
-
-      val myRespData: String = getAccountVerificationDetails
-      val f = Future {sendAccountVerificationRequestsIpsl(myRespData)}
-
-      implicit val textResponseData_Writes = Json.writes[textResponseData]
-
-      val myResponseData = new textResponseData(responseMessage)
-
-      val textResponse = {
-        myHttpStatusCode match {
-          case HttpStatusCode.Accepted =>
-            Accepted(myResponseData.text.toString).as("text/plain")
-          case HttpStatusCode.BadRequest =>
-            BadRequest(myResponseData.text.toString).as("text/plain")
-          case HttpStatusCode.Unauthorized =>
-            Unauthorized(myResponseData.text.toString).as("text/plain")
-          case _ =>
-            BadRequest(myResponseData.text.toString).as("text/plain")
-        }
-      }
-      val r: Result = textResponse
-      r
-      */
-      /*
-      implicit val AccountVerificationDetailsResponse_BatchWrites = Json.writes[AccountVerificationDetailsResponse_Batch]
-      implicit val AccountVerificationDetailsResponse_BatchDataWrites = Json.writes[AccountVerificationDetailsResponse_BatchData]
-
-      val myAccountVerificationDetailsResponse_Batch = AccountVerificationDetailsResponse_Batch(strTransactionReference, strAccountNumber, strAccountname, myBankCode.toString)
-      val myAccountVerificationResponse = AccountVerificationDetailsResponse_BatchData(strMessageReference, responseCode, responseMessage, myAccountVerificationDetailsResponse_Batch)
-      */
+	  {
+	    case ex: Exception =>
+		  responseMessage = "Error occured during processing, please try again."
+		  log_errors(strApifunction + " : " + ex.getMessage())
+	   case tr: Throwable =>
+		  responseMessage = "Error occured during processing, please try again."
+		  log_errors(strApifunction + " : " + tr.getMessage())
+	  }
+      
       implicit val  AccountVerificationDetailsResponse_Writes = Json.writes[AccountVerificationDetailsResponse]
 
       val myAccountVerificationResponse =  AccountVerificationDetailsResponse(responseCode, responseMessage)
       val jsonResponse = Json.toJson(myAccountVerificationResponse)
 
       try{
+        var isAccSchemeName: Boolean = false
         val creationDateTime: String = new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
-        val schemeName: String = {
-          mySchemeMode match {
-            case 0 =>
-              SchemeName.ACC.toString.toUpperCase
-            case 1 =>
-              SchemeName.PHNE.toString.toUpperCase
+		    val schemeName: String = {
+          var scheme: String = ""
+            if (strSchemeName.equalsIgnoreCase(accSchemeName)){
+              scheme = accSchemeName
+              isAccSchemeName = true
+            }
+            else if (strSchemeName.equalsIgnoreCase(phneSchemeName)){
+              scheme = phneSchemeName
+            }
+            scheme
+        }
+        
+        val isSendRequest = {
+          myHttpStatusCode match {
+            case HttpStatusCode.Accepted =>
+              true
             case _ =>
-              SchemeName.ACC.toString.toUpperCase
+              false
           }
         }
-        val accountVerificationDetails = AccountVerificationDetails(strMessageReference, creationDateTime, firstAgentIdentification, assignerAgentIdentification, assigneeAgentIdentification: String, strTransactionReference, strAccountNumber, schemeName, myBankCode.toString)
-        //println("schemeName - " + schemeName.toString)
-        //println("accountVerificationDetails - " + accountVerificationDetails.toString)
-        val f = Future {
-          val myRespData: String = getAccountVerificationDetails(accountVerificationDetails)
-          sendAccountVerificationRequestsIpsl(myRespData)
+
+        if (isSendRequest){
+          val accountVerificationDetails = AccountVerificationDetails(strMessageReference, creationDateTime, firstAgentIdentification, assignerAgentIdentification, assigneeAgentIdentification: String, strTransactionReference, strAccountNumber, schemeName, myBankCode.toString)
+          //println("schemeName - " + schemeName.toString)
+          //println("accountVerificationDetails - " + accountVerificationDetails.toString)
+          val f = Future {
+            val myRespData: String = getAccountVerificationDetails(accountVerificationDetails, isAccSchemeName)
+            sendAccountVerificationRequestsIpsl(myRespData)
+          }  
         }
+
         log_data(strApifunction + " : " + "response - " + jsonResponse.toString() + " , remoteAddress - " + request.remoteAddress)
       }
       catch{
@@ -10342,7 +10542,7 @@ class CbsEngine @Inject()
 
     return  myPreparedby_Id
   }
-  def getAccountVerificationDetails(accountVerificationDetails: AccountVerificationDetails) : String = {
+  def getAccountVerificationDetails(accountVerificationDetails: AccountVerificationDetails, isAccSchemeName: Boolean) : String = {
 
     var strOutput: String = ""
     try {
@@ -10383,7 +10583,7 @@ class CbsEngine @Inject()
       val agentInformation: AgentInformation = AgentInformation(agentIdentification)
       val partyAndAccountIdentificationInformation: PartyAndAccountIdentificationInformation = PartyAndAccountIdentificationInformation(accountInformation, agentInformation)
       val verificationInformation: VerificationInformation = VerificationInformation(identification, partyAndAccountIdentificationInformation)
-      val accountVerification = new AccountVerification(assignmentInformation, verificationInformation)
+      val accountVerification = new AccountVerification(assignmentInformation, verificationInformation, isAccSchemeName)
       val myData = accountVerification.toXml
       strOutput = myData.toString()
     }catch {

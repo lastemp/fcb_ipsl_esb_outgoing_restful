@@ -1,3 +1,4 @@
+/*
 package v1.post
 
 import javax.inject.Inject
@@ -30,3 +31,4 @@ class PostRouter @Inject()(controller: PostController) extends SimpleRouter {
   }
 
 }
+*/
