@@ -181,15 +181,15 @@ class CbsEngine @Inject()
   case class AccountVerificationDetails(messagereference: String, creationdatetime: String, firstagentidentification: String, assigneragentidentification: String, assigneeagentidentification: String, transactionreference: String, accountnumber: String, schemename: String, bankcode: String)
 
   //SingleCreditTransfer Details i.e SingleCreditTransfer request to IPSL through ESB
-  //The request is initiated from ESB-CBS/Other CHannels
-  case class ContactInformation(phonenumber: Option[JsValue], emailaddress: Option[JsValue])
-  case class DebitAccountInformation(debitaccountnumber: Option[JsValue], debitaccountname: Option[JsValue], debitcontactinformation: ContactInformation)
-  case class CreditAccountInformation(creditaccountnumber: Option[JsValue], creditaccountname: Option[JsValue], schemename: Option[JsValue], bankcode: Option[JsValue], creditcontactinformation: ContactInformation)
+  //The request is initiated from ESB-CBS/Other Channels
+  case class ContactInformation(fullnames: Option[JsValue], phonenumber: Option[JsValue], emailaddress: Option[JsValue])
+  case class DebitAccountInformation(debitaccountnumber: Option[JsValue], debitaccountname: Option[JsValue], debitcontactinformation: Option[ContactInformation])
+  case class CreditAccountInformation(creditaccountnumber: Option[JsValue], creditaccountname: Option[JsValue], schemename: Option[JsValue], bankcode: Option[JsValue], creditcontactinformation: Option[ContactInformation])
   case class TransferPurposeInformation(purposecode: Option[JsValue], purposedescription: Option[JsValue])
   case class TransferRemittanceInformation(unstructured: Option[JsValue], taxremittancereferencenumber: Option[JsValue])
   case class TransferMandateInformation(mandateidentification: Option[JsValue], mandatedescription: Option[JsValue])
-  case class CreditTransferPaymentInformation(transactionreference: Option[JsValue], amount: Option[JsValue], debitaccountinformation: DebitAccountInformation, creditaccountinformation: CreditAccountInformation, mandateinformation: TransferMandateInformation, remittanceinformation: TransferRemittanceInformation, purposeinformation: TransferPurposeInformation)
-  case class SingleCreditTransferPaymentDetails_Request(messagereference: Option[JsValue], paymentdata: CreditTransferPaymentInformation)
+  case class CreditTransferPaymentInformation(transactionreference: Option[JsValue], amount: Option[JsValue], debitaccountinformation: Option[DebitAccountInformation], creditaccountinformation: Option[CreditAccountInformation], mandateinformation: Option[TransferMandateInformation], remittanceinformation: Option[TransferRemittanceInformation], purposeinformation: Option[TransferPurposeInformation])
+  case class SingleCreditTransferPaymentDetails_Request(messagereference: Option[JsValue], paymentdata: Option[CreditTransferPaymentInformation])
   case class SingleCreditTransferPaymentDetailsResponse(statuscode: Int, statusdescription: String)
   //Below classes are used for mapping/holding data internally
   case class TransferDefaultInfo(firstagentidentification: String, assigneeagentidentification: String, chargebearer: String, settlementmethod: String, clearingsystem: String, servicelevel: String, localinstrumentcode: String, categorypurpose: String)
@@ -671,7 +671,7 @@ class CbsEngine @Inject()
   }
 
   //SingleCreditTransfer
-  class SingleCreditTransfer(val groupHeaderInformation: GroupHeaderInformation, val creditTransferTransactionInformation: CreditTransferTransactionInformation) {
+  class SingleCreditTransfer(val groupHeaderInformation: GroupHeaderInformation, val creditTransferTransactionInformation: CreditTransferTransactionInformation, val isAccSchemeName: Boolean) {
 
     // (a) convert SingleCreditTransfer fields to XML
     def toXml = {
@@ -737,31 +737,9 @@ class CbsEngine @Inject()
           <IntrBkSttlmAmt>{creditTransferTransactionInformation.interbanksettlementamount}</IntrBkSttlmAmt>
           <AccptncDtTm>{creditTransferTransactionInformation.acceptancedatetime}</AccptncDtTm>
           <ChrgBr>{creditTransferTransactionInformation.chargebearer}</ChrgBr>
-          <MndtRltdInf>
-            <MndtId>{creditTransferTransactionInformation.mandaterelatedinformation.mandateidentification}</MndtId>
-          </MndtRltdInf>
-          <UltmtDbtr>
-            <Nm>{creditTransferTransactionInformation.ultimatedebtorinformation.debtorname}</Nm>
-            <Id>
-              <OrgId>
-                <Othr>
-                  <Id>{creditTransferTransactionInformation.ultimatedebtorinformation.debtororganisationidentification}</Id>
-                </Othr>
-              </OrgId>
-            </Id>
-            <CtctDtls>
-              <PhneNb>{creditTransferTransactionInformation.ultimatedebtorinformation.debtorcontactphonenumber}</PhneNb>
-            </CtctDtls>
-          </UltmtDbtr>
-          <InitgPty>
-            <Id>
-              <OrgId>
-                <Othr>
-                  <Id>{creditTransferTransactionInformation.initiatingpartyinformation.organisationidentification}</Id>
-                </Othr>
-              </OrgId>
-            </Id>
-          </InitgPty>
+          {getMandateRelatedInformation(creditTransferTransactionInformation.mandaterelatedinformation.mandateidentification)}
+          {getUltimateDebtorInformation(false)}
+          {getInitiatingPartyInformation(false)}
           <Dbtr>
             <Nm>{creditTransferTransactionInformation.debtorinformation.debtorname}</Nm>
             <Id>
@@ -778,10 +756,7 @@ class CbsEngine @Inject()
           <DbtrAcct>
             <Id>
               <Othr>
-                <Id>{creditTransferTransactionInformation.debtoraccountinformation.debtoraccountidentification}</Id>
-                <SchmeNm>
-                  <Prtry>{creditTransferTransactionInformation.debtoraccountinformation.debtoraccountschemename}</Prtry>
-                </SchmeNm>
+                {getDebtorAccountIdentification(true)}
               </Othr>
             </Id>
             <Nm>{creditTransferTransactionInformation.debtoraccountinformation.debtoraccountname}</Nm>
@@ -800,6 +775,78 @@ class CbsEngine @Inject()
               </Othr>
             </FinInstnId>
           </CdtrAgt>
+          {getCreditorInformation(false)}
+          <CdtrAcct>
+            <Id>
+              <Othr>
+                {getCreditorAccountIdentification(isAccSchemeName)}
+              </Othr>
+            </Id>
+            <Nm>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccountname}</Nm>
+          </CdtrAcct>
+          {getUltimateCreditorInformation(false)}
+          <Purp>
+            <Prtry>{creditTransferTransactionInformation.purposeinformation.purposecode}</Prtry>
+          </Purp>
+          <RmtInf>
+            <Ustrd>{creditTransferTransactionInformation.remittanceinformation.unstructured}</Ustrd>
+            {getTaxRemittanceReferenceNumber(creditTransferTransactionInformation.remittanceinformation.taxremittancereferencenumber)}
+          </RmtInf>
+        </CdtTrfTxInf>
+    }
+    private def getMandateRelatedInformation(mandateRelatedInfo: String) = {
+      val mandateRelatedInformation = 
+      {
+        if (mandateRelatedInfo.length > 0){
+          <MndtRltdInf>
+            <MndtId>{creditTransferTransactionInformation.mandaterelatedinformation.mandateidentification}</MndtId>
+          </MndtRltdInf>
+        }
+      }
+      mandateRelatedInformation
+    }
+    private def getUltimateDebtorInformation(IsUltimateDebtorInfoEnabled: Boolean) = {
+      val ultimateDebtorInformation = 
+      {
+        if (IsUltimateDebtorInfoEnabled){
+          <UltmtDbtr>
+            <Nm>{creditTransferTransactionInformation.ultimatedebtorinformation.debtorname}</Nm>
+            <Id>
+              <OrgId>
+                <Othr>
+                  <Id>{creditTransferTransactionInformation.ultimatedebtorinformation.debtororganisationidentification}</Id>
+                </Othr>
+              </OrgId>
+            </Id>
+            <CtctDtls>
+              <PhneNb>{creditTransferTransactionInformation.ultimatedebtorinformation.debtorcontactphonenumber}</PhneNb>
+            </CtctDtls>
+          </UltmtDbtr>
+        }
+      }
+      ultimateDebtorInformation
+    }
+    private def getInitiatingPartyInformation(IsInitiatingPartyInfoEnabled: Boolean) = {
+      val initiatingPartyInformation = 
+      {
+        if (IsInitiatingPartyInfoEnabled){
+          <InitgPty>
+            <Id>
+              <OrgId>
+                <Othr>
+                  <Id>{creditTransferTransactionInformation.initiatingpartyinformation.organisationidentification}</Id>
+                </Othr>
+              </OrgId>
+            </Id>
+          </InitgPty>
+        }
+      }
+      initiatingPartyInformation
+    }
+    private def getCreditorInformation(IsCreditorInfoEnabled: Boolean) = {
+      val creditorInformation = 
+      {
+        if (IsCreditorInfoEnabled){
           <Cdtr>
             <Nm>{creditTransferTransactionInformation.creditorinformation.creditorname}</Nm>
             <Id>
@@ -813,17 +860,14 @@ class CbsEngine @Inject()
               <PhneNb>{creditTransferTransactionInformation.creditorinformation.creditorcontactphonenumber}</PhneNb>
             </CtctDtls>
           </Cdtr>
-          <CdtrAcct>
-            <Id>
-              <Othr>
-                <Id>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccountidentification}</Id>
-                <SchmeNm>
-                  <Prtry>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccountschemename}</Prtry>
-                </SchmeNm>
-              </Othr>
-            </Id>
-            <Nm>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccountname}</Nm>
-          </CdtrAcct>
+        }
+      }
+      creditorInformation
+    }
+    private def getUltimateCreditorInformation(IsUltimateCreditorInfoEnabled: Boolean) = {
+      val ultimateCreditorInformation = 
+      {
+        if (IsUltimateCreditorInfoEnabled){
           <UltmtCdtr>
             <Nm>{creditTransferTransactionInformation.ultimatecreditorinformation.creditorname}</Nm>
             <Id>
@@ -837,18 +881,54 @@ class CbsEngine @Inject()
               <PhneNb>{creditTransferTransactionInformation.ultimatecreditorinformation.creditorcontactphonenumber}</PhneNb>
             </CtctDtls>
           </UltmtCdtr>
-          <Purp>
-            <Prtry>{creditTransferTransactionInformation.purposeinformation.purposecode}</Prtry>
-          </Purp>
-          <RmtInf>
-            <Ustrd>{creditTransferTransactionInformation.remittanceinformation.unstructured}</Ustrd>
-            <Strd>
-              <TaxRmt>
-                <RefNb>{creditTransferTransactionInformation.remittanceinformation.taxremittancereferencenumber}</RefNb>
-              </TaxRmt>
-            </Strd>
-          </RmtInf>
-        </CdtTrfTxInf>
+        }
+      }
+      ultimateCreditorInformation
+    }
+    private def getDebtorAccountIdentification(isAccSchemeName: Boolean) = {
+      val accountIdentification = 
+      {
+        if (isAccSchemeName){//Only show these details where "account scheme" is specified i.e ACC
+          <Id>{creditTransferTransactionInformation.debtoraccountinformation.debtoraccountidentification}</Id>
+        }
+        else
+        {//Only show these other details where "account scheme" is not specified i.e PHNE
+          <Id>{creditTransferTransactionInformation.debtoraccountinformation.debtoraccountidentification}</Id>
+          <SchmeNm>
+            <Prtry>{creditTransferTransactionInformation.debtoraccountinformation.debtoraccountschemename}</Prtry>
+          </SchmeNm>
+        }
+      }
+      accountIdentification
+    }
+    private def getCreditorAccountIdentification(isAccSchemeName: Boolean) = {
+      val accountIdentification = 
+      {
+        if (isAccSchemeName){//Only show these details where "account scheme" is specified i.e ACC
+          <Id>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccountidentification}</Id>
+        }
+        else
+        {//Only show these other details where "account scheme" is not specified i.e PHNE
+          <Id>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccountidentification}</Id>
+          <SchmeNm>
+            <Prtry>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccountschemename}</Prtry>
+          </SchmeNm>
+        }
+      }
+      accountIdentification
+    }
+    private def getTaxRemittanceReferenceNumber(TaxRemittanceRef: String) = {
+      val taxRemittanceReferenceNumber = 
+      {
+        if (TaxRemittanceRef.length > 0){
+          <Strd>
+            <TaxRmt>
+              <RefNb>{creditTransferTransactionInformation.remittanceinformation.taxremittancereferencenumber}</RefNb>
+            </TaxRmt>
+          </Strd>
+        }
+      }
+      taxRemittanceReferenceNumber
     }
 
     override def toString =
@@ -898,7 +978,7 @@ class CbsEngine @Inject()
         ultimatecreditorinformation, purposeinformation, remittanceinformation
       )
 
-      new SingleCreditTransfer(groupHeaderInformation, creditTransferTransactionInformation)
+      new SingleCreditTransfer(groupHeaderInformation, creditTransferTransactionInformation, false)
     }
 
   }
@@ -1256,11 +1336,14 @@ class CbsEngine @Inject()
       var isValidAmount: Boolean = false
       var isValidDebitAccount: Boolean = false
       var isValidDebitAccountName: Boolean = false
+      var isValidDebtorName: Boolean = false
       var isValidDebitPhoneNumber: Boolean = false
       var isValidCreditAccount: Boolean = false
       var isValidCreditAccountName: Boolean = false
       var isValidCreditBankCode: Boolean = false
-      var isValidCreditPhoneNumber: Boolean = false
+      //var isValidCreditPhoneNumber: Boolean = false
+      var isValidRemittanceinfoUnstructured: Boolean = false
+      var isValidPurposeCode: Boolean = false
 
       try
       {
@@ -1423,14 +1506,15 @@ class CbsEngine @Inject()
             responseMessage  = "Error occured during processing, please try again."
 
             implicit val ContactInformation_Reads: Reads[ContactInformation] = (
-              (JsPath \ "phonenumber").readNullable[JsValue] and
+              (JsPath \ "fullnames").readNullable[JsValue] and
+                (JsPath \ "phonenumber").readNullable[JsValue] and
                 (JsPath \ "emailaddress").readNullable[JsValue]
               )(ContactInformation.apply _)
 
             implicit val DebitAccountInformation_Reads: Reads[DebitAccountInformation] = (
               (JsPath \ "debitaccountnumber").readNullable[JsValue] and
                 (JsPath \ "debitaccountname").readNullable[JsValue] and
-                (JsPath \ "debitcontactinformation").read[ContactInformation]
+                (JsPath \ "debitcontactinformation").readNullable[ContactInformation]
               )(DebitAccountInformation.apply _)
 
             implicit val CreditAccountInformation_Reads: Reads[CreditAccountInformation] = (
@@ -1438,7 +1522,7 @@ class CbsEngine @Inject()
                 (JsPath \ "creditaccountname").readNullable[JsValue] and
                 (JsPath \ "schemename").readNullable[JsValue] and
                 (JsPath \ "bankcode").readNullable[JsValue] and
-                (JsPath \ "creditcontactinformation").read[ContactInformation]
+                (JsPath \ "creditcontactinformation").readNullable[ContactInformation]
               )(CreditAccountInformation.apply _)
 
             implicit val TransferPurposeInformation_Reads: Reads[TransferPurposeInformation] = (
@@ -1459,16 +1543,16 @@ class CbsEngine @Inject()
             implicit val CreditTransferPaymentInformation_Reads: Reads[CreditTransferPaymentInformation] = (
               (JsPath \ "transactionreference").readNullable[JsValue] and
                 (JsPath \ "amount").readNullable[JsValue] and
-                (JsPath \ "debitaccountinformation").read[DebitAccountInformation] and
-                (JsPath \ "creditaccountinformation").read[CreditAccountInformation] and
-                (JsPath \ "mandateinformation").read[TransferMandateInformation] and
-                (JsPath \ "remittanceinformation").read[TransferRemittanceInformation] and
-                (JsPath \ "purposeinformation").read[TransferPurposeInformation]
+                (JsPath \ "debitaccountinformation").readNullable[DebitAccountInformation] and
+                (JsPath \ "creditaccountinformation").readNullable[CreditAccountInformation] and
+                (JsPath \ "mandateinformation").readNullable[TransferMandateInformation] and
+                (JsPath \ "remittanceinformation").readNullable[TransferRemittanceInformation] and
+                (JsPath \ "purposeinformation").readNullable[TransferPurposeInformation]
               )(CreditTransferPaymentInformation.apply _)
 
             implicit val SingleCreditTransferPaymentDetails_Request_Reads: Reads[SingleCreditTransferPaymentDetails_Request] = (
               (JsPath \ "messagereference").readNullable[JsValue] and
-                (JsPath \ "paymentdata").read[CreditTransferPaymentInformation]
+                (JsPath \ "paymentdata").readNullable[CreditTransferPaymentInformation]
               )(SingleCreditTransferPaymentDetails_Request.apply _)
 
             myjson.validate[SingleCreditTransferPaymentDetails_Request] match {
@@ -1607,13 +1691,18 @@ class CbsEngine @Inject()
                     isValidAmount = false
                     isValidDebitAccount = false
                     isValidDebitAccountName = false
+                    isValidDebtorName = false
                     isValidDebitPhoneNumber = false
                     isValidCreditAccount = false
                     isValidCreditAccountName = false
                     isValidCreditBankCode = false
-                    isValidCreditPhoneNumber = false
+                    //isValidCreditPhoneNumber = false
+                    isValidRemittanceinfoUnstructured = false
+                    isValidPurposeCode = false
 
                     try{
+                      var isValidPaymentdata = false
+
                       //messageidentification
                       if (myPaymentDetails.messagereference != None) {
                         if (myPaymentDetails.messagereference.get != None) {
@@ -1631,11 +1720,22 @@ class CbsEngine @Inject()
                         }
                       }
 
+                      isValidPaymentdata = {
+                        var isValid: Boolean = false
+                        if (myPaymentDetails.paymentdata != None){
+                          if (myPaymentDetails.paymentdata.get != None){
+                            isValid = true
+                          }
+                        }  
+                        isValid
+                      }
+
                       //paymentendtoendidentification
-                      if (myPaymentDetails.paymentdata.transactionreference != None) {
-                        if (myPaymentDetails.paymentdata.transactionreference.get != None) {
-                          val myData = myPaymentDetails.paymentdata.transactionreference.get
-                          paymentendtoendidentification = myData.toString()
+                      /*
+                      if (myPaymentDetails.paymentdata != None) {
+                        if (myPaymentDetails.paymentdata.get != None) {
+                          val myData = myPaymentDetails.paymentdata.get
+                          paymentendtoendidentification = myData.transactionreference.getOrElse("").toString()
                           if (paymentendtoendidentification != null && paymentendtoendidentification != None){
                             paymentendtoendidentification = paymentendtoendidentification.trim
                             if (paymentendtoendidentification.length > 0){
@@ -1647,12 +1747,25 @@ class CbsEngine @Inject()
                           }
                         }
                       }
-
+                      */
+                      if (isValidPaymentdata){
+                        val myData = myPaymentDetails.paymentdata.get
+                        paymentendtoendidentification = myData.transactionreference.getOrElse("").toString()
+                        if (paymentendtoendidentification != null && paymentendtoendidentification != None){
+                          paymentendtoendidentification = paymentendtoendidentification.trim
+                          if (paymentendtoendidentification.length > 0){
+                            paymentendtoendidentification = paymentendtoendidentification.replace("'","")//Remove apostrophe
+                            paymentendtoendidentification = paymentendtoendidentification.replace(" ","")//Remove spaces
+                            paymentendtoendidentification = paymentendtoendidentification.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                            paymentendtoendidentification = paymentendtoendidentification.trim
+                          }
+                        }  
+                      }
+                      
                       //strAmount
-                      if (myPaymentDetails.paymentdata.amount != None) {
-                        if (myPaymentDetails.paymentdata.amount.get != None) {
-                          val myData = myPaymentDetails.paymentdata.amount.get
-                          strAmount = myData.toString()
+                      if (isValidPaymentdata){
+                        val myData = myPaymentDetails.paymentdata.get
+                          strAmount = myData.amount.getOrElse("").toString()
                           if (strAmount != null && strAmount != None){
                             strAmount = strAmount.trim
                             if (strAmount.length > 0){
@@ -1671,14 +1784,22 @@ class CbsEngine @Inject()
                               }
                             }
                           }
-                        }
                       }
-
+                      
                       //mandateidentification
-                      if (myPaymentDetails.paymentdata.mandateinformation.mandateidentification != None) {
-                        if (myPaymentDetails.paymentdata.mandateinformation.mandateidentification.get != None) {
-                          val myData = myPaymentDetails.paymentdata.mandateinformation.mandateidentification.get
-                          mandateidentification = myData.toString()
+                      if (isValidPaymentdata){
+                        val myData1 = myPaymentDetails.paymentdata.get
+                        val isValid = {
+                          if (myData1.mandateinformation != None){
+                            if (myData1.mandateinformation.get != None){true}
+                            else {false}
+                          }  
+                          else {false}
+                        }
+                        if (isValid){
+                          val myData2 = myData1.mandateinformation.get
+
+                          mandateidentification = myData2.mandateidentification.getOrElse("").toString()
                           if (mandateidentification != null && mandateidentification != None){
                             mandateidentification = mandateidentification.trim
                             if (mandateidentification.length > 0){
@@ -1692,10 +1813,26 @@ class CbsEngine @Inject()
                       }
 
                       //debtorinformationdebtorname
-                      if (myPaymentDetails.paymentdata.debitaccountinformation.debitaccountname != None) {
-                        if (myPaymentDetails.paymentdata.debitaccountinformation.debitaccountname.get != None) {
-                          val myData = myPaymentDetails.paymentdata.debitaccountinformation.debitaccountname.get
-                          debtorinformationdebtorname = myData.toString()
+                      if (isValidPaymentdata){
+                        val myData1 = myPaymentDetails.paymentdata.get
+                        var isValid: Boolean = false
+                        val isValid1 = {
+                          if (myData1.debitaccountinformation != None){
+                            if (myData1.debitaccountinformation.get != None){true}  
+                            else {false} 
+                          }  
+                          else {false}
+                        }
+                        if (isValid1){
+                          val myVar1 = myData1.debitaccountinformation.get
+                          if (myVar1.debitcontactinformation != None){
+                            if (myVar1.debitcontactinformation.get != None){isValid = true}
+                          }  
+                        }
+                        if (isValid){
+                          val myData2 = myData1.debitaccountinformation.get
+                          val myData3 = myData2.debitcontactinformation.get
+                          debtorinformationdebtorname = myData3.fullnames.getOrElse("").toString()
                           if (debtorinformationdebtorname != null && debtorinformationdebtorname != None){
                             debtorinformationdebtorname = debtorinformationdebtorname.trim
                             if (debtorinformationdebtorname.length > 0){
@@ -1709,10 +1846,26 @@ class CbsEngine @Inject()
                       }
 
                       //debtorinformationdebtorcontactphonenumber
-                      if (myPaymentDetails.paymentdata.debitaccountinformation.debitcontactinformation.phonenumber != None) {
-                        if (myPaymentDetails.paymentdata.debitaccountinformation.debitcontactinformation.phonenumber.get != None) {
-                          val myData = myPaymentDetails.paymentdata.debitaccountinformation.debitcontactinformation.phonenumber.get
-                          debtorinformationdebtorcontactphonenumber = myData.toString()
+                      if (isValidPaymentdata){
+                        val myData1 = myPaymentDetails.paymentdata.get
+                        var isValid: Boolean = false
+                        val isValid1 = {
+                          if (myData1.debitaccountinformation != None){
+                            if (myData1.debitaccountinformation.get != None){true}  
+                            else {false} 
+                          }  
+                          else {false}
+                        }
+                        if (isValid1){
+                          val myVar1 = myData1.debitaccountinformation.get
+                          if (myVar1.debitcontactinformation != None){
+                            if (myVar1.debitcontactinformation.get != None){isValid = true}
+                          }  
+                        }
+                        if (isValid){
+                          val myData2 = myData1.debitaccountinformation.get
+                          val myData3 = myData2.debitcontactinformation.get
+                          debtorinformationdebtorcontactphonenumber = myData3.phonenumber.getOrElse("").toString()
                           if (debtorinformationdebtorcontactphonenumber != null && debtorinformationdebtorcontactphonenumber != None){
                             debtorinformationdebtorcontactphonenumber = debtorinformationdebtorcontactphonenumber.trim
                             if (debtorinformationdebtorcontactphonenumber.length > 0){
@@ -1726,10 +1879,18 @@ class CbsEngine @Inject()
                       }
 
                       //debtoraccountinformationdebtoraccountidentification
-                      if (myPaymentDetails.paymentdata.debitaccountinformation.debitaccountnumber != None) {
-                        if (myPaymentDetails.paymentdata.debitaccountinformation.debitaccountnumber.get != None) {
-                          val myData = myPaymentDetails.paymentdata.debitaccountinformation.debitaccountnumber.get
-                          debtoraccountinformationdebtoraccountidentification = myData.toString()
+                      if (isValidPaymentdata){
+                        val myData1 = myPaymentDetails.paymentdata.get
+                        val isValid = {
+                          if (myData1.debitaccountinformation != None){
+                            if (myData1.debitaccountinformation.get != None){true}
+                            else {false}
+                          }  
+                          else {false}
+                        }
+                        if (isValid){
+                          val myData2 = myData1.debitaccountinformation.get
+                          debtoraccountinformationdebtoraccountidentification = myData2.debitaccountnumber.getOrElse("").toString()
                           if (debtoraccountinformationdebtoraccountidentification != null && debtoraccountinformationdebtoraccountidentification != None){
                             debtoraccountinformationdebtoraccountidentification = debtoraccountinformationdebtoraccountidentification.trim
                             if (debtoraccountinformationdebtoraccountidentification.length > 0){
@@ -1743,10 +1904,18 @@ class CbsEngine @Inject()
                       }
 
                       //debtoraccountinformationdebtoraccountname
-                      if (myPaymentDetails.paymentdata.debitaccountinformation.debitaccountname != None) {
-                        if (myPaymentDetails.paymentdata.debitaccountinformation.debitaccountname.get != None) {
-                          val myData = myPaymentDetails.paymentdata.debitaccountinformation.debitaccountname.get
-                          debtoraccountinformationdebtoraccountname = myData.toString()
+                      if (isValidPaymentdata){
+                        val myData1 = myPaymentDetails.paymentdata.get
+                        val isValid = {
+                          if (myData1.debitaccountinformation != None){
+                            if (myData1.debitaccountinformation.get != None){true}
+                            else {false}
+                          }  
+                          else {false}
+                        }
+                        if (isValid){
+                          val myData2 = myData1.debitaccountinformation.get
+                          debtoraccountinformationdebtoraccountname = myData2.debitaccountname.getOrElse("").toString()
                           if (debtoraccountinformationdebtoraccountname != null && debtoraccountinformationdebtoraccountname != None){
                             debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.trim
                             if (debtoraccountinformationdebtoraccountname.length > 0){
@@ -1760,10 +1929,18 @@ class CbsEngine @Inject()
                       }
 
                       //creditorinformationcreditorname
-                      if (myPaymentDetails.paymentdata.creditaccountinformation.creditaccountname != None) {
-                        if (myPaymentDetails.paymentdata.creditaccountinformation.creditaccountname.get != None) {
-                          val myData = myPaymentDetails.paymentdata.creditaccountinformation.creditaccountname.get
-                          creditorinformationcreditorname = myData.toString()
+                      if (isValidPaymentdata){
+                        val myData1 = myPaymentDetails.paymentdata.get
+                        val isValid = {
+                          if (myData1.creditaccountinformation != None){
+                            if (myData1.creditaccountinformation.get != None){true} 
+                            else {false}  
+                          }  
+                          else {false}
+                        }
+                        if (isValid){
+                          val myData2 = myData1.creditaccountinformation.get
+                          creditorinformationcreditorname = myData2.creditaccountname.getOrElse("").toString()
                           if (creditorinformationcreditorname != null && creditorinformationcreditorname != None){
                             creditorinformationcreditorname = creditorinformationcreditorname.trim
                             if (creditorinformationcreditorname.length > 0){
@@ -1777,6 +1954,7 @@ class CbsEngine @Inject()
                       }
 
                       //creditorinformationcreditorcontactphonenumber
+                      /*
                       if (myPaymentDetails.paymentdata.creditaccountinformation.creditcontactinformation.phonenumber != None) {
                         if (myPaymentDetails.paymentdata.creditaccountinformation.creditcontactinformation.phonenumber.get != None) {
                           val myData = myPaymentDetails.paymentdata.creditaccountinformation.creditcontactinformation.phonenumber.get
@@ -1792,12 +1970,52 @@ class CbsEngine @Inject()
                           }
                         }
                       }
+                      */
+                      if (isValidPaymentdata){
+                        val myData1 = myPaymentDetails.paymentdata.get
+                        var isValid: Boolean = false
+                        val isValid1 = {
+                          if (myData1.creditaccountinformation != None){
+                            if (myData1.creditaccountinformation.get != None){true}  
+                            else {false} 
+                          }  
+                          else {false}
+                        }
+                        if (isValid1){
+                          val myVar1 = myData1.creditaccountinformation.get
+                          if (myVar1.creditcontactinformation != None){
+                            if (myVar1.creditcontactinformation.get != None){isValid = true}
+                          }  
+                        }
+                        if (isValid){
+                          val myData2 = myData1.creditaccountinformation.get
+                          val myData3 = myData2.creditcontactinformation.get
+                          creditorinformationcreditorcontactphonenumber = myData3.phonenumber.getOrElse("").toString()
+                          if (creditorinformationcreditorcontactphonenumber != null && creditorinformationcreditorcontactphonenumber != None){
+                            creditorinformationcreditorcontactphonenumber = creditorinformationcreditorcontactphonenumber.trim
+                            if (creditorinformationcreditorcontactphonenumber.length > 0){
+                              creditorinformationcreditorcontactphonenumber = creditorinformationcreditorcontactphonenumber.replace("'","")//Remove apostrophe
+                              creditorinformationcreditorcontactphonenumber = creditorinformationcreditorcontactphonenumber.replace(" ","")//Remove spaces
+                              creditorinformationcreditorcontactphonenumber = creditorinformationcreditorcontactphonenumber.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              creditorinformationcreditorcontactphonenumber = creditorinformationcreditorcontactphonenumber.trim
+                            }
+                          }
+                        }
+                      }
 
                       //creditoraccountinformationcreditoraccountidentification
-                      if (myPaymentDetails.paymentdata.creditaccountinformation.creditaccountnumber != None) {
-                        if (myPaymentDetails.paymentdata.creditaccountinformation.creditaccountnumber.get != None) {
-                          val myData = myPaymentDetails.paymentdata.creditaccountinformation.creditaccountnumber.get
-                          creditoraccountinformationcreditoraccountidentification = myData.toString()
+                      if (isValidPaymentdata){
+                        val myData1 = myPaymentDetails.paymentdata.get
+                        val isValid = {
+                          if (myData1.creditaccountinformation != None){
+                            if (myData1.creditaccountinformation.get != None){true} 
+                            else {false}  
+                          }  
+                          else {false}
+                        }
+                        if (isValid){
+                          val myData2 = myData1.creditaccountinformation.get
+                          creditoraccountinformationcreditoraccountidentification = myData2.creditaccountnumber.getOrElse("").toString()
                           if (creditoraccountinformationcreditoraccountidentification != null && creditoraccountinformationcreditoraccountidentification != None){
                             creditoraccountinformationcreditoraccountidentification = creditoraccountinformationcreditoraccountidentification.trim
                             if (creditoraccountinformationcreditoraccountidentification.length > 0){
@@ -1811,10 +2029,21 @@ class CbsEngine @Inject()
                       }
 
                       //creditoraccountinformationcreditoraccountschemename
-                      if (myPaymentDetails.paymentdata.creditaccountinformation.schemename != None) {
-                        if (myPaymentDetails.paymentdata.creditaccountinformation.schemename.get != None) {
-                          val myData = myPaymentDetails.paymentdata.creditaccountinformation.schemename.get
-                          creditoraccountinformationcreditoraccountschemename = myData.toString()
+                      if (isValidPaymentdata){
+                        val myData1 = myPaymentDetails.paymentdata.get
+                        val isValid = {
+                          if (myData1.creditaccountinformation != None){
+                            if (myData1.creditaccountinformation.get != None){true}   
+                            else {false}
+                          }  
+                          else {false}
+                        }
+                        if (isValid){
+                          val myData2 = myData1.creditaccountinformation.get
+                          //println("myData1: " + myData1)
+                          //println("myData2: " + myData2)
+                          creditoraccountinformationcreditoraccountschemename = myData2.schemename.getOrElse("").toString()
+                          //println("creditoraccountinformationcreditoraccountschemename: " + creditoraccountinformationcreditoraccountschemename)
                           if (creditoraccountinformationcreditoraccountschemename != null && creditoraccountinformationcreditoraccountschemename != None){
                             creditoraccountinformationcreditoraccountschemename = creditoraccountinformationcreditoraccountschemename.trim
                             if (creditoraccountinformationcreditoraccountschemename.length > 0){
@@ -1828,10 +2057,18 @@ class CbsEngine @Inject()
                       }
 
                       //creditoraccountinformationcreditoraccountname
-                      if (myPaymentDetails.paymentdata.creditaccountinformation.creditaccountname != None) {
-                        if (myPaymentDetails.paymentdata.creditaccountinformation.creditaccountname.get != None) {
-                          val myData = myPaymentDetails.paymentdata.creditaccountinformation.creditaccountname.get
-                          creditoraccountinformationcreditoraccountname = myData.toString()
+                      if (isValidPaymentdata){
+                        val myData1 = myPaymentDetails.paymentdata.get
+                        val isValid = {
+                          if (myData1.creditaccountinformation != None){
+                            if (myData1.creditaccountinformation.get != None){true}
+                            else {false}
+                          }  
+                          else {false}
+                        }
+                        if (isValid){
+                          val myData2 = myData1.creditaccountinformation.get
+                          creditoraccountinformationcreditoraccountname = myData2.creditaccountname.getOrElse("").toString()
                           if (creditoraccountinformationcreditoraccountname != null && creditoraccountinformationcreditoraccountname != None){
                             creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.trim
                             if (creditoraccountinformationcreditoraccountname.length > 0){
@@ -1845,10 +2082,18 @@ class CbsEngine @Inject()
                       }
 
                       //creditoragentinformationfinancialInstitutionIdentification
-                      if (myPaymentDetails.paymentdata.creditaccountinformation.bankcode != None) {
-                        if (myPaymentDetails.paymentdata.creditaccountinformation.bankcode.get != None) {
-                          val myData = myPaymentDetails.paymentdata.creditaccountinformation.bankcode.get
-                          creditoragentinformationfinancialInstitutionIdentification = myData.toString()
+                      if (isValidPaymentdata){
+                        val myData1 = myPaymentDetails.paymentdata.get
+                        val isValid = {
+                          if (myData1.creditaccountinformation != None){
+                            if (myData1.creditaccountinformation.get != None){true} 
+                            else {false}  
+                          }  
+                          else {false}
+                        }
+                        if (isValid){
+                          val myData2 = myData1.creditaccountinformation.get
+                          creditoragentinformationfinancialInstitutionIdentification = myData2.bankcode.getOrElse("").toString()
                           if (creditoragentinformationfinancialInstitutionIdentification != null && creditoragentinformationfinancialInstitutionIdentification != None){
                             creditoragentinformationfinancialInstitutionIdentification = creditoragentinformationfinancialInstitutionIdentification.trim
                             if (creditoragentinformationfinancialInstitutionIdentification.length > 0){
@@ -1866,10 +2111,18 @@ class CbsEngine @Inject()
 
 
                       //purposeinformationpurposecode
-                      if (myPaymentDetails.paymentdata.purposeinformation.purposecode != None) {
-                        if (myPaymentDetails.paymentdata.purposeinformation.purposecode.get != None) {
-                          val myData = myPaymentDetails.paymentdata.purposeinformation.purposecode.get
-                          purposeinformationpurposecode = myData.toString()
+                      if (isValidPaymentdata){
+                        val myData1 = myPaymentDetails.paymentdata.get
+                        val isValid = {
+                          if (myData1.purposeinformation != None){
+                            if (myData1.purposeinformation.get != None){true} 
+                            else {false}  
+                          }  
+                          else {false}
+                        }
+                        if (isValid){
+                          val myData2 = myData1.purposeinformation.get
+                          purposeinformationpurposecode = myData2.purposecode.getOrElse("").toString()
                           if (purposeinformationpurposecode != null && purposeinformationpurposecode != None){
                             purposeinformationpurposecode = purposeinformationpurposecode.trim
                             if (purposeinformationpurposecode.length > 0){
@@ -1883,15 +2136,23 @@ class CbsEngine @Inject()
                       }
 
                       //remittanceinformationunstructured
-                      if (myPaymentDetails.paymentdata.remittanceinformation.unstructured != None) {
-                        if (myPaymentDetails.paymentdata.remittanceinformation.unstructured.get != None) {
-                          val myData = myPaymentDetails.paymentdata.remittanceinformation.unstructured.get
-                          remittanceinformationunstructured = myData.toString()
+                      if (isValidPaymentdata){
+                        val myData1 = myPaymentDetails.paymentdata.get
+                        val isValid = {
+                          if (myData1.remittanceinformation != None){
+                            if (myData1.remittanceinformation.get != None){true}   
+                            else {false}
+                          }  
+                          else {false}
+                        }
+                        if (isValid){
+                          val myData2 = myData1.remittanceinformation.get
+                          remittanceinformationunstructured = myData2.unstructured.getOrElse("").toString()
                           if (remittanceinformationunstructured != null && remittanceinformationunstructured != None){
                             remittanceinformationunstructured = remittanceinformationunstructured.trim
                             if (remittanceinformationunstructured.length > 0){
                               remittanceinformationunstructured = remittanceinformationunstructured.replace("'","")//Remove apostrophe
-                              remittanceinformationunstructured = remittanceinformationunstructured.replace(" ","")//Remove spaces
+                              remittanceinformationunstructured = remittanceinformationunstructured.replace("  "," ")//Remove double spaces
                               remittanceinformationunstructured = remittanceinformationunstructured.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                               remittanceinformationunstructured = remittanceinformationunstructured.trim
                             }
@@ -1900,10 +2161,18 @@ class CbsEngine @Inject()
                       }
 
                       //remittanceinformationtaxremittancereferencenumber
-                      if (myPaymentDetails.paymentdata.remittanceinformation.taxremittancereferencenumber != None) {
-                        if (myPaymentDetails.paymentdata.remittanceinformation.taxremittancereferencenumber.get != None) {
-                          val myData = myPaymentDetails.paymentdata.remittanceinformation.taxremittancereferencenumber.get
-                          remittanceinformationtaxremittancereferencenumber = myData.toString()
+                      if (isValidPaymentdata){
+                        val myData1 = myPaymentDetails.paymentdata.get
+                        val isValid = {
+                          if (myData1.remittanceinformation != None){
+                            if (myData1.remittanceinformation.get != None){true} 
+                            else {false}  
+                          }  
+                          else {false}
+                        }
+                        if (isValid){
+                          val myData2 = myData1.remittanceinformation.get
+                          remittanceinformationtaxremittancereferencenumber = myData2.taxremittancereferencenumber.getOrElse("").toString()
                           if (remittanceinformationtaxremittancereferencenumber != null && remittanceinformationtaxremittancereferencenumber != None){
                             remittanceinformationtaxremittancereferencenumber = remittanceinformationtaxremittancereferencenumber.trim
                             if (remittanceinformationtaxremittancereferencenumber.length > 0){
@@ -2016,7 +2285,15 @@ class CbsEngine @Inject()
 
                     isValidDebitAccountName = {
                       var isValid: Boolean = false
-                      if (debtoraccountinformationdebtoraccountname.length > 0 && debtoraccountinformationdebtoraccountname.length <= 140){
+                      if (debtoraccountinformationdebtoraccountname.replace("  ","").length > 0 && debtoraccountinformationdebtoraccountname.replace("  ","").length <= 70){
+                        isValid = true
+                      }
+                      isValid
+                    }
+
+                    isValidDebtorName  = {
+                      var isValid: Boolean = false
+                      if (debtorinformationdebtorname.replace("  ","").length > 0 && debtorinformationdebtorname.replace("  ","").length <= 140){
                         isValid = true
                       }
                       isValid
@@ -2024,7 +2301,7 @@ class CbsEngine @Inject()
 
                     isValidDebitPhoneNumber = {
                       var isValid: Boolean = false
-                      if (debtorinformationdebtorcontactphonenumber.length > 0 && debtorinformationdebtorcontactphonenumber.length <= 12){
+                      if (debtorinformationdebtorcontactphonenumber.length == 10 || debtorinformationdebtorcontactphonenumber.length == 12){
                         val isNumeric: Boolean = debtorinformationdebtorcontactphonenumber.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
                         if (isNumeric){
                           val myPhonenumber = debtorinformationdebtorcontactphonenumber.toInt
@@ -2051,7 +2328,7 @@ class CbsEngine @Inject()
 
                     isValidCreditAccountName = {
                       var isValid: Boolean = false
-                      if (creditoraccountinformationcreditoraccountname.length > 0 && creditoraccountinformationcreditoraccountname.length <= 140){
+                      if (creditoraccountinformationcreditoraccountname.replace("  ","").length > 0 && creditoraccountinformationcreditoraccountname.replace("  ","").length <= 140){
                         isValid = true
                       }
                       isValid
@@ -2068,10 +2345,10 @@ class CbsEngine @Inject()
                       }
                       isValid
                     }
-
+                    /*
                     isValidCreditPhoneNumber = {
                       var isValid: Boolean = false
-                      if (creditorinformationcreditorcontactphonenumber.length > 0 && creditorinformationcreditorcontactphonenumber.length <= 12){
+                      if (creditorinformationcreditorcontactphonenumber.length == 10 || creditorinformationcreditorcontactphonenumber.length == 12){
                         val isNumeric: Boolean = creditorinformationcreditorcontactphonenumber.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
                         if (isNumeric){
                           val myPhonenumber = creditorinformationcreditorcontactphonenumber.toInt
@@ -2080,8 +2357,24 @@ class CbsEngine @Inject()
                       }
                       isValid
                     }
+                    */
+                    isValidRemittanceinfoUnstructured = {
+                      var isValid: Boolean = false
+                      if (remittanceinformationunstructured.replace(" ","").length > 0 && remittanceinformationunstructured.replace(" ","").length <= 140){
+                        isValid = true
+                      }
+                      isValid
+                    }
 
-                    if (isValidMessageReference && isValidTransactionReference && !isMatchingReference && isValidSchemeName && isValidAmount && isValidDebitAccount && isValidDebitAccountName && isValidDebitPhoneNumber && isValidCreditAccount && isValidCreditAccountName && isValidCreditBankCode &&isValidCreditPhoneNumber){
+                    isValidPurposeCode = {
+                      var isValid: Boolean = false
+                      if (purposeinformationpurposecode.length > 0 && purposeinformationpurposecode.length <= 35){
+                        isValid = true
+                      }
+                      isValid
+                    }
+
+                    if (isValidMessageReference && isValidTransactionReference && !isMatchingReference && isValidSchemeName && isValidAmount && isValidDebitAccount && isValidDebitAccountName && isValidDebitPhoneNumber && isValidCreditAccount && isValidCreditAccountName && isValidCreditBankCode && isValidDebtorName && isValidRemittanceinfoUnstructured && isValidPurposeCode){
                       isValidInputData = true
                       myHttpStatusCode = HttpStatusCode.Accepted //TESTS ONLY
                       responseCode = 0
@@ -2106,15 +2399,19 @@ class CbsEngine @Inject()
                       }
                       */
                       if (isValidInputData){
+                        var isAccSchemeName: Boolean = false
                         val schemeName: String = {
-                        var scheme: String = ""
-                        if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(accSchemeName)){
-                          scheme = accSchemeName
-                        }
-                        else if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(phneSchemeName)){
-                          scheme = phneSchemeName
-                        }
-                        scheme
+                          var scheme: String = ""
+                          if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(accSchemeName)){
+                            scheme = accSchemeName
+                            isAccSchemeName = true
+                          }
+                          else if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(phneSchemeName)){
+                            scheme = phneSchemeName
+                          }
+
+                          scheme
+
                         }
 
                         creditoraccountinformationcreditoraccountschemename = schemeName
@@ -2132,7 +2429,7 @@ class CbsEngine @Inject()
 
                         val f = Future {
                           println("singleCreditTransferPaymentInfo - " + singleCreditTransferPaymentInfo)
-                          val myRespData: String = getSingleCreditTransferDetails(singleCreditTransferPaymentInfo)
+                          val myRespData: String = getSingleCreditTransferDetails(singleCreditTransferPaymentInfo, isAccSchemeName)
                           sendSingleCreditTransferRequestsIpsl(myRespData)
                         }  
                       }
@@ -2248,9 +2545,20 @@ class CbsEngine @Inject()
                         else if (!isValidCreditBankCode){
                           responseMessage = "Invalid Input Data. credit bankcode"
                         }
+                        else if (!isValidDebtorName){
+                          responseMessage = "Invalid Input Data. debit fullnames"
+                        }
+                        else if (!isValidRemittanceinfoUnstructured){
+                          responseMessage = "Invalid Input Data. remittanceinformation - unstructured"
+                        }
+                        else if (!isValidPurposeCode){
+                          responseMessage = "Invalid Input Data. purposeinformation - purposecode"
+                        }
+                        /*
                         else if (!isValidCreditPhoneNumber){
                           responseMessage = "Invalid Input Data. credit phonenumber"
                         }
+                        */
                       }
                     }
                     catch {
@@ -10546,25 +10854,6 @@ class CbsEngine @Inject()
 
     var strOutput: String = ""
     try {
-      /*
-      myDB.withConnection { implicit myconn =>
-
-        try{
-          val mystmt: CallableStatement = myconn.prepareCall(strSQL)
-          mystmt.setInt(1,myServiceCode)
-          mystmt.registerOutParameter("ServiceEsbApi", java.sql.Types.BOOLEAN)
-          mystmt.execute()
-          isServiceEsbApi = mystmt.getBoolean("ServiceEsbApi")
-        }
-        catch{
-          case ex : Exception =>
-            log_errors("getServiceEsbApi : " + ex.getMessage + " - ex exception error occured." + " ServiceCode - " + myServiceCode.toString())
-          case t: Throwable =>
-            log_errors("getServiceEsbApi : " + t.getMessage + " exception error occured." + " ServiceCode - " + myServiceCode.toString())
-        }
-
-      }
-      */
       val messageIdentification: String = accountVerificationDetails.messagereference//"001"
       val creationDateTime: String = accountVerificationDetails.creationdatetime//"2021-03-22"
       val firstAgentIdentification: String = accountVerificationDetails.firstagentidentification//"2031"
@@ -10595,7 +10884,7 @@ class CbsEngine @Inject()
 
     strOutput
   }
-  def getSingleCreditTransferDetails(creditTransferPaymentInfo: SingleCreditTransferPaymentInfo) : String = {
+  def getSingleCreditTransferDetails(creditTransferPaymentInfo: SingleCreditTransferPaymentInfo, isAccSchemeName: Boolean) : String = {
 
     var strOutput: String = ""
     try {
@@ -10683,7 +10972,7 @@ class CbsEngine @Inject()
         ultimatecreditorinformation, purposeinformation, remittanceinformation
       )
 
-      val singleCreditTransfer = new SingleCreditTransfer(groupHeaderInformation, creditTransferTransactionInformation)
+      val singleCreditTransfer = new SingleCreditTransfer(groupHeaderInformation, creditTransferTransactionInformation, isAccSchemeName)
 
       val myData = singleCreditTransfer.toXml
       strOutput = myData.toString()
