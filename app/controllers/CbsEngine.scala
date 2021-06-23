@@ -193,7 +193,7 @@ class CbsEngine @Inject()
   case class SingleCreditTransferPaymentDetailsResponse(statuscode: Int, statusdescription: String)
   //Below classes are used for mapping/holding data internally
   case class TransferDefaultInfo(firstagentidentification: String, assigneeagentidentification: String, chargebearer: String, settlementmethod: String, clearingsystem: String, servicelevel: String, localinstrumentcode: String, categorypurpose: String)
-  case class ContactInfo(phonenumber: String)
+  case class ContactInfo(fullnames: String, phonenumber: String)
   case class DebitAccountInfo(debitaccountnumber: String, debitaccountname: String, debitcontactinformation: ContactInfo, schemename: String)
   case class CreditAccountInfo(creditaccountnumber: String, creditaccountname: String, schemename: String, bankcode: String, creditcontactinformation: ContactInfo)
   case class TransferPurposeInfo(purposecode: String)
@@ -205,7 +205,7 @@ class CbsEngine @Inject()
   /*** Xml data ***/
   //val prettyPrinter = new scala.xml.PrettyPrinter(80, 2)
   //val prettyPrinter = new scala.xml.PrettyPrinter(80, 4)
-  val prettyPrinter = new scala.xml.PrettyPrinter(400, 4)//set it this was because one of the fields has a length of 344
+  //val prettyPrinter = new scala.xml.PrettyPrinter(400, 4)//set it this was because one of the fields has a length of 344
   /* AccountVerification */
   case class FirstAgentInformation(financialInstitutionIdentification: String)
   case class AssignerAgentInformation(financialInstitutionIdentification: String)
@@ -284,6 +284,7 @@ class CbsEngine @Inject()
 
     // (a) convert AccountVerification fields to XML
     def toXml = {
+      var prettyPrinter = new scala.xml.PrettyPrinter(80, 4)//value 80 represents max length of "<Document>" header
       val a = toXmlAssignmentInformation
       val assignmentInfo: String = a.toString
       val b = toXmlVerificationInformation
@@ -302,7 +303,6 @@ class CbsEngine @Inject()
           "</IdVrfctnReq></Document>"
       }
 	    */
-
       val c = {
         "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:acmt.023.001.02\"><IdVrfctnReq>" +
           assignmentInfo +
@@ -310,7 +310,7 @@ class CbsEngine @Inject()
           "</IdVrfctnReq></Document>"
       }
 
-      val xmlData1: scala.xml.Node = scala.xml.XML.loadString(c)//c.replaceAll("\n","")
+      val xmlData1: scala.xml.Node = scala.xml.XML.loadString(c)
       val requestData: String = prettyPrinter.format(xmlData1)
 
       val myDigestValue: String = getDigestValue(requestData)
@@ -334,11 +334,11 @@ class CbsEngine @Inject()
         //val myVar2 =  new String(myVar1, "UTF-8")
         //val myVar2 = myVar1.map(_.toChar).mkString
         //val myVar3 =  myVar2.getBytes(StandardCharsets.UTF_8)//("UTF-8")
-        val myVar2 = Base64.getDecoder.decode(encodedSignatureValue)
-        val decryptedMessageHash = decryptedSignatureValue(myVar2)
-        val originalMessageHash = getMessageHash(requestData)
-        var isVerified: Boolean = verifyMessageHash(originalMessageHash, decryptedMessageHash)
-        println("isVerified - " + isVerified)
+      val myVar2 = Base64.getDecoder.decode(encodedSignatureValue)
+      val decryptedMessageHash = decryptedSignatureValue(myVar2)
+      val originalMessageHash = getMessageHash(requestData)
+      var isVerified: Boolean = verifyMessageHash(originalMessageHash, decryptedMessageHash)
+      println("isVerified - " + isVerified)
       /*** Tests only ***/
       val d = toXmlSignatureInformation(SignatureId, encodedDigestValue, myReferenceURI, encodedSignatureValue, myKeyInfoId, encodedX509Certificate)
       val signatureInfo = d.toString
@@ -360,6 +360,10 @@ class CbsEngine @Inject()
           signatureInfo +
           "</Document>"
       }
+      val x = encodedSignatureValue.length
+      val y = "<ds:SignatureValue></ds:SignatureValue>".length + 7//value 7 is a default value given
+      val z = x  + y// var z equals the width value of the document
+      prettyPrinter = new scala.xml.PrettyPrinter(z, 4)//set it this was because one of the fields has a variable length eg 344
       val xmlData: scala.xml.Node = scala.xml.XML.loadString(finalRequestData)
       val accountVerification = prettyPrinter.format(xmlData)
       accountVerification
@@ -430,6 +434,7 @@ class CbsEngine @Inject()
       }
       accountIdentification
     }
+    /*
     private def toXmlSignatureInformation(SignatureId: String, myDigestValue: String, myReferenceURI: String, mySignatureValue: String, myKeyInfoId: String, myX509Certificate: String) = {
         <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id={SignatureId}>
           <ds:SignedInfo>
@@ -488,6 +493,7 @@ class CbsEngine @Inject()
       </ds:Signature>
          */
     }
+    */
 
     override def toString =
       s"assignmentInformation: $assignmentInformation, verificationInformation: $verificationInformation"
@@ -675,21 +681,61 @@ class CbsEngine @Inject()
 
     // (a) convert SingleCreditTransfer fields to XML
     def toXml = {
+      var prettyPrinter = new scala.xml.PrettyPrinter(80, 4)//value 80 represents max length of "<Document>" header
       val a = toXmlGroupHeaderInformation
       val groupHeaderInfo: String = a.toString
       val b = toXmlCreditTransferTransactionInformation
       val creditTransferTransactionInfo = b.toString
+      val requestType: String = "singlecredittransfer"
+      val SignatureId: String = getSignatureId(requestType)
+      val myReferenceURI: String = getReferenceURI(requestType)
+      val myKeyInfoId: String = getKeyInfoId(requestType)
+      val myX509Certificate: String = getX509Certificate()
+      val encodedX509Certificate: String = Base64.getEncoder.encodeToString(myX509Certificate.getBytes)
 
       val c = {
         "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.008.001.09\"><FIToFICstmrCdtTrf>" +
-          groupHeaderInfo + System.lineSeparator() +
-          creditTransferTransactionInfo + System.lineSeparator() +
+          groupHeaderInfo +
+          creditTransferTransactionInfo +
           "</FIToFICstmrCdtTrf></Document>"
       }
 
-      val xmlData: scala.xml.Node = scala.xml.XML.loadString(c)
-      val accountVerification = prettyPrinter.format(xmlData)
-      accountVerification
+      val xmlData1: scala.xml.Node = scala.xml.XML.loadString(c)
+      val requestData: String = prettyPrinter.format(xmlData1)
+
+      val myDigestValue: String = getDigestValue(requestData)
+      val encodedDigestValue: String = Base64.getEncoder.encodeToString(myDigestValue.getBytes)
+      val mySignatureValue = getSignatureValue(requestData)
+      val myEncodedSignatureValue: String = Base64.getEncoder.encodeToString(mySignatureValue)
+	    val encodedSignatureValue: String = myEncodedSignatureValue.replace(" ","").trim
+      println("encodedSignatureValue - " + encodedSignatureValue.length)
+      println("encodedSignatureValue 2 - " + encodedSignatureValue.replace(" ","").trim.length)
+
+      val myVar2 = Base64.getDecoder.decode(encodedSignatureValue)
+      val decryptedMessageHash = decryptedSignatureValue(myVar2)
+      val originalMessageHash = getMessageHash(requestData)
+      var isVerified: Boolean = verifyMessageHash(originalMessageHash, decryptedMessageHash)
+      println("isVerified - " + isVerified)
+      /*** Tests only ***/
+      val d = toXmlSignatureInformation(SignatureId, encodedDigestValue, myReferenceURI, encodedSignatureValue, myKeyInfoId, encodedX509Certificate)
+      val signatureInfo = d.toString
+
+      val finalRequestData = {
+        "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.008.001.09\"><FIToFICstmrCdtTrf>" +
+          groupHeaderInfo +
+          creditTransferTransactionInfo +
+          "</FIToFICstmrCdtTrf>" +
+          signatureInfo +
+          "</Document>"
+      }
+      val x = encodedSignatureValue.length
+      val y = "<ds:SignatureValue></ds:SignatureValue>".length + 7//value 7 is a default value given
+      val z = x  + y// var z equals the width value of the document
+      prettyPrinter = new scala.xml.PrettyPrinter(z, 4)//set it this was because one of the fields has a variable length eg 344
+      val xmlData: scala.xml.Node = scala.xml.XML.loadString(finalRequestData)
+      val singleCreditTransfer = prettyPrinter.format(xmlData)
+      singleCreditTransfer
+
     }
     def toXmlGroupHeaderInformation = {
         <GrpHdr>
@@ -988,6 +1034,8 @@ class CbsEngine @Inject()
 
     // (a) convert BulkCreditTransfer fields to XML
     def toXml = {
+      //var prettyPrinter = new scala.xml.PrettyPrinter(80, 4)
+      val prettyPrinter = new scala.xml.PrettyPrinter(400, 4)//set it this was because one of the fields has a length of 344
       /*
       <Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.09">
         <FIToFICstmrCdtTrf>
@@ -2417,9 +2465,9 @@ class CbsEngine @Inject()
                         creditoraccountinformationcreditoraccountschemename = schemeName
 
                         val transferDefaultInfo = TransferDefaultInfo(firstAgentIdentification, assigneeAgentIdentification, chargeBearer, settlementMethod, clearingSystem, serviceLevel, localInstrumentCode, categoryPurpose)
-                        val debitcontactinformation = ContactInfo(debtorinformationdebtorcontactphonenumber)
+                        val debitcontactinformation = ContactInfo(debtorinformationdebtorname, debtorinformationdebtorcontactphonenumber)
                         val debitAccountInfo = DebitAccountInfo(debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, debitcontactinformation, SchemeName.ACC.toString.toUpperCase)
-                        val creditcontactinformation = ContactInfo(creditorinformationcreditorcontactphonenumber)
+                        val creditcontactinformation = ContactInfo(creditorinformationcreditorname, creditorinformationcreditorcontactphonenumber)
                         val creditAccountInfo = CreditAccountInfo(creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoraccountinformationcreditoraccountschemename, creditoragentinformationfinancialInstitutionIdentification, creditcontactinformation)
                         val purposeInfo = TransferPurposeInfo(purposeinformationpurposecode)
                         val remittanceInfo = TransferRemittanceInfo(remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber)
@@ -2428,7 +2476,7 @@ class CbsEngine @Inject()
                         val singleCreditTransferPaymentInfo = SingleCreditTransferPaymentInfo(messageidentification, creationDateTime, numberoftransactions, totalinterbanksettlementamount, paymentdata)
 
                         val f = Future {
-                          println("singleCreditTransferPaymentInfo - " + singleCreditTransferPaymentInfo)
+                          //println("singleCreditTransferPaymentInfo - " + singleCreditTransferPaymentInfo)
                           val myRespData: String = getSingleCreditTransferDetails(singleCreditTransferPaymentInfo, isAccSchemeName)
                           sendSingleCreditTransferRequestsIpsl(myRespData)
                         }  
@@ -10904,11 +10952,11 @@ class CbsEngine @Inject()
       val acceptancedatetime: String = creditTransferPaymentInfo.creationdatetime//"2021-03-27"
       val chargebearer: String = creditTransferPaymentInfo.paymentdata.transferdefaultinformation.chargebearer//"SLEV"
       val mandateidentification: String = creditTransferPaymentInfo.paymentdata.mandateinformation.mandateidentification//""
-      val ultimatedebtorinformationdebtorname: String = creditTransferPaymentInfo.paymentdata.debitaccountinformation.debitaccountname//"paul wakimani"
+      val ultimatedebtorinformationdebtorname: String = creditTransferPaymentInfo.paymentdata.debitaccountinformation.debitcontactinformation.fullnames//"paul wakimani"
       val ultimatedebtorinformationdebtororganisationidentification: String = creditTransferPaymentInfo.paymentdata.transferdefaultinformation.firstagentidentification//"2000"
       val ultimatedebtorinformationdebtorcontactphonenumber: String = creditTransferPaymentInfo.paymentdata.debitaccountinformation.debitcontactinformation.phonenumber//"0711000000"
       val initiatingpartyinformationorganisationidentification: String = creditTransferPaymentInfo.paymentdata.transferdefaultinformation.firstagentidentification//"2000"
-      val debtorinformationdebtorname: String = creditTransferPaymentInfo.paymentdata.debitaccountinformation.debitaccountname//"paul wakimani"
+      val debtorinformationdebtorname: String = creditTransferPaymentInfo.paymentdata.debitaccountinformation.debitcontactinformation.fullnames//"paul wakimani"
       val debtorinformationdebtororganisationidentification: String = creditTransferPaymentInfo.paymentdata.transferdefaultinformation.firstagentidentification//"2000"
       val debtorinformationdebtorcontactphonenumber: String = creditTransferPaymentInfo.paymentdata.debitaccountinformation.debitcontactinformation.phonenumber//"0711000000"
       val debtoraccountinformationdebtoraccountidentification: String = creditTransferPaymentInfo.paymentdata.debitaccountinformation.debitaccountnumber//"0711000000"
@@ -11146,7 +11194,7 @@ class CbsEngine @Inject()
       signatureId = {
         requestType.replace(" ","").trim.toLowerCase match {
           case "accountverification" => "_4614c57e-40ae-4cc2-aeb5-6e93ba1be1eb"
-          case "singlecredittransfer" => ""
+          case "singlecredittransfer" => "_4614c57e-40ae-4cc2-aeb5-6e93ba1be1eb"
           case "bulkcredittransfer" => ""
           case _ => ""
         }
@@ -11230,7 +11278,7 @@ class CbsEngine @Inject()
       referenceURI = {
         requestType.replace(" ","").trim.toLowerCase match {
           case "accountverification" => "#_8401036a-cd29-4f5b-a48a-9ecf4d515d98"
-          case "singlecredittransfer" => ""
+          case "singlecredittransfer" => "#_8401036a-cd29-4f5b-a48a-9ecf4d515d98"
           case "bulkcredittransfer" => ""
           case _ => ""
         }
@@ -11308,7 +11356,7 @@ class CbsEngine @Inject()
       keyInfoId = {
         requestType.replace(" ","").trim.toLowerCase match {
           case "accountverification" => "_8401036a-cd29-4f5b-a48a-9ecf4d515d98"
-          case "singlecredittransfer" => ""
+          case "singlecredittransfer" => "_8401036a-cd29-4f5b-a48a-9ecf4d515d98"
           case "bulkcredittransfer" => ""
           case _ => ""
         }
@@ -11519,6 +11567,35 @@ class CbsEngine @Inject()
 
     return isVerified
   }
+  private def toXmlSignatureInformation(SignatureId: String, myDigestValue: String, myReferenceURI: String, mySignatureValue: String, myKeyInfoId: String, myX509Certificate: String) = {
+        <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id={SignatureId}>
+          <ds:SignedInfo>
+            <ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+            <ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+            <ds:Reference URI="">
+              <ds:Transforms>
+                <ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+                <ds:Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+              </ds:Transforms>
+              <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+              <ds:DigestValue>{myDigestValue}</ds:DigestValue>
+            </ds:Reference>
+            <ds:Reference URI={myReferenceURI}>
+              <ds:Transforms>
+                <ds:Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+              </ds:Transforms>
+              <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+              <ds:DigestValue>{myDigestValue}</ds:DigestValue>
+            </ds:Reference>
+          </ds:SignedInfo>
+          <ds:SignatureValue>{mySignatureValue}</ds:SignatureValue>
+          <ds:KeyInfo Id={myKeyInfoId}>
+            <ds:X509Data>
+              <ds:X509Certificate>{myX509Certificate}</ds:X509Certificate>
+            </ds:X509Data>
+          </ds:KeyInfo>
+        </ds:Signature>
+    }
   def log_data(mydetail : String) : Unit = {
     //var strpath_file2 : String = "C:\\Program Files\\Biometric_System\\mps1\\Logs.txt"
     try{

@@ -6615,8 +6615,8 @@ class IpslEngine @Inject()
         var strUserName: String = ""
         var strPassWord: String = ""
         try {
-          strUserName = getCbsApiUserName
-          var strPwd: String = getCbsApiPassword //n6,e$=p8QK\+c^h~
+          strUserName = getCbsApiUserName()
+          var strPwd: String = getCbsApiPassword() //n6,e$=p8QK\+c^h~
           var myByteAuthToken = Base64.getDecoder.decode(strPwd)
           var myPwd : String = new String(myByteAuthToken, StandardCharsets.UTF_8)
           strPassWord = myPwd
@@ -7837,8 +7837,8 @@ class IpslEngine @Inject()
         var strUserName: String = ""
         var strPassWord: String = ""
         try {
-          strUserName = getCbsApiUserName
-          var strPwd: String = getCbsApiPassword //n6,e$=p8QK\+c^h~
+          strUserName = getCbsApiUserName()
+          var strPwd: String = getCbsApiPassword() //n6,e$=p8QK\+c^h~
           var myByteAuthToken = Base64.getDecoder.decode(strPwd)
           var myPwd : String = new String(myByteAuthToken, StandardCharsets.UTF_8)
           strPassWord = myPwd
@@ -8536,8 +8536,8 @@ class IpslEngine @Inject()
         var strUserName: String = ""
         var strPassWord: String = ""
         try {
-          strUserName = getCbsApiUserName
-          var strPwd: String = getCbsApiPassword //n6,e$=p8QK\+c^h~
+          strUserName = getCbsApiUserName()
+          var strPwd: String = getCbsApiPassword() //n6,e$=p8QK\+c^h~
           var myByteAuthToken = Base64.getDecoder.decode(strPwd)
           var myPwd : String = new String(myByteAuthToken, StandardCharsets.UTF_8)
           strPassWord = myPwd
