@@ -1318,6 +1318,9 @@ class CbsEngine @Inject()
 
   /*** Xml data ***/
 
+  case class AccountVerificationTableDetails(batchreference: java.math.BigDecimal, accountnumber: String, bankcode: String, messagereference: String, transactionreference: String, schemename: String, batchsize: Integer, requestmessagecbsapi: String, datefromcbsapi: String, remoteaddresscbsapi: String)
+  case class AccountVerificationTableResponseDetails(id: java.math.BigDecimal, responsecode: Int, responsemessage: String)
+
   implicit val system = ActorSystem("CbsEngine")
   implicit val materializer = ActorMaterializer()
 
@@ -3661,6 +3664,7 @@ class CbsEngine @Inject()
   }
   def addAccountVerificationDetails = Action.async { request =>
     Future {
+      val dateFromCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
       val startDate: String =  new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new java.util.Date)
       var responseCode: Int = 1
       var responseMessage: String = "Error occured during processing, please try again."
@@ -3672,13 +3676,16 @@ class CbsEngine @Inject()
       var strTransactionReference: String = ""
       var strAccountNumber: String = ""
       var strSchemeName: String = ""
-      var strBankCode : String = ""
+      var strBankCode: String = ""
       var isValidMessageReference: Boolean = false
       var isValidTransactionReference: Boolean = false
       var isMatchingReference: Boolean = false
       var isValidSchemeName: Boolean = false
+      var isValidAccountNumber: Boolean = false
+      var isValidBankCode: Boolean = false
 	    val accSchemeName: String = SchemeName.ACC.toString.toUpperCase
       val phneSchemeName: String = SchemeName.PHNE.toString.toUpperCase
+      var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
 
       try
       {
@@ -3866,7 +3873,7 @@ class CbsEngine @Inject()
                   //val myBatchReference : java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
 
                   try{
-
+                    /*
                     val sourceDataTable = new SQLServerDataTable
                     sourceDataTable.addColumnMetadata("BatchReference", java.sql.Types.NUMERIC)
                     sourceDataTable.addColumnMetadata("DebitAccountNumber", java.sql.Types.VARCHAR)
@@ -3874,6 +3881,7 @@ class CbsEngine @Inject()
                     sourceDataTable.addColumnMetadata("CustomerReference", java.sql.Types.VARCHAR)
                     sourceDataTable.addColumnMetadata("Amount", java.sql.Types.NUMERIC)
                     sourceDataTable.addColumnMetadata("BatchSize", java.sql.Types.INTEGER)
+                    */
                     /*
                     var myBankCode: Int = 0
                     var mySchemeMode: Int = 0
@@ -3903,6 +3911,8 @@ class CbsEngine @Inject()
                     isValidTransactionReference = false
                     isMatchingReference = false
                     isValidSchemeName = false
+                    isValidAccountNumber = false
+                    isValidBankCode = false
 
                     try{
                       //strMessageReference
@@ -4061,14 +4071,40 @@ class CbsEngine @Inject()
                       isValid
                     }
 
+                    isValidAccountNumber = {
+                      var isValid: Boolean = false
+                      if (strAccountNumber.length > 0 && strAccountNumber.length <= 35){
+                        isValid = true
+                      }
+                      isValid
+                    }
+
+                    isValidBankCode = {
+                      var isValid: Boolean = false
+                      if (strBankCode.length > 0 && strBankCode.length <= 35){
+                        val isNumeric: Boolean = strBankCode.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
+                        if (isNumeric){
+                          val myBankCode = strBankCode.toInt
+                          if (myBankCode > 0){isValid = true}
+                        }
+                        else{
+                          isValid = true
+                        }
+                      }
+                      isValid
+                    }
+
                     /* Lets set var isValidInputData to true if valid data is received from e-Channels/ESB-CBS System */
-                    if (isValidMessageReference && isValidTransactionReference && strAccountNumber.length > 0 && isValidSchemeName && myBankCode > 0 && !isMatchingReference){
+                    if (isValidMessageReference && isValidTransactionReference && isValidAccountNumber && isValidSchemeName && isValidBankCode && !isMatchingReference){
+                      /*
                       isValidInputData = true
                       myHttpStatusCode = HttpStatusCode.Accepted //TESTS ONLY
                       responseCode = 0
                       responseMessage = "Message accepted for processing."
+                      */
+                      isValidInputData = true
                     }
-
+                    /*
                     try{
                       //sourceDataTable.addRow(myBatchReference, strDebitAccountNumber, strPrn, strCustomerReference, myAmount, myBatchSize)
                       //println("strMessageReference - " + strMessageReference + ", strTransactionReference - " + strTransactionReference + ", strAccountNumber - " + strAccountNumber)
@@ -4080,65 +4116,24 @@ class CbsEngine @Inject()
                       case ex: Exception =>
                         log_errors(strApifunction + " : " + ex.getMessage())
                     }
-
+                    */
                     try{
                       if (isValidInputData){
-                        myDB.withConnection { implicit  myconn =>
-                          /*
-                          try {
-                            val strSQL = "{ call dbo.insertOutgoingTaxPaymentDetailsBatch(?) }"
-                            val mystmt = myconn.prepareCall(strSQL)
-                            try {
-                              mystmt.setObject(1, sourceDataTable)
-                              val resultSet = mystmt.executeQuery()
-                              isProcessed = true
-                              if (resultSet != null){
-                                while ( resultSet.next()){
-                                  try{
-                                    val myprn = resultSet.getString("prn")
-                                    val mycustomerReference = resultSet.getString("customerReference")
-                                    val myresponseCode = resultSet.getInt("responseCode")
-                                    val myresponseMessage = resultSet.getString("responseMessage")
-                                    val myTax_PaymentDetailsResponse_Batch = new Tax_PaymentDetailsResponse_Batch(myprn, mycustomerReference, myresponseCode, myresponseMessage)
-                                    myTax_PaymentDetailsResponse_BatchData  = myTax_PaymentDetailsResponse_BatchData :+ myTax_PaymentDetailsResponse_Batch
-                                  }
-                                  catch{
-                                    case io: Throwable =>
-                                      log_errors(strApifunction + " : resultSet.next - " + io.getMessage())
-                                    case ex: Exception =>
-                                      log_errors(strApifunction + " : resultSet.next - " + ex.getMessage())
-                                  }
-                                }
-                              }
-                            }
-                            catch{
-                              case io: Throwable =>
-                                //io.printStackTrace()
-                                responseMessage = "Error occured during processing, please try again."
-                                //println(io.printStackTrace())
-                                log_errors(strApifunction + " : " + io.getMessage())
-                              //strErrorMsg = io.toString
-                              case ex: Exception =>
-                                //ex.printStackTrace()
-                                responseMessage = "Error occured during processing, please try again."
-                                //println(ex.printStackTrace())
-                                log_errors(strApifunction + " : " + ex.getMessage())
-                            }
-                          }
-                          catch{
-                            case io: IOException =>
-                              //io.printStackTrace()
-                              responseMessage = "Error occured during processing, please try again."
-                              //println(io.printStackTrace())
-                              log_errors(strApifunction + " : " + io.getMessage())
-                            //strErrorMsg = io.toString
-                            case ex: Exception =>
-                              //ex.printStackTrace()
-                              responseMessage = "Error occured during processing, please try again."
-                              //println(ex.printStackTrace())
-                              log_errors(strApifunction + " : " + ex.getMessage())
-                          }
-                          */
+                        val myBatchSize : Integer = 1
+                        val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
+                        val myBatchReference : java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
+                        val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+                        
+                        val myAccountVerificationTableResponseDetails = addOutgoingAccountVerificationDetails(myAccountVerificationTableDetails)
+                        myID = myAccountVerificationTableResponseDetails.id
+                        responseCode = myAccountVerificationTableResponseDetails.responsecode
+                        responseMessage = myAccountVerificationTableResponseDetails.responsemessage
+                        println("myID - " + myID)
+                        println("responseCode - " + responseCode)
+                        println("responseMessage - " + responseMessage)
+                        if (responseCode == 0){
+                          myHttpStatusCode = HttpStatusCode.Accepted
+                          responseMessage = "Message accepted for processing."
                         }
                       }
                       else{
@@ -4149,13 +4144,13 @@ class CbsEngine @Inject()
                         else if (!isValidTransactionReference){
                           responseMessage = "Invalid Input Data. transactionreference"
                         }
-                        else if (strAccountNumber.length == 0){
+                        else if (!isValidAccountNumber){
                           responseMessage = "Invalid Input Data. accountnumber"
                         }
                         else if (!isValidSchemeName){
                           responseMessage = "Invalid Input Data. schemename"
                         }
-                        else if (myBankCode == 0){
+                        else if (!isValidBankCode){
                           responseMessage = "Invalid Input Data. bankcode"
                         }
                         else if (isMatchingReference){
@@ -4224,70 +4219,70 @@ class CbsEngine @Inject()
 		  log_errors(strApifunction + " : " + tr.getMessage())
 	  }
       
-      implicit val  AccountVerificationDetailsResponse_Writes = Json.writes[AccountVerificationDetailsResponse]
+    implicit val  AccountVerificationDetailsResponse_Writes = Json.writes[AccountVerificationDetailsResponse]
 
-      val myAccountVerificationResponse =  AccountVerificationDetailsResponse(responseCode, responseMessage)
-      val jsonResponse = Json.toJson(myAccountVerificationResponse)
+    val myAccountVerificationResponse =  AccountVerificationDetailsResponse(responseCode, responseMessage)
+    val jsonResponse = Json.toJson(myAccountVerificationResponse)
 
-      try{
-        var isAccSchemeName: Boolean = false
-        val creationDateTime: String = new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
-		    val schemeName: String = {
-          var scheme: String = ""
-            if (strSchemeName.equalsIgnoreCase(accSchemeName)){
-              scheme = accSchemeName
-              isAccSchemeName = true
-            }
-            else if (strSchemeName.equalsIgnoreCase(phneSchemeName)){
-              scheme = phneSchemeName
-            }
-            scheme
-        }
-        
-        val isSendRequest = {
-          myHttpStatusCode match {
-            case HttpStatusCode.Accepted =>
-              true
-            case _ =>
-              false
+    try{
+      var isAccSchemeName: Boolean = false
+      val creationDateTime: String = new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
+      val schemeName: String = {
+        var scheme: String = ""
+          if (strSchemeName.equalsIgnoreCase(accSchemeName)){
+            scheme = accSchemeName
+            isAccSchemeName = true
           }
-        }
-
-        if (isSendRequest){
-          val accountVerificationDetails = AccountVerificationDetails(strMessageReference, creationDateTime, firstAgentIdentification, assignerAgentIdentification, assigneeAgentIdentification: String, strTransactionReference, strAccountNumber, schemeName, myBankCode.toString)
-          //println("schemeName - " + schemeName.toString)
-          //println("accountVerificationDetails - " + accountVerificationDetails.toString)
-          val f = Future {
-            val myRespData: String = getAccountVerificationDetails(accountVerificationDetails, isAccSchemeName)
-            sendAccountVerificationRequestsIpsl(myRespData)
-          }  
-        }
-
-        log_data(strApifunction + " : " + "response - " + jsonResponse.toString() + " , remoteAddress - " + request.remoteAddress)
+          else if (strSchemeName.equalsIgnoreCase(phneSchemeName)){
+            scheme = phneSchemeName
+          }
+          scheme
       }
-      catch{
-        case ex: Exception =>
-          log_errors(strApifunction + " : " + ex.getMessage())
-        case io: IOException =>
-          log_errors(strApifunction + " : " + io.getMessage())
-        case tr: Throwable =>
-          log_errors(strApifunction + " : " + tr.getMessage())
-      }
-
-      val r: Result = {
+      
+      val isSendRequest = {
         myHttpStatusCode match {
           case HttpStatusCode.Accepted =>
-            Accepted(jsonResponse)
-          case HttpStatusCode.BadRequest =>
-            BadRequest(jsonResponse)
-          case HttpStatusCode.Unauthorized =>
-            Unauthorized(jsonResponse)
+            true
           case _ =>
-            BadRequest(jsonResponse)
+            false
         }
       }
 
-      r
+      if (isSendRequest){
+        val accountVerificationDetails = AccountVerificationDetails(strMessageReference, creationDateTime, firstAgentIdentification, assignerAgentIdentification, assigneeAgentIdentification: String, strTransactionReference, strAccountNumber, schemeName, strBankCode)
+        //println("schemeName - " + schemeName.toString)
+        //println("accountVerificationDetails - " + accountVerificationDetails.toString)
+        val f = Future {
+          val myRespData: String = getAccountVerificationDetails(accountVerificationDetails, isAccSchemeName)
+          sendAccountVerificationRequestsIpsl(myRespData)
+        }  
+      }
+
+      log_data(strApifunction + " : " + "response - " + jsonResponse.toString() + " , remoteAddress - " + request.remoteAddress)
+    }
+    catch{
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage())
+      case io: IOException =>
+        log_errors(strApifunction + " : " + io.getMessage())
+      case tr: Throwable =>
+        log_errors(strApifunction + " : " + tr.getMessage())
+    }
+
+    val r: Result = {
+      myHttpStatusCode match {
+        case HttpStatusCode.Accepted =>
+          Accepted(jsonResponse)
+        case HttpStatusCode.BadRequest =>
+          BadRequest(jsonResponse)
+        case HttpStatusCode.Unauthorized =>
+          Unauthorized(jsonResponse)
+        case _ =>
+          BadRequest(jsonResponse)
+      }
+    }
+
+    r
     }(myExecutionContext)
   }
   def addInternalTransferPaymentDetailsCoopBank = Action.async { request =>
@@ -11596,6 +11591,54 @@ class CbsEngine @Inject()
           </ds:KeyInfo>
         </ds:Signature>
     }
+  def addOutgoingAccountVerificationDetails(myAccountVerificationTableDetails: AccountVerificationTableDetails): AccountVerificationTableResponseDetails = {
+
+    var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
+    var responseCode: Int = 1
+    var responseMessage: String = ""
+
+    val strSQL : String = "{ call dbo.Add_OutgoingAccountVerificationDetails(?,?,?,?,?,?,?,?,?,?,?,?,?) }"
+    try {
+      myDB.withConnection { implicit myconn =>
+
+        try{
+          val mystmt: CallableStatement = myconn.prepareCall(strSQL)
+          mystmt.registerOutParameter("myID", java.sql.Types.INTEGER)
+          mystmt.registerOutParameter("responseCode", java.sql.Types.INTEGER)
+          mystmt.registerOutParameter("responseMessage", java.sql.Types.VARCHAR)
+          mystmt.setBigDecimal(1, myAccountVerificationTableDetails.batchreference)
+          mystmt.setString(2, myAccountVerificationTableDetails.accountnumber)
+          mystmt.setString(3,myAccountVerificationTableDetails.bankcode)
+          mystmt.setString(4,myAccountVerificationTableDetails.messagereference)
+          mystmt.setString(5,myAccountVerificationTableDetails.transactionreference)
+          mystmt.setString(6,myAccountVerificationTableDetails.schemename)
+          mystmt.setInt(7,myAccountVerificationTableDetails.batchsize)
+          mystmt.setString(8,myAccountVerificationTableDetails.requestmessagecbsapi)
+          mystmt.setString(9,myAccountVerificationTableDetails.datefromcbsapi)
+          mystmt.setString(10,myAccountVerificationTableDetails.remoteaddresscbsapi)
+          mystmt.execute()
+          myID = mystmt.getBigDecimal("myID")
+          responseCode = mystmt.getInt("responseCode")
+          responseMessage = mystmt.getString("responseMessage")
+        }
+        catch{
+          case ex : Exception =>
+            log_errors("addOutgoingAccountVerificationDetails : " + ex.getMessage + " - ex exception error occured." + " accountnumber - " + myAccountVerificationTableDetails.accountnumber)
+          case t: Throwable =>
+            log_errors("addOutgoingAccountVerificationDetails : " + t.getMessage + " exception error occured." + " accountnumber - " + myAccountVerificationTableDetails.accountnumber)
+        }
+
+      }
+    }catch {
+      case ex: Exception =>
+        log_errors("addOutgoingAccountVerificationDetails : " + ex.getMessage + " exception error occured." + " accountnumber - " + myAccountVerificationTableDetails.accountnumber)
+      case t: Throwable =>
+        log_errors("addOutgoingAccountVerificationDetails : " + t.getMessage + " exception error occured." + " accountnumber - " + myAccountVerificationTableDetails.accountnumber)
+    }
+
+    val myAccountVerificationTableResponseDetails = AccountVerificationTableResponseDetails(myID, responseCode, responseMessage)
+    myAccountVerificationTableResponseDetails
+  }  
   def log_data(mydetail : String) : Unit = {
     //var strpath_file2 : String = "C:\\Program Files\\Biometric_System\\mps1\\Logs.txt"
     try{
