@@ -9789,3 +9789,969 @@ No more data in the client stdin, exiting...
 No more data in the client stdin, exiting...
 No more data in the server stdin, exiting...
 No more data in the server stdin, exiting...
+[0m2021.06.30 15:46:08 INFO  Started: Metals version 0.10.4 in workspace 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful' for client Visual Studio Code 1.57.1.[0m
+[0m2021.06.30 15:46:16 INFO  time: initialize in 7.8s[0m
+[0m2021.06.30 15:46:16 INFO  Attempting to connect to the build server...[0m
+[0m2021.06.30 15:46:16 WARN  no build target for: F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala[0m
+[0m2021.06.30 15:46:17 INFO  skipping build import with status 'Installed'[0m
+Starting the bsp launcher for bloop...
+Opening a bsp server connection with 'bsp --protocol tcp --port 19960'...
+Waiting for the bsp connection to come up...
+Waiting for the bsp connection to come up...
+Waiting for the bsp connection to come up...
+Waiting for the bsp connection to come up...
+Waiting for the bsp connection to come up...
+Waiting for the bsp connection to come up...
+Waiting for the bsp connection to come up...
+[0m2021.06.30 15:46:32 INFO  no build target: using presentation compiler with only scala-library: 2.12.14[0m
+Waiting for the bsp connection to come up...
+Waiting for the bsp connection to come up...
+Waiting for the bsp connection to come up...
+Waiting for the bsp connection to come up...
+Waiting for the bsp connection to come up...
+Waiting for the bsp connection to come up...
+Waiting for the bsp connection to come up...
+No server running at 127.0.0.1:8212, let's fire one...
+Resolving ch.epfl.scala:bloop-frontend_2.12:1.4.8-19-4d9f966b...
+Starting bloop server at 127.0.0.1:8212...
+Attempting a connection to the server...
+[0m[32m[D][0m Loading workspace settings from bloop.settings.json
+[0m[32m[D][0m Loading 2 projects from 'f:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\.bloop'...
+[0m[32m[D][0m Loading project from 'f:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\.bloop\root.json'
+[0m[32m[D][0m Loading project from 'f:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\.bloop\root-test.json'
+[0m[32m[D][0m Cache miss for scala instance org.scala-lang:scala-compiler:2.13.6.
+[0m[32m[D][0m   => C:\Users\Emmanuel\AppData\Local\Coursier\Cache\v1\https\repo1.maven.org\maven2\net\java\dev\jna\jna\5.3.1\jna-5.3.1.jar
+[0m[32m[D][0m   => C:\Users\Emmanuel\AppData\Local\Coursier\Cache\v1\https\repo1.maven.org\maven2\org\jline\jline\3.19.0\jline-3.19.0.jar
+[0m[32m[D][0m   => C:\Users\Emmanuel\AppData\Local\Coursier\Cache\v1\https\repo1.maven.org\maven2\org\scala-lang\scala-compiler\2.13.6\scala-compiler-2.13.6.jar
+[0m[32m[D][0m   => C:\Users\Emmanuel\AppData\Local\Coursier\Cache\v1\https\repo1.maven.org\maven2\org\scala-lang\scala-library\2.13.6\scala-library-2.13.6.jar
+[0m[32m[D][0m   => C:\Users\Emmanuel\AppData\Local\Coursier\Cache\v1\https\repo1.maven.org\maven2\org\scala-lang\scala-reflect\2.13.6\scala-reflect-2.13.6.jar
+[0m[32m[D][0m Configured SemanticDB in projects 'root-test', 'root'
+[0m[32m[D][0m Missing analysis file for project 'root-test'
+[0m[32m[D][0m Missing analysis file for project 'root'
+[0m[32m[D][0m Waiting for a connection at 127.0.0.1:19960...
+The server is listening for incoming connections at tcp://127.0.0.1:19960...
+Starting thread that pumps stdin and redirects it to the bsp server...
+Starting thread that pumps server stdout and redirects it to the client stdout...
+[0m2021.06.30 15:47:11 INFO  time: code lens generation in 53s[0m
+[0m2021.06.30 15:47:10 INFO  tracing is disabled for protocol BSP, to enable tracing of incoming and outgoing JSON messages create an empty file at C:\Users\Emmanuel\AppData\Local\scalameta\metals\cache\bsp.trace.json[0m
+[0m2021.06.30 15:47:12 INFO  Attempting to connect to the build server...[0m
+[0m2021.06.30 15:47:12 INFO  Attempting to connect to the build server...[0m
+Starting the bsp launcher for bloop...
+Opening a bsp server connection with 'bsp --protocol tcp --port 33153'...
+Waiting for the bsp connection to come up...
+Starting the bsp launcher for bloop...
+Opening a bsp server connection with 'bsp --protocol tcp --port 23251'...
+Waiting for the bsp connection to come up...
+[0m[32m[D][0m Loading workspace settings from bloop.settings.json
+[0m[32m[D][0m Waiting for a connection at 127.0.0.1:23251...
+The server is listening for incoming connections at tcp://127.0.0.1:23251...
+Starting thread that pumps stdin and redirects it to the bsp server...
+Starting thread that pumps server stdout and redirects it to the client stdout...
+[0m[32m[D][0m Loading workspace settings from bloop.settings.json
+[0m[32m[D][0m Waiting for a connection at 127.0.0.1:33153...
+The server is listening for incoming connections at tcp://127.0.0.1:33153...
+Starting thread that pumps stdin and redirects it to the bsp server...
+Starting thread that pumps server stdout and redirects it to the client stdout...
+[0m2021.06.30 15:47:13 INFO  tracing is disabled for protocol BSP, to enable tracing of incoming and outgoing JSON messages create an empty file at C:\Users\Emmanuel\AppData\Local\scalameta\metals\cache\bsp.trace.json[0m
+[0m2021.06.30 15:47:13 INFO  tracing is disabled for protocol BSP, to enable tracing of incoming and outgoing JSON messages create an empty file at C:\Users\Emmanuel\AppData\Local\scalameta\metals\cache\bsp.trace.json[0m
+[0m2021.06.30 15:47:13 INFO  time: Connected to build server in 57s[0m
+[0m2021.06.30 15:47:13 INFO  Connected to Build server: Bloop v1.4.8-19-4d9f966b[0m
+[0m2021.06.30 15:47:18 INFO  time: Imported build in 4.94s[0m
+[0m2021.06.30 15:47:45 INFO  time: indexed workspace in 26s[0m
+[0m2021.06.30 15:47:53 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 15:48:28 INFO  time: compiled root in 34s[0m
+Jun 30, 2021 3:48:32 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 114
+Jun 30, 2021 3:48:33 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 116
+Jun 30, 2021 3:48:35 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 129
+Jun 30, 2021 3:48:39 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 130
+Jun 30, 2021 3:48:39 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 131
+Jun 30, 2021 3:48:40 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 132
+Jun 30, 2021 3:48:40 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 136
+Jun 30, 2021 3:48:41 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 137
+Jun 30, 2021 3:48:41 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 138
+Jun 30, 2021 3:48:41 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 150
+Jun 30, 2021 3:48:41 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 139
+Jun 30, 2021 3:48:41 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 151
+Jun 30, 2021 3:48:42 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 152
+Jun 30, 2021 3:48:42 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 153
+Jun 30, 2021 3:48:42 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 165
+Jun 30, 2021 3:48:42 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 171
+Jun 30, 2021 3:48:42 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 172
+Jun 30, 2021 3:48:42 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 180
+Jun 30, 2021 3:48:42 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 181
+Jun 30, 2021 3:48:43 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 182
+Jun 30, 2021 3:48:43 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 183
+Jun 30, 2021 3:48:43 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 227
+Jun 30, 2021 3:48:43 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 228
+Jun 30, 2021 3:48:43 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 229
+[0m2021.06.30 15:49:02 ERROR code navigation does not work for the file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala' because the SemanticDB file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\.bloop\root\bloop-bsp-clients-classes\classes-Metals-6mt-ugT2RM2m0XiTAz2oiw==\META-INF\semanticdb\app\controllers\CbsEngine.scala.semanticdb' doesn't exist. There can be many reasons for this error. [0m
+Jun 30, 2021 3:49:18 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 364
+Jun 30, 2021 3:53:33 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 476
+Jun 30, 2021 4:14:43 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 953
+Jun 30, 2021 4:16:26 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1270
+[0m2021.06.30 16:16:32 INFO  compiling root (12 scala sources)[0m
+Jun 30, 2021 4:16:39 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1381
+[0m2021.06.30 16:16:40 INFO  time: compiled root in 8.41s[0m
+[0m2021.06.30 16:16:43 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 16:16:47 INFO  time: compiled root in 4.47s[0m
+Jun 30, 2021 4:16:52 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1417
+[0m2021.06.30 17:44:40 ERROR code navigation does not work for the file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala' because the SemanticDB file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\.bloop\root\bloop-bsp-clients-classes\classes-Metals-6mt-ugT2RM2m0XiTAz2oiw==\META-INF\semanticdb\app\controllers\CbsEngine.scala.semanticdb' doesn't exist. There can be many reasons for this error. [0m
+[0m2021.06.30 17:44:45 ERROR code navigation does not work for the file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala' because the SemanticDB file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\.bloop\root\bloop-bsp-clients-classes\classes-Metals-6mt-ugT2RM2m0XiTAz2oiw==\META-INF\semanticdb\app\controllers\CbsEngine.scala.semanticdb' doesn't exist. There can be many reasons for this error. [0m
+[0m2021.06.30 17:44:47 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 17:44:51 INFO  time: compiled root in 3.62s[0m
+[0m2021.06.30 18:25:56 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:26:00 INFO  time: compiled root in 4.65s[0m
+[0m2021.06.30 18:26:02 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:26:05 INFO  time: compiled root in 2.71s[0m
+[0m2021.06.30 18:26:16 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:26:20 INFO  time: compiled root in 4.05s[0m
+[0m2021.06.30 18:26:22 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:26:24 INFO  time: compiled root in 2.11s[0m
+Jun 30, 2021 6:26:32 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1544
+[0m2021.06.30 18:26:33 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:26:38 INFO  time: compiled root in 5.12s[0m
+[0m2021.06.30 18:26:40 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:26:42 INFO  time: compiled root in 2.18s[0m
+[0m2021.06.30 18:27:24 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:27:28 INFO  time: compiled root in 4.58s[0m
+Jun 30, 2021 6:27:52 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1604
+Jun 30, 2021 6:27:52 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1605
+Jun 30, 2021 6:27:52 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1606
+Jun 30, 2021 6:27:52 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1607
+Jun 30, 2021 6:27:52 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1608
+Jun 30, 2021 6:27:52 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1611
+[0m2021.06.30 18:28:04 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:28:07 INFO  time: compiled root in 3.29s[0m
+[0m2021.06.30 18:28:18 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:28:22 ERROR code navigation does not work for the file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala' because the build target root is being compiled. Wait until compilation is finished and try again.[0m
+[0m2021.06.30 18:28:24 INFO  time: compiled root in 5.79s[0m
+[0m2021.06.30 18:28:26 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:28:28 INFO  time: compiled root in 2.73s[0m
+[0m2021.06.30 18:28:30 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:28:32 INFO  time: compiled root in 1.96s[0m
+[0m2021.06.30 18:29:04 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:29:08 INFO  time: compiled root in 4.46s[0m
+Jun 30, 2021 6:29:10 PM scala.meta.internal.pc.CompilerAccess retryWithCleanCompiler
+INFO: compiler crashed due to an error in the Scala compiler, retrying with new compiler instance.
+[0m2021.06.30 18:29:11 INFO  compiling root (12 scala sources)[0m
+Jun 30, 2021 6:29:12 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1722
+Jun 30, 2021 6:29:12 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1723
+Jun 30, 2021 6:29:12 PM scala.meta.internal.pc.CompilerAccess retryWithCleanCompiler
+INFO: compiler crashed due to an error in the Scala compiler, retrying with new compiler instance.
+Jun 30, 2021 6:29:12 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1724
+Jun 30, 2021 6:29:12 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1727
+Jun 30, 2021 6:29:17 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1731
+Jun 30, 2021 6:29:17 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1733
+Jun 30, 2021 6:29:17 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1735
+[0m2021.06.30 18:29:17 INFO  time: compiled root in 6.59s[0m
+Jun 30, 2021 6:29:18 PM scala.meta.internal.pc.CompilerAccess retryWithCleanCompiler
+INFO: compiler crashed due to an error in the Scala compiler, retrying with new compiler instance.
+[0m2021.06.30 18:29:20 ERROR code navigation does not work for the file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala' because the SemanticDB file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\.bloop\root\bloop-bsp-clients-classes\classes-Metals-6mt-ugT2RM2m0XiTAz2oiw==\META-INF\semanticdb\app\controllers\CbsEngine.scala.semanticdb' doesn't exist. There can be many reasons for this error. [0m
+Jun 30, 2021 6:29:22 PM scala.meta.internal.pc.CompilerAccess retryWithCleanCompiler
+INFO: compiler crashed due to an error in the Scala compiler, retrying with new compiler instance.
+Jun 30, 2021 6:29:27 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1774
+Jun 30, 2021 6:29:27 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1772
+Jun 30, 2021 6:29:27 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1775
+[0m2021.06.30 18:29:27 ERROR code navigation does not work for the file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala' because the SemanticDB file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\.bloop\root\bloop-bsp-clients-classes\classes-Metals-6mt-ugT2RM2m0XiTAz2oiw==\META-INF\semanticdb\app\controllers\CbsEngine.scala.semanticdb' doesn't exist. There can be many reasons for this error. [0m
+Jun 30, 2021 6:29:27 PM scala.meta.internal.pc.CompilerAccess retryWithCleanCompiler
+INFO: compiler crashed due to an error in the Scala compiler, retrying with new compiler instance.
+Jun 30, 2021 6:29:27 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1776
+Jun 30, 2021 6:29:27 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1779
+Jun 30, 2021 6:29:28 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1778
+Jun 30, 2021 6:29:28 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1783
+Jun 30, 2021 6:29:28 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1785
+Jun 30, 2021 6:29:28 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1790
+Jun 30, 2021 6:29:29 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1788
+Jun 30, 2021 6:29:29 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1793
+Jun 30, 2021 6:29:29 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1795
+Jun 30, 2021 6:29:29 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1791
+Jun 30, 2021 6:29:29 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1800
+Jun 30, 2021 6:29:32 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1805
+Jun 30, 2021 6:29:32 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1799
+Jun 30, 2021 6:29:32 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1802
+Jun 30, 2021 6:29:32 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1806
+Jun 30, 2021 6:29:32 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1803
+Jun 30, 2021 6:29:32 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1813
+Exception in thread "pool-4-thread-1" java.lang.Error: java.lang.InterruptedException
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1148)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+	at java.lang.Thread.run(Thread.java:745)
+Caused by: java.lang.InterruptedException
+	at scala.meta.internal.metals.FutureCancelToken.checkCanceled(FutureCancelToken.scala:29)
+	at scala.meta.internal.pc.CompilerAccess.$anonfun$onCompilerJobQueue$1(CompilerAccess.scala:195)
+	at scala.meta.internal.pc.CompilerJobQueue$Job.run(CompilerJobQueue.scala:103)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+	... 2 more
+Jun 30, 2021 6:29:33 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1814
+Jun 30, 2021 6:29:33 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1816
+Jun 30, 2021 6:29:33 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1804
+Jun 30, 2021 6:29:33 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1818
+Jun 30, 2021 6:29:33 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1809
+Jun 30, 2021 6:29:33 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1812
+Jun 30, 2021 6:29:34 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1820
+Jun 30, 2021 6:29:34 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1823
+Jun 30, 2021 6:29:35 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1829
+Jun 30, 2021 6:29:35 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1827
+Jun 30, 2021 6:29:35 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1830
+Jun 30, 2021 6:29:35 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1831
+Jun 30, 2021 6:29:35 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1832
+Jun 30, 2021 6:29:35 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1833
+Jun 30, 2021 6:29:36 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1839
+Jun 30, 2021 6:29:37 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1843
+[0m2021.06.30 18:29:38 INFO  F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala:10396:35: stale bloop error: not found: value myAccountVerificationTableDetails
+          mystmt.setBigDecimal(1, myAccountVerificationTableDetails.batchreference)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m2021.06.30 18:29:38 INFO  F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala:10397:31: stale bloop error: not found: value myAccountVerificationTableDetails
+          mystmt.setString(2, myAccountVerificationTableDetails.accountnumber)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m2021.06.30 18:29:38 INFO  F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala:10398:30: stale bloop error: not found: value myAccountVerificationTableDetails
+          mystmt.setString(3,myAccountVerificationTableDetails.bankcode)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m2021.06.30 18:29:38 INFO  F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala:10399:30: stale bloop error: not found: value myAccountVerificationTableDetails
+          mystmt.setString(4,myAccountVerificationTableDetails.messagereference)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m2021.06.30 18:29:38 INFO  F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala:10400:30: stale bloop error: not found: value myAccountVerificationTableDetails
+          mystmt.setString(5,myAccountVerificationTableDetails.transactionreference)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m2021.06.30 18:29:38 INFO  F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala:10401:30: stale bloop error: not found: value myAccountVerificationTableDetails
+          mystmt.setString(6,myAccountVerificationTableDetails.schemename)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m2021.06.30 18:29:38 INFO  F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala:10402:27: stale bloop error: not found: value myAccountVerificationTableDetails
+          mystmt.setInt(7,myAccountVerificationTableDetails.batchsize)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m2021.06.30 18:29:38 INFO  F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala:10403:30: stale bloop error: not found: value myAccountVerificationTableDetails
+          mystmt.setString(8,myAccountVerificationTableDetails.requestmessagecbsapi)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m2021.06.30 18:29:38 INFO  F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala:10404:30: stale bloop error: not found: value myAccountVerificationTableDetails
+          mystmt.setString(9,myAccountVerificationTableDetails.datefromcbsapi)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m2021.06.30 18:29:38 INFO  F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala:10405:31: stale bloop error: not found: value myAccountVerificationTableDetails
+          mystmt.setString(10,myAccountVerificationTableDetails.remoteaddresscbsapi)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m2021.06.30 18:29:38 INFO  F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala:10413:122: stale bloop error: not found: value myAccountVerificationTableDetails
+            log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured." + " accountnumber - " + myAccountVerificationTableDetails.accountnumber)
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m2021.06.30 18:29:38 INFO  F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala:10415:116: stale bloop error: not found: value myAccountVerificationTableDetails
+            log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " accountnumber - " + myAccountVerificationTableDetails.accountnumber)
+                                                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m2021.06.30 18:29:38 INFO  F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala:10421:113: stale bloop error: not found: value myAccountVerificationTableDetails
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured." + " accountnumber - " + myAccountVerificationTableDetails.accountnumber)
+                                                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m2021.06.30 18:29:38 INFO  F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala:10423:112: stale bloop error: not found: value myAccountVerificationTableDetails
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " accountnumber - " + myAccountVerificationTableDetails.accountnumber)
+                                                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m2021.06.30 18:29:38 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:29:43 INFO  time: compiled root in 4.16s[0m
+[0m2021.06.30 18:29:47 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:29:50 INFO  time: compiled root in 3.12s[0m
+Jun 30, 2021 6:31:29 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1868
+Jun 30, 2021 6:32:41 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1910
+[0m2021.06.30 18:32:41 INFO  compiling root (12 scala sources)[0m
+Jun 30, 2021 6:32:44 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1914
+[0m2021.06.30 18:32:44 INFO  time: compiled root in 2.85s[0m
+[0m2021.06.30 18:33:13 INFO  compiling root (12 scala sources)[0m
+Jun 30, 2021 6:33:13 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1934
+[0m2021.06.30 18:33:15 INFO  time: compiled root in 2.45s[0m
+[0m2021.06.30 18:40:17 INFO  compiling root (12 scala sources)[0m
+Jun 30, 2021 6:40:18 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1991
+Jun 30, 2021 6:40:18 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1994
+Jun 30, 2021 6:40:18 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 1995
+[0m2021.06.30 18:40:21 INFO  time: compiled root in 3.87s[0m
+[0m2021.06.30 18:40:30 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:40:35 INFO  time: compiled root in 4.69s[0m
+Jun 30, 2021 6:40:35 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2027
+Jun 30, 2021 6:40:35 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2032
+Jun 30, 2021 6:40:35 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2033
+Jun 30, 2021 6:40:35 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2034
+Jun 30, 2021 6:40:35 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2035
+Jun 30, 2021 6:40:35 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2053
+Jun 30, 2021 6:40:47 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2085
+Jun 30, 2021 6:40:47 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2086
+Jun 30, 2021 6:40:47 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2088
+Jun 30, 2021 6:40:50 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2093
+Jun 30, 2021 6:40:50 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2092
+Jun 30, 2021 6:40:52 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2100
+Jun 30, 2021 6:40:52 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2101
+[0m2021.06.30 18:40:52 INFO  compiling root (12 scala sources)[0m
+Jun 30, 2021 6:40:55 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2108
+[0m2021.06.30 18:40:55 INFO  time: compiled root in 3.03s[0m
+[0m2021.06.30 18:40:58 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:41:00 INFO  time: compiled root in 2.46s[0m
+Jun 30, 2021 6:41:32 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2122
+Jun 30, 2021 6:41:32 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2123
+Jun 30, 2021 6:41:33 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2124
+Jun 30, 2021 6:41:33 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2125
+Jun 30, 2021 6:41:33 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2126
+[0m2021.06.30 18:41:36 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:41:38 INFO  time: compiled root in 2.26s[0m
+Jun 30, 2021 6:42:11 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2150
+Jun 30, 2021 6:42:11 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2154
+Jun 30, 2021 6:42:19 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2177
+Jun 30, 2021 6:42:23 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2190
+Jun 30, 2021 6:42:31 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2212
+Jun 30, 2021 6:42:31 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2217
+Jun 30, 2021 6:42:32 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2222
+Jun 30, 2021 6:42:32 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2225
+Jun 30, 2021 6:42:33 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2226
+Jun 30, 2021 6:42:33 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2227
+Jun 30, 2021 6:42:37 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2232
+Exception in thread "pool-4-thread-2" java.lang.Error: java.lang.InterruptedException
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1148)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+	at java.lang.Thread.run(Thread.java:745)
+Caused by: java.lang.InterruptedException
+	at scala.meta.internal.metals.FutureCancelToken.checkCanceled(FutureCancelToken.scala:29)
+	at scala.meta.internal.pc.CompilerAccess.$anonfun$onCompilerJobQueue$1(CompilerAccess.scala:195)
+	at scala.meta.internal.pc.CompilerJobQueue$Job.run(CompilerJobQueue.scala:103)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+	... 2 more
+Jun 30, 2021 6:42:38 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2233
+Jun 30, 2021 6:42:38 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2237
+Jun 30, 2021 6:42:39 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2234
+Jun 30, 2021 6:42:39 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2236
+Jun 30, 2021 6:42:39 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2242
+Jun 30, 2021 6:42:39 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2247
+Jun 30, 2021 6:42:41 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2243
+Jun 30, 2021 6:42:41 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2252
+Jun 30, 2021 6:42:41 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2245
+Jun 30, 2021 6:42:41 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2254
+Jun 30, 2021 6:42:42 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2255
+Jun 30, 2021 6:42:42 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2257
+Jun 30, 2021 6:42:43 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2262
+Jun 30, 2021 6:42:43 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2267
+Jun 30, 2021 6:42:46 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2272
+Jun 30, 2021 6:42:46 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2273
+Jun 30, 2021 6:42:46 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2275
+Jun 30, 2021 6:42:46 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2277
+Jun 30, 2021 6:42:46 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2271
+Jun 30, 2021 6:42:50 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2284
+Jun 30, 2021 6:42:50 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2287
+Jun 30, 2021 6:42:52 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2292
+Jun 30, 2021 6:42:52 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2294
+Jun 30, 2021 6:42:52 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2293
+Jun 30, 2021 6:42:52 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2291
+Jun 30, 2021 6:42:54 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2301
+Jun 30, 2021 6:42:55 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2305
+Jun 30, 2021 6:42:55 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2306
+Jun 30, 2021 6:42:55 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2307
+Jun 30, 2021 6:42:57 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2313
+Jun 30, 2021 6:42:57 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2314
+Jun 30, 2021 6:42:57 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2315
+Jun 30, 2021 6:42:58 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2320
+Jun 30, 2021 6:43:02 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2325
+Jun 30, 2021 6:43:02 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2326
+Jun 30, 2021 6:43:02 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2328
+Jun 30, 2021 6:43:02 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2324
+Jun 30, 2021 6:43:04 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2334
+Jun 30, 2021 6:43:04 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2336
+Jun 30, 2021 6:43:04 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2333
+Jun 30, 2021 6:43:06 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2343
+Jun 30, 2021 6:43:06 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2344
+[0m2021.06.30 18:43:08 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:43:12 INFO  time: compiled root in 4.05s[0m
+[0m2021.06.30 18:43:14 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:43:16 INFO  time: compiled root in 2.32s[0m
+[0m2021.06.30 18:43:18 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:43:21 INFO  time: compiled root in 2.56s[0m
+[0m2021.06.30 18:43:23 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:43:25 INFO  time: compiled root in 2.44s[0m
+[0m2021.06.30 18:43:46 ERROR code navigation does not work for the file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala' because the SemanticDB file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\.bloop\root\bloop-bsp-clients-classes\classes-Metals-6mt-ugT2RM2m0XiTAz2oiw==\META-INF\semanticdb\app\controllers\CbsEngine.scala.semanticdb' doesn't exist. There can be many reasons for this error. [0m
+Jun 30, 2021 6:43:47 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2401
+[0m2021.06.30 18:43:55 INFO  compiling root (12 scala sources)[0m
+Jun 30, 2021 6:43:55 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2415
+Jun 30, 2021 6:43:55 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2418
+[0m2021.06.30 18:43:58 INFO  time: compiled root in 3.03s[0m
+[0m2021.06.30 18:44:00 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:44:02 INFO  time: compiled root in 2.19s[0m
+Jun 30, 2021 6:44:15 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2476
+Jun 30, 2021 6:44:21 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2495
+Jun 30, 2021 6:44:23 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2505
+Jun 30, 2021 6:44:29 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2516
+Jun 30, 2021 6:44:36 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2531
+Jun 30, 2021 6:44:36 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2530
+Jun 30, 2021 6:44:36 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2532
+Jun 30, 2021 6:44:37 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2533
+Jun 30, 2021 6:44:37 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2534
+Jun 30, 2021 6:44:37 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2536
+Jun 30, 2021 6:44:41 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2547
+Jun 30, 2021 6:44:45 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2556
+Jun 30, 2021 6:44:50 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2565
+Jun 30, 2021 6:44:50 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2566
+Jun 30, 2021 6:44:52 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2577
+Jun 30, 2021 6:44:58 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2596
+[0m2021.06.30 18:45:02 INFO  compiling root (12 scala sources)[0m
+Jun 30, 2021 6:45:06 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2613
+[0m2021.06.30 18:45:06 INFO  time: compiled root in 4.58s[0m
+[0m2021.06.30 18:45:09 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:45:12 INFO  time: compiled root in 2.89s[0m
+[0m2021.06.30 18:45:19 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:45:21 INFO  time: compiled root in 2.77s[0m
+[0m2021.06.30 18:45:23 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:45:26 INFO  time: compiled root in 2.52s[0m
+[0m2021.06.30 18:45:40 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:45:42 INFO  time: compiled root in 2.03s[0m
+[0m2021.06.30 18:46:23 ERROR code navigation does not work for the file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala' because the SemanticDB file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\.bloop\root\bloop-bsp-clients-classes\classes-Metals-6mt-ugT2RM2m0XiTAz2oiw==\META-INF\semanticdb\app\controllers\CbsEngine.scala.semanticdb' doesn't exist. There can be many reasons for this error. [0m
+Jun 30, 2021 6:46:55 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2770
+Jun 30, 2021 6:47:20 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2847
+Jun 30, 2021 6:47:20 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2849
+Jun 30, 2021 6:47:20 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 2852
+[0m2021.06.30 18:48:04 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:48:06 INFO  time: compiled root in 2.74s[0m
+[0m2021.06.30 18:48:50 ERROR code navigation does not work for the file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala' because the SemanticDB file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\.bloop\root\bloop-bsp-clients-classes\classes-Metals-6mt-ugT2RM2m0XiTAz2oiw==\META-INF\semanticdb\app\controllers\CbsEngine.scala.semanticdb' doesn't exist. There can be many reasons for this error. [0m
+Jun 30, 2021 6:49:45 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3019
+[0m2021.06.30 18:50:05 INFO  F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala:2495:115: stale bloop error: not found: value strAccountNumber
+                        val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+                                                                                                                  ^^^^^^^^^^^^^^^^[0m
+[0m2021.06.30 18:50:05 INFO  F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala:2495:133: stale bloop error: not found: value strBankCode
+                        val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+                                                                                                                                    ^^^^^^^^^^^[0m
+[0m2021.06.30 18:50:05 INFO  F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala:2495:146: stale bloop error: not found: value strMessageReference
+                        val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+                                                                                                                                                 ^^^^^^^^^^^^^^^^^^^[0m
+[0m2021.06.30 18:50:05 INFO  F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala:2495:167: stale bloop error: not found: value strTransactionReference
+                        val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+                                                                                                                                                                      ^^^^^^^^^^^^^^^^^^^^^^^[0m
+[0m2021.06.30 18:50:05 INFO  F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala:2495:192: stale bloop error: not found: value strSchemeName
+                        val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+                                                                                                                                                                                               ^^^^^^^^^^^^^[0m
+[0m2021.06.30 18:50:05 INFO  F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala:2495:236: stale bloop error: not found: value dateFromCbsApi
+                        val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+                                                                                                                                                                                                                                           ^^^^^^^^^^^^^^[0m
+[0m2021.06.30 18:50:05 INFO  F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala:2498:25: stale bloop error: not found: value myID
+                        myID = myAccountVerificationTableResponseDetails.id
+                        ^^^^[0m
+[0m2021.06.30 18:50:06 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:50:10 INFO  time: compiled root in 3.98s[0m
+[0m2021.06.30 18:50:12 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:50:14 INFO  time: compiled root in 2.21s[0m
+Jun 30, 2021 6:51:47 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3127
+Jun 30, 2021 6:51:48 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3129
+Jun 30, 2021 6:51:48 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3133
+Jun 30, 2021 6:51:49 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3137
+[0m2021.06.30 18:51:49 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:51:52 INFO  time: compiled root in 2.66s[0m
+[0m2021.06.30 18:52:02 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:52:05 INFO  time: compiled root in 3.66s[0m
+[0m2021.06.30 18:52:13 INFO  compiling root (12 scala sources)[0m
+Jun 30, 2021 6:52:15 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3149
+[0m2021.06.30 18:52:15 INFO  time: compiled root in 2.23s[0m
+Jun 30, 2021 6:52:22 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3160
+Jun 30, 2021 6:52:25 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3168
+[0m2021.06.30 18:52:27 ERROR code navigation does not work for the file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala' because the SemanticDB file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\.bloop\root\bloop-bsp-clients-classes\classes-Metals-6mt-ugT2RM2m0XiTAz2oiw==\META-INF\semanticdb\app\controllers\CbsEngine.scala.semanticdb' doesn't exist. There can be many reasons for this error. [0m
+[0m2021.06.30 18:52:35 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:52:37 INFO  time: compiled root in 2.1s[0m
+Jun 30, 2021 6:53:22 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3224
+Jun 30, 2021 6:56:23 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3243
+[0m2021.06.30 18:56:31 ERROR code navigation does not work for the file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala' because the SemanticDB file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\.bloop\root\bloop-bsp-clients-classes\classes-Metals-6mt-ugT2RM2m0XiTAz2oiw==\META-INF\semanticdb\app\controllers\CbsEngine.scala.semanticdb' doesn't exist. There can be many reasons for this error. [0m
+Jun 30, 2021 6:56:42 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3264
+Jun 30, 2021 6:56:53 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3283
+[0m2021.06.30 18:56:54 INFO  compiling root (12 scala sources)[0m
+Jun 30, 2021 6:56:54 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3285
+Jun 30, 2021 6:56:54 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3287
+[0m2021.06.30 18:56:57 INFO  time: compiled root in 3.43s[0m
+[0m2021.06.30 18:56:59 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:57:03 INFO  time: compiled root in 3.59s[0m
+[0m2021.06.30 18:57:07 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:57:09 INFO  time: compiled root in 2.57s[0m
+Jun 30, 2021 6:57:21 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3315
+[0m2021.06.30 18:58:12 ERROR code navigation does not work for the file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala' because the SemanticDB file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\.bloop\root\bloop-bsp-clients-classes\classes-Metals-6mt-ugT2RM2m0XiTAz2oiw==\META-INF\semanticdb\app\controllers\CbsEngine.scala.semanticdb' doesn't exist. There can be many reasons for this error. [0m
+[0m2021.06.30 18:58:13 INFO  compiling root (12 scala sources)[0m
+Jun 30, 2021 6:58:15 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3405
+[0m2021.06.30 18:58:16 INFO  time: compiled root in 2.96s[0m
+Jun 30, 2021 6:59:35 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3430
+[0m2021.06.30 18:59:39 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 18:59:41 INFO  time: compiled root in 2.27s[0m
+Jun 30, 2021 7:00:50 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3612
+[0m2021.06.30 19:01:56 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:01:59 INFO  time: compiled root in 2.74s[0m
+Jun 30, 2021 7:02:10 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3703
+[0m2021.06.30 19:02:22 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:02:25 INFO  time: compiled root in 2.95s[0m
+[0m2021.06.30 19:02:28 INFO  compiling root (12 scala sources)[0m
+Jun 30, 2021 7:02:28 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3743
+[0m2021.06.30 19:02:30 INFO  time: compiled root in 2.2s[0m
+Jun 30, 2021 7:02:48 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3773
+[0m2021.06.30 19:02:50 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:02:52 INFO  time: compiled root in 2.48s[0m
+[0m2021.06.30 19:03:10 ERROR code navigation does not work for the file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala' because the SemanticDB file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\.bloop\root\bloop-bsp-clients-classes\classes-Metals-6mt-ugT2RM2m0XiTAz2oiw==\META-INF\semanticdb\app\controllers\CbsEngine.scala.semanticdb' doesn't exist. There can be many reasons for this error. [0m
+[0m2021.06.30 19:03:12 ERROR code navigation does not work for the file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala' because the SemanticDB file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\.bloop\root\bloop-bsp-clients-classes\classes-Metals-6mt-ugT2RM2m0XiTAz2oiw==\META-INF\semanticdb\app\controllers\CbsEngine.scala.semanticdb' doesn't exist. There can be many reasons for this error. [0m
+[0m2021.06.30 19:03:12 ERROR code navigation does not work for the file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala' because the SemanticDB file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\.bloop\root\bloop-bsp-clients-classes\classes-Metals-6mt-ugT2RM2m0XiTAz2oiw==\META-INF\semanticdb\app\controllers\CbsEngine.scala.semanticdb' doesn't exist. There can be many reasons for this error. [0m
+Jun 30, 2021 7:03:41 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3842
+Jun 30, 2021 7:03:42 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3843
+Jun 30, 2021 7:03:47 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3852
+Jun 30, 2021 7:03:48 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3854
+Jun 30, 2021 7:03:48 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3859
+Jun 30, 2021 7:03:48 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3858
+Jun 30, 2021 7:03:49 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3862
+Jun 30, 2021 7:03:50 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3865
+Jun 30, 2021 7:03:50 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3861
+Jun 30, 2021 7:03:51 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3869
+Jun 30, 2021 7:03:52 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3872
+Jun 30, 2021 7:03:52 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3873
+Jun 30, 2021 7:03:53 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3879
+Jun 30, 2021 7:03:56 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3891
+Jun 30, 2021 7:04:13 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3930
+[0m2021.06.30 19:04:14 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:04:17 INFO  time: compiled root in 2.68s[0m
+[0m2021.06.30 19:04:23 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:04:26 INFO  time: compiled root in 2.81s[0m
+[0m2021.06.30 19:04:28 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:04:32 INFO  time: compiled root in 3.94s[0m
+Jun 30, 2021 7:04:32 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3965
+Jun 30, 2021 7:04:34 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3975
+Jun 30, 2021 7:04:35 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3976
+Jun 30, 2021 7:04:43 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 3983
+[0m2021.06.30 19:04:47 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:04:50 INFO  time: compiled root in 3.08s[0m
+Jun 30, 2021 7:05:17 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4015
+[0m2021.06.30 19:05:17 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:05:19 INFO  time: compiled root in 2.21s[0m
+Jun 30, 2021 7:05:32 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4039
+Jun 30, 2021 7:05:35 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4044
+Jun 30, 2021 7:05:37 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4050
+[0m2021.06.30 19:05:39 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:05:44 INFO  time: compiled root in 4.96s[0m
+Jun 30, 2021 7:06:12 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4091
+[0m2021.06.30 19:06:33 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:06:35 INFO  time: compiled root in 2.36s[0m
+Jun 30, 2021 7:07:08 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4142
+[0m2021.06.30 19:07:08 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:07:11 INFO  time: compiled root in 2.45s[0m
+Jun 30, 2021 7:07:40 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4166
+[0m2021.06.30 19:07:41 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:07:45 INFO  time: compiled root in 4.26s[0m
+[0m2021.06.30 19:07:45 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:07:49 INFO  time: compiled root in 2.71s[0m
+Jun 30, 2021 7:07:49 PM scala.meta.internal.pc.CompilerAccess retryWithCleanCompiler
+INFO: compiler crashed due to an error in the Scala compiler, retrying with new compiler instance.
+Jun 30, 2021 7:07:55 PM scala.meta.internal.pc.CompilerAccess retryWithCleanCompiler
+INFO: compiler crashed due to an error in the Scala compiler, retrying with new compiler instance.
+[0m2021.06.30 19:08:11 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:08:14 INFO  time: compiled root in 2.45s[0m
+[0m2021.06.30 19:08:38 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:08:43 INFO  time: compiled root in 4.7s[0m
+[0m2021.06.30 19:09:05 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:09:07 INFO  time: compiled root in 2.63s[0m
+[0m2021.06.30 19:09:58 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:10:01 INFO  time: compiled root in 2.49s[0m
+[0m2021.06.30 19:10:17 INFO  compiling root (12 scala sources)[0m
+Jun 30, 2021 7:10:19 PM scala.meta.internal.pc.CompilerAccess retryWithCleanCompiler
+INFO: compiler crashed due to an error in the Scala compiler, retrying with new compiler instance.
+[0m2021.06.30 19:10:22 INFO  time: compiled root in 4.46s[0m
+Jun 30, 2021 7:10:29 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4349
+Jun 30, 2021 7:10:34 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4361
+[0m2021.06.30 19:10:34 INFO  compiling root (12 scala sources)[0m
+Jun 30, 2021 7:10:35 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4362
+Jun 30, 2021 7:10:38 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4365
+[0m2021.06.30 19:10:39 INFO  time: compiled root in 4.12s[0m
+Jun 30, 2021 7:10:39 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4366
+Jun 30, 2021 7:10:39 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4368
+[0m2021.06.30 19:10:40 ERROR code navigation does not work for the file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala' because the build target root is being compiled. Wait until compilation is finished and try again.[0m
+[0m2021.06.30 19:10:40 ERROR code navigation does not work for the file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala' because the SemanticDB file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\.bloop\root\bloop-bsp-clients-classes\classes-Metals-6mt-ugT2RM2m0XiTAz2oiw==\META-INF\semanticdb\app\controllers\CbsEngine.scala.semanticdb' doesn't exist. There can be many reasons for this error. [0m
+Jun 30, 2021 7:10:41 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4379
+Jun 30, 2021 7:10:42 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4382
+Jun 30, 2021 7:10:42 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4383
+Jun 30, 2021 7:10:42 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4381
+Jun 30, 2021 7:10:42 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4384
+Jun 30, 2021 7:10:46 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4389
+Jun 30, 2021 7:10:46 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4390
+Jun 30, 2021 7:10:51 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4402
+Jun 30, 2021 7:10:51 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4404
+[0m2021.06.30 19:10:51 INFO  compiling root (12 scala sources)[0m
+Jun 30, 2021 7:10:54 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4410
+[0m2021.06.30 19:10:55 INFO  time: compiled root in 3.46s[0m
+Jun 30, 2021 7:11:22 PM scala.meta.internal.pc.CompilerAccess retryWithCleanCompiler
+INFO: compiler crashed due to an error in the Scala compiler, retrying with new compiler instance.
+Jun 30, 2021 7:11:25 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4502
+Jun 30, 2021 7:11:29 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4510
+Jun 30, 2021 7:11:29 PM scala.meta.internal.pc.CompilerAccess retryWithCleanCompiler
+INFO: compiler crashed due to an error in the Scala compiler, retrying with new compiler instance.
+Jun 30, 2021 7:11:29 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4508
+Jun 30, 2021 7:11:35 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4530
+[0m2021.06.30 19:11:36 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:11:39 INFO  time: compiled root in 2.98s[0m
+[0m2021.06.30 19:11:41 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:11:43 INFO  time: compiled root in 1.88s[0m
+[0m2021.06.30 19:12:33 INFO  compiling root (12 scala sources)[0m
+Jun 30, 2021 7:12:34 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4569
+[0m2021.06.30 19:12:35 INFO  time: compiled root in 2.7s[0m
+Jun 30, 2021 7:12:42 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4603
+Jun 30, 2021 7:12:42 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4604
+Jun 30, 2021 7:12:42 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4615
+Jun 30, 2021 7:13:37 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4820
+Jun 30, 2021 7:13:56 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4844
+[0m2021.06.30 19:13:58 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:14:01 INFO  time: compiled root in 3.23s[0m
+[0m2021.06.30 19:14:03 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:14:05 INFO  time: compiled root in 2.1s[0m
+Jun 30, 2021 7:14:05 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4856
+[0m2021.06.30 19:14:06 ERROR code navigation does not work for the file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala' because the build target root is being compiled. Wait until compilation is finished and try again.[0m
+[0m2021.06.30 19:14:07 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:14:09 INFO  time: compiled root in 1.97s[0m
+Jun 30, 2021 7:14:22 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4877
+[0m2021.06.30 19:14:33 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:14:37 INFO  time: compiled root in 3.85s[0m
+[0m2021.06.30 19:14:39 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:14:41 INFO  time: compiled root in 1.83s[0m
+Jun 30, 2021 7:14:44 PM scala.meta.internal.pc.CompilerAccess retryWithCleanCompiler
+INFO: compiler crashed due to an error in the Scala compiler, retrying with new compiler instance.
+Jun 30, 2021 7:15:02 PM scala.meta.internal.pc.CompilerAccess retryWithCleanCompiler
+INFO: compiler crashed due to an error in the Scala compiler, retrying with new compiler instance.
+Jun 30, 2021 7:15:09 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4938
+[0m2021.06.30 19:15:10 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:15:13 INFO  time: compiled root in 2.75s[0m
+[0m2021.06.30 19:15:15 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:15:17 INFO  time: compiled root in 2.22s[0m
+Jun 30, 2021 7:15:24 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4963
+Jun 30, 2021 7:15:55 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4985
+Jun 30, 2021 7:15:56 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 4988
+Jun 30, 2021 7:16:00 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 5001
+Jun 30, 2021 7:16:01 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 5004
+[0m2021.06.30 19:16:02 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:16:05 INFO  time: compiled root in 2.81s[0m
+[0m2021.06.30 19:16:07 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:16:09 INFO  time: compiled root in 1.91s[0m
+[0m2021.06.30 19:16:11 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:16:13 INFO  time: compiled root in 2.37s[0m
+[0m2021.06.30 19:16:58 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 19:17:02 INFO  time: compiled root in 3.44s[0m
+[0m2021.06.30 20:50:38 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 20:50:53 INFO  time: compiled root in 15s[0m
+[0m2021.06.30 20:50:54 ERROR code navigation does not work for the file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala' because the build target root is being compiled. Wait until compilation is finished and try again.[0m
+[0m2021.06.30 20:50:57 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 20:51:00 INFO  time: compiled root in 2.96s[0m
+[0m2021.06.30 20:51:01 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 20:51:03 INFO  time: compiled root in 2.32s[0m
+Jun 30, 2021 8:51:07 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 5081
+[0m2021.06.30 20:51:08 ERROR code navigation does not work for the file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala' because the SemanticDB file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\.bloop\root\bloop-bsp-clients-classes\classes-Metals-6mt-ugT2RM2m0XiTAz2oiw==\META-INF\semanticdb\app\controllers\CbsEngine.scala.semanticdb' doesn't exist. There can be many reasons for this error. [0m
+[0m2021.06.30 20:51:09 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 20:51:12 INFO  time: compiled root in 2.79s[0m
+Jun 30, 2021 8:51:20 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 5103
+Jun 30, 2021 8:51:20 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 5104
+[0m2021.06.30 20:51:21 INFO  compiling root (12 scala sources)[0m
+[0m2021.06.30 20:51:23 INFO  time: compiled root in 2.27s[0m
+[0m2021.06.30 20:59:14 ERROR code navigation does not work for the file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\app\controllers\CbsEngine.scala' because the SemanticDB file 'F:\my_Systems_2\Scala\FCB\Restful_APIs\IPSL-ESB_System\IPSL_ESB_Outgoing_Restful\.bloop\root\bloop-bsp-clients-classes\classes-Metals-6mt-ugT2RM2m0XiTAz2oiw==\META-INF\semanticdb\app\controllers\CbsEngine.scala.semanticdb' doesn't exist. There can be many reasons for this error. [0m
+[0m2021.06.30 20:59:16 INFO  compiling root (17 scala sources and 1 java source)[0m
+[0m2021.06.30 21:00:46 INFO  time: compiled root in 1m29s[0m
+[0m2021.06.30 21:00:50 INFO  time: code lens generation in 2.29s[0m
+Jun 30, 2021 9:03:00 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 5154
+Jun 30, 2021 9:03:00 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 5155
+Jun 30, 2021 9:03:09 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 5156
+Jun 30, 2021 9:03:09 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 5162
+Jun 30, 2021 9:03:11 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 5163
+Jun 30, 2021 9:03:11 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 5172
+Jun 30, 2021 9:03:12 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 5173
+Jun 30, 2021 9:03:12 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 5174
+Jun 30, 2021 9:03:15 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 5175
+Jun 30, 2021 9:03:16 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 5196
+Jun 30, 2021 9:03:16 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 5197
+Jun 30, 2021 9:03:17 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 5198
+Jun 30, 2021 9:03:17 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 5205
+Jun 30, 2021 9:03:18 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 5206
+Jun 30, 2021 9:03:18 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 5211
+Jun 30, 2021 9:03:18 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 5213
+Jun 30, 2021 9:03:19 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 5214
+Jun 30, 2021 9:04:48 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 5256
+No more data in the server stdin, exiting...
+No more data in the server stdin, exiting...
+No more data in the client stdin, exiting...
+Starting the bsp launcher for bloop...
+Opening a bsp server connection with 'bsp --protocol tcp --port 18167'...
+Waiting for the bsp connection to come up...
+[0m[32m[D][0m Loading workspace settings from bloop.settings.json
+[0m[32m[D][0m Waiting for a connection at 127.0.0.1:18167...
+The server is listening for incoming connections at tcp://127.0.0.1:18167...
+Starting thread that pumps stdin and redirects it to the bsp server...
+Starting thread that pumps server stdout and redirects it to the client stdout...
+[0m2021.06.30 21:16:53 INFO  shutting down Metals[0m
+No more data in the server stdin, exiting...
+No more data in the server stdin, exiting...
+No more data in the server stdin, exiting...
+No more data in the server stdin, exiting...
+[0m2021.06.30 21:16:56 ERROR timeout: build server 'bloop' during shutdown[0m
+[0m2021.06.30 21:16:56 ERROR timeout: build server 'bloop' during shutdown[0m

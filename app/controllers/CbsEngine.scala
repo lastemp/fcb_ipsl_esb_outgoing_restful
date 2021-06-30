@@ -1321,6 +1321,17 @@ class CbsEngine @Inject()
   case class AccountVerificationTableDetails(batchreference: java.math.BigDecimal, accountnumber: String, bankcode: String, messagereference: String, transactionreference: String, schemename: String, batchsize: Integer, requestmessagecbsapi: String, datefromcbsapi: String, remoteaddresscbsapi: String)
   case class AccountVerificationTableResponseDetails(id: java.math.BigDecimal, responsecode: Int, responsemessage: String)
 
+  case class SingleCreditTransferPaymentTableDetails(batchreference: java.math.BigDecimal, 
+  debtoraccountnumber: String, debtoraccountname: String, debtorbankcode: String, 
+  messagereference: String, transactionreference: String, debtorschemename: String, 
+  amount: java.math.BigDecimal, debtorfullnames: String, debtorphonenumber: String, 
+  creditoraccountnumber: String, creditoraccountname: String, creditorbankcode: String, creditorschemename: String, 
+  remittanceinfounstructured: String, taxremittancereferenceno: String, purposecode: String, 
+  chargebearer: String, mandateidentification: String, instructingagentbankcode: String, instructedagentbankcode: String, 
+  batchsize: Integer, requestmessagecbsapi: String, datefromcbsapi: String, remoteaddresscbsapi: String)
+
+  case class SingleCreditTransferPaymentTableResponseDetails(id: java.math.BigDecimal, responsecode: Int, responsemessage: String)
+
   implicit val system = ActorSystem("CbsEngine")
   implicit val materializer = ActorMaterializer()
 
@@ -1373,6 +1384,7 @@ class CbsEngine @Inject()
 
   def addSingleCreditTransferPaymentDetails = Action.async { request =>
     Future {
+      val dateFromCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
       val startDate: String =  new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new java.util.Date)
       var entryID: Int = 0
       var responseCode: Int = 1
@@ -1395,6 +1407,7 @@ class CbsEngine @Inject()
       //var isValidCreditPhoneNumber: Boolean = false
       var isValidRemittanceinfoUnstructured: Boolean = false
       var isValidPurposeCode: Boolean = false
+      var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
 
       try
       {
@@ -1622,23 +1635,6 @@ class CbsEngine @Inject()
                   //val myBatchReference : java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
 
                   try{
-
-                    val sourceDataTable = new SQLServerDataTable
-                    sourceDataTable.addColumnMetadata("BatchReference", java.sql.Types.NUMERIC)
-                    sourceDataTable.addColumnMetadata("DebitAccountNumber", java.sql.Types.VARCHAR)
-                    sourceDataTable.addColumnMetadata("AccountNumber", java.sql.Types.VARCHAR)
-                    sourceDataTable.addColumnMetadata("AccountName", java.sql.Types.VARCHAR)
-                    sourceDataTable.addColumnMetadata("CustomerReference", java.sql.Types.VARCHAR)
-                    sourceDataTable.addColumnMetadata("BankCode", java.sql.Types.VARCHAR)
-                    sourceDataTable.addColumnMetadata("LocalBankCode", java.sql.Types.VARCHAR)
-                    sourceDataTable.addColumnMetadata("BranchCode", java.sql.Types.VARCHAR)
-                    sourceDataTable.addColumnMetadata("Amount", java.sql.Types.NUMERIC)
-                    sourceDataTable.addColumnMetadata("PaymentType", java.sql.Types.VARCHAR)
-                    sourceDataTable.addColumnMetadata("PurposeofPayment", java.sql.Types.VARCHAR)
-                    sourceDataTable.addColumnMetadata("Description", java.sql.Types.VARCHAR)
-                    sourceDataTable.addColumnMetadata("EmailAddress", java.sql.Types.VARCHAR)
-                    sourceDataTable.addColumnMetadata("BatchSize", java.sql.Types.INTEGER)
-
 
                     var myAmount: BigDecimal = 0
                     var strAmount: String = ""
@@ -2495,71 +2491,31 @@ class CbsEngine @Inject()
 
                     try{
                       if (isValidInputData){
-                        /*
-                        myDB.withConnection { implicit  myconn =>
+                        val myBatchSize: Integer = 1
+                        val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
+                        val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
+                        val amount: java.math.BigDecimal =  new java.math.BigDecimal(myAmount.toString())
+                        val mySingleCreditTransferPaymentTableDetails = //SingleCreditTransferPaymentTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+                          SingleCreditTransferPaymentTableDetails(myBatchReference, 
+                          debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, firstAgentIdentification, 
+                          messageidentification, paymentendtoendidentification, SchemeName.ACC.toString.toUpperCase, 
+                          amount, debtorinformationdebtorname, debtorinformationdebtorcontactphonenumber, 
+                          creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoragentinformationfinancialInstitutionIdentification, creditoraccountinformationcreditoraccountschemename, 
+                          remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber, purposeinformationpurposecode, 
+                          chargeBearer, mandateidentification, assignerAgentIdentification, assigneeAgentIdentification, 
+                          myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
 
-                          try {
-                            val strSQL = "{ call dbo.insertOutgoingS2bPaymentDetailsBatch(?) }"
-                            val mystmt = myconn.prepareCall(strSQL)
-                            try {
-                              mystmt.setObject(1, sourceDataTable)
-                              val resultSet = mystmt.executeQuery()
-                              isProcessed = true
-                              if (resultSet != null){
-                                while ( resultSet.next()){
-                                  try{
-                                    val myaccountnumber = resultSet.getString("accountnumber")
-                                    val mybankcode = resultSet.getString("bankcode")
-                                    val mybranchcode = resultSet.getString("branchcode")
-                                    val mycustomerreference = resultSet.getString("customerreference")
-                                    val myresponseCode = resultSet.getInt("responseCode")
-                                    val myresponseMessage = resultSet.getString("responseMessage")
-                                    val myS2B_PaymentDetailsResponse_Batch = new S2B_PaymentDetailsResponse_Batch(myaccountnumber, mybankcode, mybranchcode, mycustomerreference, myresponseCode, myresponseMessage)
-                                    myS2B_PaymentDetailsResponse_BatchData  = myS2B_PaymentDetailsResponse_BatchData :+ myS2B_PaymentDetailsResponse_Batch
-                                  }
-                                  catch{
-                                    case io: Throwable =>
-                                      log_errors(strApifunction + " : resultSet.next - " + io.getMessage())
-                                    case ex: Exception =>
-                                      log_errors(strApifunction + " : resultSet.next - " + ex.getMessage())
-                                  }
-                                }
-                              }
-                            }
-                            catch{
-                              case io: Throwable =>
-                                //io.printStackTrace()
-                                responseMessage = "Error occured during processing, please try again."
-                                //println(io.printStackTrace())
-                                entryID = 2
-                                log_errors(strApifunction + " : " + io.getMessage())
-                              //strErrorMsg = io.toString
-                              case ex: Exception =>
-                                //ex.printStackTrace()
-                                responseMessage = "Error occured during processing, please try again."
-                                //println(ex.printStackTrace())
-                                entryID = 3
-                                log_errors(strApifunction + " : " + ex.getMessage())
-                            }
-
-                          }
-                          catch{
-                            case io: IOException =>
-                              //io.printStackTrace()
-                              responseMessage = "Error occured during processing, please try again."
-                              //println(io.printStackTrace())
-                              entryID = 2
-                              log_errors(strApifunction + " : " + io.getMessage())
-                            //strErrorMsg = io.toString
-                            case ex: Exception =>
-                              //ex.printStackTrace()
-                              responseMessage = "Error occured during processing, please try again."
-                              //println(ex.printStackTrace())
-                              entryID = 3
-                              log_errors(strApifunction + " : " + ex.getMessage())
-                          }
+                        val myTableResponseDetails = addOutgoingSingleCreditTransferPaymentDetails(mySingleCreditTransferPaymentTableDetails)
+                        myID = myTableResponseDetails.id
+                        responseCode = myTableResponseDetails.responsecode
+                        responseMessage = myTableResponseDetails.responsemessage
+                        println("myID - " + myID)
+                        println("responseCode - " + responseCode)
+                        println("responseMessage - " + responseMessage)
+                        if (responseCode == 0){
+                          myHttpStatusCode = HttpStatusCode.Accepted
+                          responseMessage = "Message accepted for processing."
                         }
-                        */
                       }
                       else{
                         responseMessage = "Invalid Input Data length"
@@ -10366,6 +10322,69 @@ class CbsEngine @Inject()
 
     val myAccountVerificationTableResponseDetails = AccountVerificationTableResponseDetails(myID, responseCode, responseMessage)
     myAccountVerificationTableResponseDetails
+  }
+  def addOutgoingSingleCreditTransferPaymentDetails(mySingleCreditTransferPaymentTableDetails: SingleCreditTransferPaymentTableDetails): SingleCreditTransferPaymentTableResponseDetails = {
+    val strApifunction: String = "addOutgoingSingleCreditTransferPaymentDetails"
+    var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
+    var responseCode: Int = 1
+    var responseMessage: String = ""
+
+    val strSQL : String = "{ call dbo.Add_OutgoingSingleCreditTransferPaymentDetails(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) }"
+    try {
+      myDB.withConnection { implicit myconn =>
+
+        try{
+          val mystmt: CallableStatement = myconn.prepareCall(strSQL)
+          mystmt.registerOutParameter("myID", java.sql.Types.INTEGER)
+          mystmt.registerOutParameter("responseCode", java.sql.Types.INTEGER)
+          mystmt.registerOutParameter("responseMessage", java.sql.Types.VARCHAR)
+          mystmt.setBigDecimal(1, mySingleCreditTransferPaymentTableDetails.batchreference)
+          mystmt.setString(2, mySingleCreditTransferPaymentTableDetails.debtoraccountnumber)
+          mystmt.setString(3,mySingleCreditTransferPaymentTableDetails.debtoraccountname)
+          mystmt.setString(4,mySingleCreditTransferPaymentTableDetails.debtorbankcode)
+          mystmt.setString(5,mySingleCreditTransferPaymentTableDetails.messagereference)
+          mystmt.setString(6,mySingleCreditTransferPaymentTableDetails.transactionreference)
+          mystmt.setString(7,mySingleCreditTransferPaymentTableDetails.debtorschemename)
+          mystmt.setBigDecimal(8,mySingleCreditTransferPaymentTableDetails.amount)
+          mystmt.setString(9,mySingleCreditTransferPaymentTableDetails.debtorfullnames)
+          mystmt.setString(10,mySingleCreditTransferPaymentTableDetails.debtorphonenumber)
+          mystmt.setString(11,mySingleCreditTransferPaymentTableDetails.creditoraccountnumber)
+          mystmt.setString(12,mySingleCreditTransferPaymentTableDetails.creditoraccountname)
+          mystmt.setString(13,mySingleCreditTransferPaymentTableDetails.creditorbankcode)
+          mystmt.setString(14,mySingleCreditTransferPaymentTableDetails.creditorschemename)
+          mystmt.setString(15,mySingleCreditTransferPaymentTableDetails.remittanceinfounstructured)
+          mystmt.setString(16,mySingleCreditTransferPaymentTableDetails.taxremittancereferenceno)
+          mystmt.setString(17,mySingleCreditTransferPaymentTableDetails.purposecode)
+          mystmt.setString(18,mySingleCreditTransferPaymentTableDetails.chargebearer)
+          mystmt.setString(19,mySingleCreditTransferPaymentTableDetails.mandateidentification)
+          mystmt.setString(20,mySingleCreditTransferPaymentTableDetails.instructingagentbankcode)
+          mystmt.setString(21,mySingleCreditTransferPaymentTableDetails.instructedagentbankcode)
+          mystmt.setInt(22,mySingleCreditTransferPaymentTableDetails.batchsize)
+          mystmt.setString(23,mySingleCreditTransferPaymentTableDetails.requestmessagecbsapi)
+          mystmt.setString(24,mySingleCreditTransferPaymentTableDetails.datefromcbsapi)
+          mystmt.setString(25,mySingleCreditTransferPaymentTableDetails.remoteaddresscbsapi)
+          mystmt.execute()
+          myID = mystmt.getBigDecimal("myID")
+          responseCode = mystmt.getInt("responseCode")
+          responseMessage = mystmt.getString("responseMessage")
+        }
+        catch{
+          case ex : Exception =>
+            log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured." + " transactionreference - " + mySingleCreditTransferPaymentTableDetails.transactionreference)
+          case t: Throwable =>
+            log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " transactionreference - " + mySingleCreditTransferPaymentTableDetails.transactionreference)
+        }
+
+      }
+    }catch {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured." + " transactionreference - " + mySingleCreditTransferPaymentTableDetails.transactionreference)
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " transactionreference - " + mySingleCreditTransferPaymentTableDetails.transactionreference)
+    }
+
+    val mySingleCreditTransferPaymentTableResponseDetails = SingleCreditTransferPaymentTableResponseDetails(myID, responseCode, responseMessage)
+    mySingleCreditTransferPaymentTableResponseDetails
   } 
   def insertUpdateRecord(strSQL: String): Unit = {
 
