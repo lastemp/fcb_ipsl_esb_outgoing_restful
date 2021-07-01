@@ -2473,24 +2473,13 @@ class CbsEngine @Inject()
                         val mandateInfo = TransferMandateInfo(mandateidentification)
                         val paymentdata = CreditTransferPaymentInfo(paymentendtoendidentification, interbanksettlementamount, debitAccountInfo, creditAccountInfo, mandateInfo, remittanceInfo, purposeInfo, transferDefaultInfo)
                         val singleCreditTransferPaymentInfo = SingleCreditTransferPaymentInfo(messageidentification, creationDateTime, numberoftransactions, totalinterbanksettlementamount, paymentdata)
-
+                        /*  
                         val f = Future {
                           //println("singleCreditTransferPaymentInfo - " + singleCreditTransferPaymentInfo)
                           val myRespData: String = getSingleCreditTransferDetails(singleCreditTransferPaymentInfo, isAccSchemeName)
-                          sendSingleCreditTransferRequestsIpsl(myRespData)
+                          sendSingleCreditTransferRequestsIpsl(myID, myRespData)
                         }  
-                      }
-                    }
-                    catch {
-                      case io: Throwable =>
-                        log_errors(strApifunction + " : " + io.getMessage())
-                      case ex: Exception =>
-                        log_errors(strApifunction + " : " + ex.getMessage())
-                    }
-                    //})
-
-                    try{
-                      if (isValidInputData){
+                        */
                         val myBatchSize: Integer = 1
                         val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
                         val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
@@ -2509,13 +2498,65 @@ class CbsEngine @Inject()
                         myID = myTableResponseDetails.id
                         responseCode = myTableResponseDetails.responsecode
                         responseMessage = myTableResponseDetails.responsemessage
-                        println("myID - " + myID)
-                        println("responseCode - " + responseCode)
-                        println("responseMessage - " + responseMessage)
+                        //println("myID - " + myID)
+                        //println("responseCode - " + responseCode)
+                        //println("responseMessage - " + responseMessage)
                         if (responseCode == 0){
                           myHttpStatusCode = HttpStatusCode.Accepted
                           responseMessage = "Message accepted for processing."
+
+                          val f = Future {
+                            //println("singleCreditTransferPaymentInfo - " + singleCreditTransferPaymentInfo)
+                            val myRespData: String = getSingleCreditTransferDetails(singleCreditTransferPaymentInfo, isAccSchemeName)
+                            sendSingleCreditTransferRequestsIpsl(myID, myRespData)
+                          }
                         }
+                      }
+                    }
+                    catch {
+                      case io: Throwable =>
+                        log_errors(strApifunction + " : " + io.getMessage())
+                      case ex: Exception =>
+                        log_errors(strApifunction + " : " + ex.getMessage())
+                    }
+                    //})
+
+                    try{
+                      if (isValidInputData){
+                        /*
+                        val myBatchSize: Integer = 1
+                        val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
+                        val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
+                        val amount: java.math.BigDecimal =  new java.math.BigDecimal(myAmount.toString())
+                        val mySingleCreditTransferPaymentTableDetails = //SingleCreditTransferPaymentTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+                          SingleCreditTransferPaymentTableDetails(myBatchReference, 
+                          debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, firstAgentIdentification, 
+                          messageidentification, paymentendtoendidentification, SchemeName.ACC.toString.toUpperCase, 
+                          amount, debtorinformationdebtorname, debtorinformationdebtorcontactphonenumber, 
+                          creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoragentinformationfinancialInstitutionIdentification, creditoraccountinformationcreditoraccountschemename, 
+                          remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber, purposeinformationpurposecode, 
+                          chargeBearer, mandateidentification, assignerAgentIdentification, assigneeAgentIdentification, 
+                          myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+
+                        val myTableResponseDetails = addOutgoingSingleCreditTransferPaymentDetails(mySingleCreditTransferPaymentTableDetails)
+                        myID = myTableResponseDetails.id
+                        responseCode = myTableResponseDetails.responsecode
+                        responseMessage = myTableResponseDetails.responsemessage
+                        //println("myID - " + myID)
+                        //println("responseCode - " + responseCode)
+                        //println("responseMessage - " + responseMessage)
+                        if (responseCode == 0){
+                          myHttpStatusCode = HttpStatusCode.Accepted
+                          responseMessage = "Message accepted for processing."
+
+                          val f = Future {
+                            //println("singleCreditTransferPaymentInfo - " + singleCreditTransferPaymentInfo)
+                            val myRespData: String = getSingleCreditTransferDetails(singleCreditTransferPaymentInfo, isAccSchemeName)
+                            sendSingleCreditTransferRequestsIpsl(myID, myRespData)
+                          }
+
+                        }
+                        */
                       }
                       else{
                         responseMessage = "Invalid Input Data length"
@@ -2632,59 +2673,46 @@ class CbsEngine @Inject()
         }
       }
       catch
-        {
-          case ex: Exception =>
-            responseMessage = "Error occured during processing, please try again."
-            log_errors(strApifunction + " : " + ex.getMessage())
-          case tr: Throwable =>
-            responseMessage = "Error occured during processing, please try again."
-            log_errors(strApifunction + " : " + tr.getMessage())
-        }
-      /*
-      implicit val S2B_PaymentDetailsResponse_BatchWrites = Json.writes[S2B_PaymentDetailsResponse_Batch]
-      implicit val S2B_PaymentDetailsResponse_BatchDataWrites = Json.writes[S2B_PaymentDetailsResponse_BatchData]
-
-      if (myS2B_PaymentDetailsResponse_BatchData.isEmpty || myS2B_PaymentDetailsResponse_BatchData){
-        val myS2B_PaymentDetailsResponse_Batch = new S2B_PaymentDetailsResponse_Batch("", "", "", "", responseCode, responseMessage)
-        myS2B_PaymentDetailsResponse_BatchData  = myS2B_PaymentDetailsResponse_BatchData :+ myS2B_PaymentDetailsResponse_Batch
-      }
-
-      val myPaymentDetailsResponse = new S2B_PaymentDetailsResponse_BatchData(myS2B_PaymentDetailsResponse_BatchData)
-
-      val jsonResponse = Json.toJson(myPaymentDetailsResponse)
-      */
-      /*
-      try{
-        log_data(strApifunction + " : " + "response - " + jsonResponse.toString() + " , remoteAddress - " + request.remoteAddress)
-      }
-      catch{
+      {
         case ex: Exception =>
+          responseMessage = "Error occured during processing, please try again."
           log_errors(strApifunction + " : " + ex.getMessage())
-        case io: IOException =>
-          log_errors(strApifunction + " : " + io.getMessage())
         case tr: Throwable =>
+          responseMessage = "Error occured during processing, please try again."
           log_errors(strApifunction + " : " + tr.getMessage())
       }
-
-      val r: Result = Ok(jsonResponse)
-      r
-      */
-      /*
-      val myRespData: String = getSingleCreditTransferDetails
-
-      val f = Future {sendSingleCreditTransferRequestsIpsl(myRespData)}
-      */
-
-      //Log_data("processWhatsAppActions - " + "ResponseCode - " + responseCode.toString + " , ResponseMessage - " + responseMessage + " - Request Message : " + strRequest)
-      /*
-      val textResponse = Ok(myresponse_processUssdActions.text.toString).as("text/xml")
-      val r: Result = textResponse
-      r
-      */
+      
       implicit val  SingleCreditTransferPaymentDetailsResponse_Writes = Json.writes[SingleCreditTransferPaymentDetailsResponse]
 
       val mySingleCreditTransferPaymentResponse =  SingleCreditTransferPaymentDetailsResponse(responseCode, responseMessage)
       val jsonResponse = Json.toJson(mySingleCreditTransferPaymentResponse)
+
+      try{
+      val dateToCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+      val myCode: Int = {
+      myHttpStatusCode match {
+        case HttpStatusCode.Accepted =>
+          202
+        case HttpStatusCode.BadRequest =>
+          400
+        case HttpStatusCode.Unauthorized =>
+          401
+        case _ =>
+          400
+      }
+    }
+      val strSQL: String = "update [dbo].[OutgoingSingleCreditTransferPaymentDetails] set [HttpStatusCode_CbsApi_In] = " + myCode + ", [ResponseMessage_CbsApi_In] = '" + jsonResponse.toString() + "', [Date_to_CbsApi_In] = '" + dateToCbsApi + "' where [ID] = " + myID + ";"
+      println("strSQL - " + strSQL)
+      insertUpdateRecord(strSQL)
+    }
+    catch{
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage())
+      case io: IOException =>
+        log_errors(strApifunction + " : " + io.getMessage())
+      case tr: Throwable =>
+        log_errors(strApifunction + " : " + tr.getMessage())
+    }
 
       val r: Result = {
         myHttpStatusCode match {
@@ -4075,9 +4103,9 @@ class CbsEngine @Inject()
                     */
                     try{
                       if (isValidInputData){
-                        val myBatchSize : Integer = 1
+                        val myBatchSize: Integer = 1
                         val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
-                        val myBatchReference : java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
+                        val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
                         val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
                         
                         val myAccountVerificationTableResponseDetails = addOutgoingAccountVerificationDetails(myAccountVerificationTableDetails)
@@ -4239,7 +4267,7 @@ class CbsEngine @Inject()
           400
       }
     }
-      val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [HttpStatusCode_CbsApi_In] = " + myCode + ", [ResponseMessage_CbsApi_In] = '" + jsonResponse.toString() + "', [Date_to_CbsApi_In] = '" + dateToCbsApi + "' where ID = " + myID + ";"
+      val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [HttpStatusCode_CbsApi_In] = " + myCode + ", [ResponseMessage_CbsApi_In] = '" + jsonResponse.toString() + "', [Date_to_CbsApi_In] = '" + dateToCbsApi + "' where [ID] = " + myID + ";"
       println("strSQL - " + strSQL)
       insertUpdateRecord(strSQL)
     }
@@ -6363,7 +6391,7 @@ class CbsEngine @Inject()
           strRequestData = strRequestData.trim
           */
           //val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Posted_to_IpslApi] = 1, [Post_picked_IpslApi] = 1, [RequestMessage_IpslApi] = '" + strRequestData + "', [Date_to_IpslApi] = '" + dateToIpslApi + "' where ID = " + myID + ";"
-          val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Posted_to_IpslApi] = 1, [Post_picked_IpslApi] = 1, [RequestMessage_IpslApi] = '" + strRequestData + "', [Date_to_IpslApi] = '" + dateToIpslApi + "' where ID = " + myID + ";"
+          val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Posted_to_IpslApi] = 1, [Post_picked_IpslApi] = 1, [RequestMessage_IpslApi] = '" + strRequestData + "', [Date_to_IpslApi] = '" + dateToIpslApi + "' where [ID] = " + myID + ";"
           insertUpdateRecord(strSQL)
         }
         catch{
@@ -6388,7 +6416,7 @@ class CbsEngine @Inject()
         //val myEntryID: Future[java.math.BigDecimal] = Future(entryID)
         var start_time_DB: String = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
         val myStart_time: Future[String] = Future(start_time_DB)
-        val my_ID: Future[java.math.BigDecimal] = Future(myID)
+        val myEntryID: Future[java.math.BigDecimal] = Future(myID)
         //TESTS ONLY
         //println("start 1: " + start_time_DB)
 
@@ -6460,9 +6488,9 @@ class CbsEngine @Inject()
                       val myAccountVerificationDetailsResponse_Batch = AccountVerificationDetailsResponse_Batch(strTransactionReference, strAccountNumber, strAccountname, strBankCode)
                       val myAccountVerificationResponse = AccountVerificationDetailsResponse_BatchData(strMessageReference, responseCode, responseMessage, myAccountVerificationDetailsResponse_Batch)
 
-                      if (my_ID.value.isEmpty != true) {
-                        if (my_ID.value.get != None) {
-                          val myVal = my_ID.value.get
+                      if (myEntryID.value.isEmpty != true) {
+                        if (myEntryID.value.get != None) {
+                          val myVal = myEntryID.value.get
                           if (myVal.get != None) {
                             myID = myVal.get
                           }
@@ -6478,7 +6506,7 @@ class CbsEngine @Inject()
                       "', [isVerified] = '" + isVerified + "', [VerificationStatus] = '" + verificationStatus + 
                       "', [VerificationReasonCode] = '" + verificationReasonCode + "', [AccountName] = '" + strAccountname + 
                       "', [ResponseMessage_IpslApi] = '" + strResponseData + 
-                      "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where ID = " + myID + ";"
+                      "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
                       insertUpdateRecord(strSQL)
 
                     }
@@ -6500,9 +6528,9 @@ class CbsEngine @Inject()
                   //val myStatusCode: Int = res.status.intValue()
                   val strStatusMessage: String = "Failed"
 
-                  if (my_ID.value.isEmpty != true) {
-                    if (my_ID.value.get != None) {
-                      val myVal = my_ID.value.get
+                  if (myEntryID.value.isEmpty != true) {
+                    if (myEntryID.value.get != None) {
+                      val myVal = myEntryID.value.get
                       if (myVal.get != None) {
                         myID = myVal.get
                       }
@@ -6511,7 +6539,7 @@ class CbsEngine @Inject()
 
                   val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + res.status.intValue() + 
                   ", [StatusCode_IpslApi] = 1, [StatusMessage_IpslApi] = '" + strStatusMessage +
-                  "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where ID = " + myID + ";"
+                  "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
                   insertUpdateRecord(strSQL)
                   
                 }
@@ -6526,9 +6554,9 @@ class CbsEngine @Inject()
               val myStatusCode_Cbs: Int = 500
               val strStatusMessage: String = "Failure occured when sending the request to API. " + f.getMessage
 
-              if (my_ID.value.isEmpty != true) {
-                if (my_ID.value.get != None) {
-                  val myVal = my_ID.value.get
+              if (myEntryID.value.isEmpty != true) {
+                if (myEntryID.value.get != None) {
+                  val myVal = myEntryID.value.get
                   if (myVal.get != None) {
                     myID = myVal.get
                   }
@@ -6537,11 +6565,10 @@ class CbsEngine @Inject()
 
               val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myStatusCode_Cbs + 
               ", [StatusCode_IpslApi] = 1, [StatusMessage_IpslApi] = '" + strStatusMessage +
-              "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where ID = " + myID + ";"
+              "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
               insertUpdateRecord(strSQL)
               
           }
-
       }
     }
     catch
@@ -7868,55 +7895,10 @@ class CbsEngine @Inject()
     }
 
   }
-  def sendSingleCreditTransferRequestsIpsl(myRequestData: String): Unit = {
+  def sendSingleCreditTransferRequestsIpsl(myID: java.math.BigDecimal, myRequestData: String): Unit = {
     val strApifunction : String = "sendSingleCreditTransferRequestsIpsl"
-    var strProjectionType  : String = "RetirementsReduced"
     var strApiURL  : String = "http://localhost:9001/getsinglecredittransferresponsedetails"
-    val myMemberNo : Int = 1
-    val myMemberId : Int = 1
-    val myProjectionType  : Int = 1
-
-
-    try{
-      myProjectionType match {
-        case 0 =>
-          strProjectionType = "RetirementsReduced"
-        case 1 =>
-          strProjectionType = "RetirementsUnreduced"
-        case _ =>
-          strProjectionType = "RetirementsReduced"
-      }
-    }
-    catch {
-      case io: Throwable =>
-        log_errors(strApifunction + " : " + io.getMessage())
-      case ex: Exception =>
-        log_errors(strApifunction + " : " + ex.getMessage())
-    }
-    /*
-    try{
-
-      strApiURL = ""
-      //strApiURL = "http://172.16.109.253:8088/Xi/api/getProjectionsForMember/283632/60/6973/Retirements Reduced"
-      //strApiURL = "http://172.16.109.253:8088/Xi/api/getProjectionsForMember/" + myMemberId + "/60/6973/" + strProjectionType
-      strApiURL = getCBSProjectionBenefitsURL(myMemberId, myProjectionType)
-      if (strApiURL == null){
-        strApiURL = ""
-      }
-
-      if (strApiURL.trim.length == 0){
-        Log_errors(strApifunction + " : Failure in fetching  Api URL - " + strApiURL + " , application error occured.")
-        return
-      }
-
-    }
-    catch {
-      case io: Throwable =>
-        Log_errors(strApifunction + " : " + io.getMessage())
-      case ex: Exception =>
-        Log_errors(strApifunction + " : " + ex.getMessage())
-    }
-    */
+    
     val myuri : Uri = strApiURL //"http://172.16.109.253:8088/Xi/api/getProjectionsForMember/283632/60/6973/Retirements Reduced"
 
     var isValidData : Boolean = false
@@ -7924,63 +7906,8 @@ class CbsEngine @Inject()
     var myXmlData : String = ""
     //var strDeveloperId: String = ""//strDeveloperId_Verification
 
-
-    try
-    {
-      /*
-      if (strDeveloperId == null){
-        strDeveloperId = "1"
-      }
-
-      if (strMemberType != null && strProjectionType != null && strApiURL != null){
-        if (myMemberNo > 0 && strMemberType.length > 0 && strProjectionType.length > 0 && strApiURL.trim.length > 0){
-          isValidData = true
-        }
-      }
-      */
-
-      if (myMemberNo > 0 && myMemberId > 0){
-        isValidData = true
-      }
-      else{
-        log_errors(strApifunction + " : Failure in fetching  MemberNo - " + myMemberNo + " , MemberId - " + myMemberId)
-        return
-      }
-
-    }
-    catch
-      {
-        case ex: Exception =>
-          isSuccessful = false//strname = "no data"//println("Got some other kind of exception")
-        case t: Throwable =>
-          isSuccessful = false//strname = "no data"//println("Got some other kind of exception")
-      }
-
-    /*
-    try
-    {
-      println("start isValidData 1: " + isValidData)
-      if (isValidData == true){
-        /*
-        val myrequest_verification =  myVerificationMessage_BatchData.toJson
-        myjsonData = myrequest_verification.toString()
-        */
-        }
-        }
-        catch
-        {
-        case ex: Exception =>
-        isSuccessful = false//strname = "no data"//println("Got some other kind of exception")
-        case t: Throwable =>
-        isSuccessful = false//strname = "no data"//println("Got some other kind of exception")
-        }
-        finally
-        {
-        // your scala code here, such as to close a database connection
-        }
-        */
-
     try {
+      isValidData = true//TESTS ONLY
       if (isValidData) {
 
         //val myDataManagement = new DataManagement
@@ -8022,6 +7949,28 @@ class CbsEngine @Inject()
           return
         }
 
+        try{
+          val dateToIpslApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+          var strRequestData: String = ""
+          /*
+          var strRequestData: String = myRequestData
+          strRequestData = strRequestData.replace("'","")//Remove apostrophe
+          strRequestData = strRequestData.replace(" ","")//Remove spaces
+          strRequestData = strRequestData.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+          strRequestData = strRequestData.trim
+          */
+          val strSQL: String = "update [dbo].[OutgoingSingleCreditTransferPaymentDetails] set [Posted_to_IpslApi] = 1, [Post_picked_IpslApi] = 1, [RequestMessage_IpslApi] = '" + strRequestData + "', [Date_to_IpslApi] = '" + dateToIpslApi + "' where [ID] = " + myID + ";"
+          insertUpdateRecord(strSQL)
+        }
+        catch{
+          case ex: Exception =>
+            log_errors(strApifunction + " : " + ex.getMessage())
+          case io: IOException =>
+            log_errors(strApifunction + " : " + io.getMessage())
+          case tr: Throwable =>
+            log_errors(strApifunction + " : " + tr.getMessage())
+        }
+
         //val data = HttpEntity(ContentType(MediaTypes.`application/json`), myjsonData)
         //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization", "bearer " + accessToken)))
         //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("username", strUserName),RawHeader("password", strPassWord)))
@@ -8032,1154 +7981,88 @@ class CbsEngine @Inject()
         myXmlData = myRequestData
         val data = HttpEntity(ContentType.WithCharset(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`), myXmlData)
         val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization", "bearer " + accessToken)))
-        //val myEntryID: Future[java.math.BigDecimal] = Future(entryID)
-        var start_time_DB: String = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
-        val myStart_time: Future[String] = Future(start_time_DB)
-        val myMember_No: Future[Int] = Future(myMemberNo)
+        val myEntryID: Future[java.math.BigDecimal] = Future(myID)
+        //var start_time_DB: String = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+        //val myStart_time: Future[String] = Future(start_time_DB)
         //TESTS ONLY
-        println("start 1: " + start_time_DB)
+        //println("start 1: " + start_time_DB)
 
         responseFuture
           .onComplete {
             case Success(res) =>
-              println("start 2: " + res.status.intValue())
+              //println("start 2: " + res.status.intValue())
+              val dateFromIpslApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+              var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
+              var myHttpStatusCode: Int = 0
+              var mystatuscode: Int = 1
+              var strStatusMessage: String = "Failed processing"
+              var strResponseData: String = ""
               if (res.status != None) {
                 if (res.status.intValue() == 202) {
-                  var isDataExists: Boolean = false
-                  var myCount: Int = 0
-                  val oldformatter : SimpleDateFormat = new SimpleDateFormat("MMM dd, yyyy")
-                  val newFormatter : SimpleDateFormat = new SimpleDateFormat("dd-MM-yyyy")
-                  var strid: String = ""
-                  var strCalc_date: String = ""
-                  var strExit_date: String = ""
-                  var strScheme_id: String = ""
-                  var strMember_id: String = ""
-                  var strExit_reason: String = ""
-                  var strExit_age: String = ""
-                  var strYears_worked: String = ""
-                  var strTotalBenefits: String = ""
-                  var strPurchasePrice: String = ""
-                  var strAnnualPension: String = ""
-                  var strMonthlyPension: String = ""
-                  var strTaxOnMonthlyPension: String = ""
-                  //var strNetMonthlyPension: String = ""
-                  var strCommutedLumpsum: String = ""
-                  var strTaxFreeLumpsum: String = ""
-                  var strTaxableAmount: String = ""
-                  var strWitholdingTax: String = ""
-                  var strLiability: String = ""
-                  var strLumpsumPayable: String = ""
-                  //Integers
-                  var myid: Integer = 0
-                  var myScheme_id: Integer = 0
-                  var myMember_id: Integer = 0
-                  var myExit_age: Integer = 0
-                  var myYears_worked: BigDecimal = 0
-                  var myTotalBenefits: BigDecimal = 0
-                  var myPurchasePrice: BigDecimal = 0
-                  var myAnnualPension: BigDecimal = 0
-                  var myMonthlyPension: BigDecimal = 0
-                  var myTaxOnMonthlyPension: BigDecimal = 0
-                  var myNetMonthlyPension: BigDecimal = 0
-                  var myCommutedLumpsum: BigDecimal = 0
-                  var myTaxFreeLumpsum: BigDecimal = 0
-                  var myTaxableAmount: BigDecimal = 0
-                  var myWitholdingTax: BigDecimal = 0
-                  var myLiability: BigDecimal = 0
-                  var myLumpsumPayable: BigDecimal = 0
-                  var strResponseData: String = ""
-                  val strIntRegex: String = "[0-9]+" //Integers only
-                  val strDecimalRegex: String = "^[0-9]*\\.?[0-9]+$" //Decimals
-                  //val resByteStr: String = res.entity.toString
-                  //val resByteStr: akka.util.ByteString = res.entity
-                  //println("res.entity - " + res.entity.toString())
-
                   val myData = res.entity
                   if (myData != null){
                     val x = myData.asInstanceOf[HttpEntity.Strict].getData().decodeString(StandardCharsets.UTF_8)
+                    strResponseData = x.toString
                     //println("res.entity x - " + x.toString)
-                    println("mySingleCreditTransfer - " + x.toString)
-
+                    //println("mySingleCreditTransfer - " + x.toString)
                   }
-                  /*
-                  val x = myData.value
-                  //val y = (x.toArray, Charset.forName("UTF-8"))
-                  val y = myData.asInstanceOf[String]
-                  println("res.entity x - " + x.get.toString)
-                  println("res.entity y - " + y)
-                  */
-                  //val myData = Unmarshal(res.entity).to[CbsMessage_ProjectionBenefits_Batch]
-                  /*
-                  if (myData != None) {
-                    //val strB = myData.value.getOrElse("requestdata")
-                    //println("error occured myData.value.get != None 1 : " + strB.toString)
-                    //if (myData.value.get != None) {
-                    if (myData.value.getOrElse(None) != None) {
-                      val myResultCbsMessage_BatchData = myData.value.get
-                      if (myResultCbsMessage_BatchData.get != None) {
-                        /*
-                        val sourceDataTable = new SQLServerDataTable
-                        sourceDataTable.addColumnMetadata("StaffNo", java.sql.Types.INTEGER)
-                        sourceDataTable.addColumnMetadata("Pensioner_Identifier", java.sql.Types.VARCHAR)
-                        sourceDataTable.addColumnMetadata("StatusCode_Cbs", java.sql.Types.INTEGER)
-                        sourceDataTable.addColumnMetadata("StatusMessage_Cbs", java.sql.Types.VARCHAR)
-                        sourceDataTable.addColumnMetadata("Verified_Previous_Cycle", java.sql.Types.INTEGER)
-                        sourceDataTable.addColumnMetadata("Verified_Cycle_Return_Date", java.sql.Types.VARCHAR)
-                        sourceDataTable.addColumnMetadata("Previous_Cycle_id", java.sql.Types.NUMERIC)
-                        sourceDataTable.addColumnMetadata("Date_to_Cbs", java.sql.Types.VARCHAR)
-                        sourceDataTable.addColumnMetadata("Date_from_Cbs", java.sql.Types.VARCHAR)
-                        */
-
-                        if (myResultCbsMessage_BatchData.get != None) {
-                          strResponseData = myResultCbsMessage_BatchData.toString
-                        }
-
-                        var start_time_DB: String = ""
-                        //new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
-                        var stop_time_DB: String = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
-                        var memberNo: Int = 0
-
-                        if (myStart_time.value.isEmpty != true) {
-                          if (myStart_time.value.get != None) {
-                            val myVal = myStart_time.value.get
-                            if (myVal.get != None) {
-                              start_time_DB = myVal.get
-                            }
-                          }
-                        }
-
-                        if (myMember_No.value.isEmpty != true) {
-                          if (myMember_No.value.get != None) {
-                            val myVal = myMember_No.value.get
-                            if (myVal.get != None) {
-                              memberNo = myVal.get
-                            }
-                          }
-                        }
-
-                        if (myResultCbsMessage_BatchData.get.rows != None) {
-
-                          myCount = myResultCbsMessage_BatchData.get.rows.length
-
-                          val myCbsMessageData = myResultCbsMessage_BatchData.get.rows
-                          if (myCbsMessageData != None) {
-                            myCbsMessageData.foreach(myCbsData => {
-
-                              //strid
-                              if (myCbsData.id != None) {
-                                if (myCbsData.id.get != None) {
-                                  val myData = myCbsData.id.get
-                                  strid = myData.toString()
-                                  if (strid != null && strid != None){
-                                    strid = strid.trim
-                                    if (strid.length > 0){
-                                      strid = strid.replace("'","")//Remove apostrophe
-                                      strid = strid.replace(" ","")//Remove spaces
-                                      strid = strid.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                      strid = strid.trim
-                                      //val isNumeric : Boolean = strid.toString.matches("[0-9]+")//"\\d+", //[0-9]
-                                      val isNumeric : Boolean = strid.toString.matches(strIntRegex)//"\\d+", //[0-9]
-                                      if (isNumeric == true){
-                                        myid = strid.toInt
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-
-                              //strCalc_date
-                              if (myCbsData.calc_date != None) {
-                                if (myCbsData.calc_date.get != None) {
-                                  val myData = myCbsData.calc_date.get
-                                  strCalc_date = myData.toString()
-                                  if (strCalc_date != null && strCalc_date != None){
-                                    strCalc_date = strCalc_date.trim
-                                    if (strCalc_date.length > 0){
-                                      strCalc_date = strCalc_date.replace("'","")//Remove apostrophe
-                                      strCalc_date = strCalc_date.replace("  "," ")//Remove double spaces
-                                      strCalc_date = strCalc_date.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                      strCalc_date = strCalc_date.trim
-                                      try{
-                                        val myTxnDate : Date = oldformatter.parse(strCalc_date)
-                                        //Lets convert var from format "MMM dd, yyyy" to expected date format "dd-MM-yyyy"
-                                        strCalc_date = newFormatter.format(myTxnDate)
-                                        val strTxnDate: String = newFormatter.format(myTxnDate)
-                                        strCalc_date = strTxnDate
-                                      }
-                                      catch {
-                                        case io: Throwable =>
-                                          Log_errors(strApifunction + " : " + io.getMessage())
-                                        case ex: Exception =>
-                                          Log_errors(strApifunction + " : " + ex.getMessage())
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-
-                              //strExit_date
-                              if (myCbsData.exit_date != None) {
-                                if (myCbsData.exit_date.get != None) {
-                                  val myData = myCbsData.exit_date.get
-                                  strExit_date = myData.toString()
-                                  if (strExit_date != null && strExit_date != None){
-                                    strExit_date = strExit_date.trim
-                                    if (strExit_date.length > 0){
-                                      strExit_date = strExit_date.replace("'","")//Remove apostrophe
-                                      strExit_date = strExit_date.replace("  "," ")//Remove double spaces
-                                      strExit_date = strExit_date.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                      strExit_date = strExit_date.trim
-                                      try{
-                                        val myTxnDate : Date = oldformatter.parse(strExit_date)
-                                        //Lets convert var from format "MMM dd, yyyy" to expected date format "dd-MM-yyyy"
-                                        val strTxnDate: String = newFormatter.format(myTxnDate)
-                                        strExit_date = strTxnDate
-                                      }
-                                      catch {
-                                        case io: Throwable =>
-                                          Log_errors(strApifunction + " : " + io.getMessage())
-                                        case ex: Exception =>
-                                          Log_errors(strApifunction + " : " + ex.getMessage())
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-
-                              //strScheme_id
-                              if (myCbsData.scheme_id != None) {
-                                if (myCbsData.scheme_id.get != None) {
-                                  val myData = myCbsData.scheme_id.get
-                                  strScheme_id = myData.toString()
-                                  if (strScheme_id != null && strScheme_id != None){
-                                    strScheme_id = strScheme_id.trim
-                                    if (strScheme_id.length > 0){
-                                      strScheme_id = strScheme_id.replace("'","")//Remove apostrophe
-                                      strScheme_id = strScheme_id.replace(" ","")//Remove spaces
-                                      strScheme_id = strScheme_id.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                      strScheme_id = strScheme_id.trim
-                                      //val isNumeric : Boolean = strScheme_id.toString.matches("[0-9]+")//"\\d+", //[0-9]
-                                      val isNumeric : Boolean = strScheme_id.toString.matches(strIntRegex)//"\\d+", //[0-9]
-                                      if (isNumeric == true){
-                                        myScheme_id = strScheme_id.toInt
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-
-                              //strMember_id
-                              if (myCbsData.member_id != None) {
-                                if (myCbsData.member_id.get != None) {
-                                  val myData = myCbsData.member_id.get
-                                  strMember_id = myData.toString()
-                                  if (strMember_id != null && strMember_id != None){
-                                    strMember_id = strMember_id.trim
-                                    if (strMember_id.length > 0){
-                                      strMember_id = strMember_id.replace("'","")//Remove apostrophe
-                                      strMember_id = strMember_id.replace(" ","")//Remove spaces
-                                      strMember_id = strMember_id.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                      strMember_id = strMember_id.trim
-                                      //val isNumeric : Boolean = strMember_id.toString.matches("[0-9]+")//"\\d+", //[0-9]
-                                      val isNumeric : Boolean = strMember_id.toString.matches(strIntRegex)//"\\d+", //[0-9]
-                                      if (isNumeric == true){
-                                        myMember_id = strMember_id.toInt
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-
-                              //strExit_reason
-                              if (myCbsData.exit_reason != None) {
-                                if (myCbsData.exit_reason.get != None) {
-                                  val myData = myCbsData.exit_reason.get
-                                  strExit_reason = myData.toString()
-                                  if (strExit_reason != null && strExit_reason != None){
-                                    strExit_reason = strExit_reason.trim
-                                    if (strExit_reason.length > 0){
-                                      strExit_reason = strExit_reason.replace("'","")//Remove apostrophe
-                                      strExit_reason = strExit_reason.replace(" ","")//Remove spaces
-                                      strExit_reason = strExit_reason.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                      strExit_reason = strExit_reason.trim
-                                    }
-                                  }
-                                }
-                              }
-
-                              //strExit_age
-                              if (myCbsData.exit_age != None) {
-                                if (myCbsData.exit_age.get != None) {
-                                  val myData = myCbsData.exit_age.get
-                                  strExit_age = myData.toString()
-                                  if (strExit_age != null && strExit_age != None){
-                                    strExit_age = strExit_age.trim
-                                    if (strExit_age.length > 0){
-                                      strExit_age = strExit_age.replace("'","")//Remove apostrophe
-                                      strExit_age = strExit_age.replace(" ","")//Remove spaces
-                                      strExit_age = strExit_age.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                      strExit_age = strExit_age.trim
-                                      //val isNumeric : Boolean = strExit_age.toString.matches("[0-9]+")//"\\d+", //[0-9]
-                                      val isNumeric : Boolean = strExit_age.toString.matches(strDecimalRegex)//"\\d+", //[0-9]
-                                      if (isNumeric == true){
-                                        var myExAge: BigDecimal = BigDecimal(strExit_age)
-                                        myExAge = myExAge.setScale(2,mode = BigDecimal.RoundingMode.HALF_EVEN);
-                                        //myExit_age = strExit_age.toInt
-                                        myExit_age = myExAge.toInt
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-
-                              //strYears_worked
-                              if (myCbsData.years_worked != None) {
-                                if (myCbsData.years_worked.get != None) {
-                                  val myData = myCbsData.years_worked.get
-                                  strYears_worked = myData.toString()
-                                  if (strYears_worked != null && strYears_worked != None){
-                                    strYears_worked = strYears_worked.trim
-                                    if (strYears_worked.length > 0){
-                                      strYears_worked = strYears_worked.replace("'","")//Remove apostrophe
-                                      strYears_worked = strYears_worked.replace(" ","")//Remove spaces
-                                      strYears_worked = strYears_worked.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                      strYears_worked = strYears_worked.trim
-                                      //val isNumeric : Boolean = strYears_worked.toString.matches("[0-9]+")//"\\d+", //[0-9]
-                                      val isNumeric : Boolean = strYears_worked.toString.matches(strDecimalRegex)//"\\d+", //[0-9]
-                                      if (isNumeric == true){
-                                        myYears_worked = BigDecimal(strYears_worked)
-                                        myYears_worked = myYears_worked.setScale(2,mode = BigDecimal.RoundingMode.HALF_EVEN);
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-
-                              //strTotalBenefits
-                              if (myCbsData.totalBenefitsDb != None) {
-                                if (myCbsData.totalBenefitsDb.get != None) {
-                                  val myData = myCbsData.totalBenefitsDb.get
-                                  strTotalBenefits = myData.toString()
-                                  if (strTotalBenefits != null && strTotalBenefits != None){
-                                    strTotalBenefits = strTotalBenefits.trim
-                                    if (strTotalBenefits.length > 0){
-                                      strTotalBenefits = strTotalBenefits.replace("'","")//Remove apostrophe
-                                      strTotalBenefits = strTotalBenefits.replace(" ","")//Remove spaces
-                                      strTotalBenefits = strTotalBenefits.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                      strTotalBenefits = strTotalBenefits.trim
-                                      val isNumeric : Boolean = strTotalBenefits.toString.matches(strDecimalRegex)//"\\d+", //[0-9]
-                                      if (isNumeric == true){
-                                        myTotalBenefits = BigDecimal(strTotalBenefits)
-                                        myTotalBenefits = myTotalBenefits.setScale(2,mode = BigDecimal.RoundingMode.HALF_EVEN);
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-
-                              //strPurchasePrice
-                              if (myCbsData.purchasePrice != None) {
-                                if (myCbsData.purchasePrice.get != None) {
-                                  val myData = myCbsData.purchasePrice.get
-                                  strPurchasePrice = myData.toString()
-                                  if (strPurchasePrice != null && strPurchasePrice != None){
-                                    strPurchasePrice = strPurchasePrice.trim
-                                    if (strPurchasePrice.length > 0){
-                                      strPurchasePrice = strPurchasePrice.replace("'","")//Remove apostrophe
-                                      strPurchasePrice = strPurchasePrice.replace(" ","")//Remove spaces
-                                      strPurchasePrice = strPurchasePrice.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                      strPurchasePrice = strPurchasePrice.trim
-                                      val isNumeric : Boolean = strYears_worked.toString.matches(strDecimalRegex)//"\\d+", //[0-9]
-                                      if (isNumeric == true){
-                                        myPurchasePrice = BigDecimal(strPurchasePrice)
-                                        myPurchasePrice = myPurchasePrice.setScale(2,mode = BigDecimal.RoundingMode.HALF_EVEN);
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-
-                              //strAnnualPension
-                              if (myCbsData.annualPension != None) {
-                                if (myCbsData.annualPension.get != None) {
-                                  val myData = myCbsData.annualPension.get
-                                  strAnnualPension = myData.toString()
-                                  if (strAnnualPension != null && strAnnualPension != None){
-                                    strAnnualPension = strAnnualPension.trim
-                                    if (strAnnualPension.length > 0){
-                                      strAnnualPension = strAnnualPension.replace("'","")//Remove apostrophe
-                                      strAnnualPension = strAnnualPension.replace(" ","")//Remove spaces
-                                      strAnnualPension = strAnnualPension.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                      strAnnualPension = strAnnualPension.trim
-                                      val isNumeric : Boolean = strYears_worked.toString.matches(strDecimalRegex)//"\\d+", //[0-9]
-                                      if (isNumeric == true){
-                                        myAnnualPension = BigDecimal(strAnnualPension)
-                                        myAnnualPension = myAnnualPension.setScale(2,mode = BigDecimal.RoundingMode.HALF_EVEN);
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-
-                              //strMonthlyPension
-                              if (myCbsData.monthlyPension != None) {
-                                if (myCbsData.monthlyPension.get != None) {
-                                  val myData = myCbsData.monthlyPension.get
-                                  strMonthlyPension = myData.toString()
-                                  if (strMonthlyPension != null && strMonthlyPension != None){
-                                    strMonthlyPension = strMonthlyPension.trim
-                                    if (strMonthlyPension.length > 0){
-                                      strMonthlyPension = strMonthlyPension.replace("'","")//Remove apostrophe
-                                      strMonthlyPension = strMonthlyPension.replace(" ","")//Remove spaces
-                                      strMonthlyPension = strMonthlyPension.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                      strMonthlyPension = strMonthlyPension.trim
-                                      val isNumeric : Boolean = strYears_worked.toString.matches(strDecimalRegex)//"\\d+", //[0-9]
-                                      if (isNumeric == true){
-                                        myMonthlyPension = BigDecimal(strMonthlyPension)
-                                        myMonthlyPension = myMonthlyPension.setScale(2,mode = BigDecimal.RoundingMode.HALF_EVEN);
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-
-                              //strTaxOnMonthlyPension
-                              if (myCbsData.taxOnMonthlyPension != None) {
-                                if (myCbsData.taxOnMonthlyPension.get != None) {
-                                  val myData = myCbsData.taxOnMonthlyPension.get
-                                  strTaxOnMonthlyPension = myData.toString()
-                                  if (strTaxOnMonthlyPension != null && strTaxOnMonthlyPension != None){
-                                    strTaxOnMonthlyPension = strTaxOnMonthlyPension.trim
-                                    if (strTaxOnMonthlyPension.length > 0){
-                                      strTaxOnMonthlyPension = strTaxOnMonthlyPension.replace("'","")//Remove apostrophe
-                                      strTaxOnMonthlyPension = strTaxOnMonthlyPension.replace(" ","")//Remove spaces
-                                      strTaxOnMonthlyPension = strTaxOnMonthlyPension.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                      strTaxOnMonthlyPension = strTaxOnMonthlyPension.trim
-                                      val isNumeric : Boolean = strYears_worked.toString.matches(strDecimalRegex)//"\\d+", //[0-9]
-                                      if (isNumeric == true){
-                                        myTaxOnMonthlyPension = BigDecimal(strTaxOnMonthlyPension)
-                                        myTaxOnMonthlyPension = myTaxOnMonthlyPension.setScale(2,mode = BigDecimal.RoundingMode.HALF_EVEN);
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-
-                              //myNetMonthlyPension
-                              myNetMonthlyPension = myMonthlyPension  - myTaxOnMonthlyPension
-
-                              //strCommutedLumpsum
-                              if (myCbsData.commutedLumpsum != None) {
-                                if (myCbsData.commutedLumpsum.get != None) {
-                                  val myData = myCbsData.commutedLumpsum.get
-                                  strCommutedLumpsum = myData.toString()
-                                  if (strCommutedLumpsum != null && strCommutedLumpsum != None){
-                                    strCommutedLumpsum = strCommutedLumpsum.trim
-                                    if (strCommutedLumpsum.length > 0){
-                                      strCommutedLumpsum = strCommutedLumpsum.replace("'","")//Remove apostrophe
-                                      strCommutedLumpsum = strCommutedLumpsum.replace(" ","")//Remove spaces
-                                      strCommutedLumpsum = strCommutedLumpsum.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                      strCommutedLumpsum = strCommutedLumpsum.trim
-                                      val isNumeric : Boolean = strYears_worked.toString.matches(strDecimalRegex)//"\\d+", //[0-9]
-                                      if (isNumeric == true){
-                                        myCommutedLumpsum = BigDecimal(strCommutedLumpsum)
-                                        myCommutedLumpsum = myCommutedLumpsum.setScale(2,mode = BigDecimal.RoundingMode.HALF_EVEN);
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-
-                              //strTaxFreeLumpsum
-                              if (myCbsData.taxFreeLumpsum != None) {
-                                if (myCbsData.taxFreeLumpsum.get != None) {
-                                  val myData = myCbsData.taxFreeLumpsum.get
-                                  strTaxFreeLumpsum = myData.toString()
-                                  if (strTaxFreeLumpsum != null && strTaxFreeLumpsum != None){
-                                    strTaxFreeLumpsum = strTaxFreeLumpsum.trim
-                                    if (strTaxFreeLumpsum.length > 0){
-                                      strTaxFreeLumpsum = strTaxFreeLumpsum.replace("'","")//Remove apostrophe
-                                      strTaxFreeLumpsum = strTaxFreeLumpsum.replace(" ","")//Remove spaces
-                                      strTaxFreeLumpsum = strTaxFreeLumpsum.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                      strTaxFreeLumpsum = strTaxFreeLumpsum.trim
-                                      val isNumeric : Boolean = strYears_worked.toString.matches(strDecimalRegex)//"\\d+", //[0-9]
-                                      if (isNumeric == true){
-                                        myTaxFreeLumpsum = BigDecimal(strTaxFreeLumpsum)
-                                        myTaxFreeLumpsum = myTaxFreeLumpsum.setScale(2,mode = BigDecimal.RoundingMode.HALF_EVEN);
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-
-                              //strTaxableAmount
-                              if (myCbsData.taxableAmount != None) {
-                                if (myCbsData.taxableAmount.get != None) {
-                                  val myData = myCbsData.taxableAmount.get
-                                  strTaxableAmount = myData.toString()
-                                  if (strTaxableAmount != null && strTaxableAmount != None){
-                                    strTaxableAmount = strTaxableAmount.trim
-                                    if (strTaxableAmount.length > 0){
-                                      strTaxableAmount = strTaxableAmount.replace("'","")//Remove apostrophe
-                                      strTaxableAmount = strTaxableAmount.replace(" ","")//Remove spaces
-                                      strTaxableAmount = strTaxableAmount.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                      strTaxableAmount = strTaxableAmount.trim
-                                      val isNumeric : Boolean = strYears_worked.toString.matches(strDecimalRegex)//"\\d+", //[0-9]
-                                      if (isNumeric == true){
-                                        myTaxableAmount = BigDecimal(strTaxableAmount)
-                                        myTaxableAmount = myTaxableAmount.setScale(2,mode = BigDecimal.RoundingMode.HALF_EVEN);
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-
-                              //strWitholdingTax
-                              if (myCbsData.witholdingTax != None) {
-                                if (myCbsData.witholdingTax.get != None) {
-                                  val myData = myCbsData.witholdingTax.get
-                                  strWitholdingTax = myData.toString()
-                                  if (strWitholdingTax != null && strWitholdingTax != None){
-                                    strWitholdingTax = strWitholdingTax.trim
-                                    if (strWitholdingTax.length > 0){
-                                      strWitholdingTax = strWitholdingTax.replace("'","")//Remove apostrophe
-                                      strWitholdingTax = strWitholdingTax.replace(" ","")//Remove spaces
-                                      strWitholdingTax = strWitholdingTax.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                      strWitholdingTax = strWitholdingTax.trim
-                                      val isNumeric : Boolean = strYears_worked.toString.matches(strDecimalRegex)//"\\d+", //[0-9]
-                                      if (isNumeric == true){
-                                        myWitholdingTax = BigDecimal(strWitholdingTax)
-                                        myWitholdingTax = myWitholdingTax.setScale(2,mode = BigDecimal.RoundingMode.HALF_EVEN);
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-
-                              //strLiability
-                              if (myCbsData.liability != None) {
-                                if (myCbsData.liability.get != None) {
-                                  val myData = myCbsData.liability.get
-                                  strLiability = myData.toString()
-                                  if (strLiability != null && strLiability != None){
-                                    strLiability = strLiability.trim
-                                    if (strLiability.length > 0){
-                                      strLiability = strLiability.replace("'","")//Remove apostrophe
-                                      strLiability = strLiability.replace(" ","")//Remove spaces
-                                      strLiability = strLiability.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                      strLiability = strLiability.trim
-                                      val isNumeric : Boolean = strYears_worked.toString.matches(strDecimalRegex)//"\\d+", //[0-9]
-                                      if (isNumeric == true){
-                                        myLiability = BigDecimal(strLiability)
-                                        myLiability = myLiability.setScale(2,mode = BigDecimal.RoundingMode.HALF_EVEN);
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-
-                              //strLumpsumPayable
-                              if (myCbsData.lumpsumPayable != None) {
-                                if (myCbsData.lumpsumPayable.get != None) {
-                                  val myData = myCbsData.lumpsumPayable.get
-                                  strLumpsumPayable = myData.toString()
-                                  if (strLumpsumPayable != null && strLumpsumPayable != None){
-                                    strLumpsumPayable = strLumpsumPayable.trim
-                                    if (strLumpsumPayable.length > 0){
-                                      strLumpsumPayable = strLumpsumPayable.replace("'","")//Remove apostrophe
-                                      strLumpsumPayable = strLumpsumPayable.replace(" ","")//Remove spaces
-                                      strLumpsumPayable = strLumpsumPayable.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                                      strLumpsumPayable = strLumpsumPayable.trim
-                                      val isNumeric : Boolean = strYears_worked.toString.matches(strDecimalRegex)//"\\d+", //[0-9]
-                                      if (isNumeric == true){
-                                        myLumpsumPayable = BigDecimal(strLumpsumPayable)
-                                        myLumpsumPayable = myLumpsumPayable.setScale(2,mode = BigDecimal.RoundingMode.HALF_EVEN);
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-
-                              //TESTS ONLY
-                              val strMessage: String = "myScheme_id - " + myScheme_id + ", myMember_id - " + myMember_id + ", myExit_age - " + myExit_age +
-                                ", myYears_worked - " + myYears_worked + ", myTotalBenefits - " + myTotalBenefits + ", myPurchasePrice - " + myPurchasePrice +
-                                ", myAnnualPension - " + myAnnualPension + ", myMonthlyPension - " + myMonthlyPension + ", myTaxOnMonthlyPension - " + myTaxOnMonthlyPension +
-                                ", myNetMonthlyPension - " + myNetMonthlyPension + ", myCommutedLumpsum - " + myCommutedLumpsum + ", myTaxFreeLumpsum - " + myTaxFreeLumpsum +
-                                ", myTaxableAmount - " + myTaxableAmount + ", myWitholdingTax - " + myWitholdingTax + ", myLiability - " + myLiability  +
-                                ", myLumpsumPayable - " + myLumpsumPayable
-                              Log_data(strApifunction + " : " + strMessage + " - ResponseMessage." + strApifunction)
-
-                              isDataExists = true
-
-                              /*
-                              if (myMember_id > 0) {
-
-                                if (isDataExists == false) {
-                                  isDataExists = true
-                                }
-
-                                sourceDataTable.addRow(myStaffno,
-                                  strPensionercode,
-                                  myStatuscode,
-                                  strStatusmessage,
-                                  myVerified_previous_cycle,
-                                  strVerified_cycle_return_date,
-                                  myPrevious_cycle_id,
-                                  start_time_DB,
-                                  stop_time_DB
-                                )
-                              }
-
-                              myStaffno = 0
-                              strStaffno  = ""
-                              strPensionercode = ""
-                              myStatuscode = 1
-                              myVerified_previous_cycle = 0
-                              strVerified_cycle_return_date = ""
-                              myPrevious_cycle_id = 0
-                              strStatuscode  = ""
-                              strStatusmessage = ""
-                              */
-
-                            })
-                          }
-                        }
-
-                        //val posted_to_Cbs: Boolean = true
-                        val posted_to_Cbs: Integer = 1
-                        val post_picked_Cbs: Integer = 1
-                        val strDate_to_Cbs: String = start_time_DB
-                        val strDate_from_Cbs: String = stop_time_DB
-                        val myStatusCode_Cbs : Integer = res.status.intValue()
-                        val strStatusMessage_Cbs: String = "Successful"
-                        //UpdateLogsOutgoingLipaNaMpesaRequests(myTxnID, posted_to_Cbs, strDate_to_Cbs, strDate_from_Cbs, myStatusCode_Cbs, strStatusMessage_Cbs)
-
-                        if (isDataExists == true) {
-                          //processUpdatePensionersVerification(sourceDataTable)
-                          val myMemberProjectionBenefitsDetailsResponse_Batch = new MemberProjectionBenefitsDetailsResponse_Batch(strCalc_date, strExit_date, strExit_reason, myExit_age, myYears_worked, myTotalBenefits, myPurchasePrice, myAnnualPension, myMonthlyPension, myTaxOnMonthlyPension, myNetMonthlyPension, myCommutedLumpsum, myTaxFreeLumpsum, myTaxableAmount, myWitholdingTax, myLiability, myLumpsumPayable)
-                          //val memberno: Int = 17274
-                          val statuscode: Int = 0
-                          val statusdescription: String = strStatusMessage_Cbs
-                          val myresponse_MemberProjectionBenefitsData =  MemberProjectionBenefitsDetailsResponse_BatchData(memberNo, statuscode, statusdescription, myMemberProjectionBenefitsDetailsResponse_Batch)
-                          var myTxnID: java.math.BigDecimal = new java.math.BigDecimal(0)
-
-                          try{
-
-                            val sourceDataTable = new SQLServerDataTable
-                            sourceDataTable.addColumnMetadata("MemberNo", java.sql.Types.NUMERIC)
-                            sourceDataTable.addColumnMetadata("MemberId", java.sql.Types.NUMERIC)
-                            sourceDataTable.addColumnMetadata("ProjectionType", java.sql.Types.VARCHAR)
-                            sourceDataTable.addColumnMetadata("Calc_date", java.sql.Types.VARCHAR)
-                            sourceDataTable.addColumnMetadata("Exit_date", java.sql.Types.VARCHAR)
-                            sourceDataTable.addColumnMetadata("Exit_reason", java.sql.Types.VARCHAR)
-                            sourceDataTable.addColumnMetadata("Exit_age", java.sql.Types.INTEGER)
-                            sourceDataTable.addColumnMetadata("Years_worked", java.sql.Types.DECIMAL)
-                            sourceDataTable.addColumnMetadata("TotalBenefits", java.sql.Types.DECIMAL)
-                            sourceDataTable.addColumnMetadata("PurchasePrice", java.sql.Types.DECIMAL)
-                            sourceDataTable.addColumnMetadata("AnnualPension", java.sql.Types.DECIMAL)
-                            sourceDataTable.addColumnMetadata("MonthlyPension", java.sql.Types.DECIMAL)
-                            sourceDataTable.addColumnMetadata("TaxOnMonthlyPension", java.sql.Types.DECIMAL)
-                            sourceDataTable.addColumnMetadata("NetMonthlyPension", java.sql.Types.DECIMAL)
-                            sourceDataTable.addColumnMetadata("CommutedLumpsum", java.sql.Types.DECIMAL)
-                            sourceDataTable.addColumnMetadata("TaxFreeLumpsum", java.sql.Types.DECIMAL)
-                            sourceDataTable.addColumnMetadata("TaxableAmount", java.sql.Types.DECIMAL)
-                            sourceDataTable.addColumnMetadata("WitholdingTax", java.sql.Types.DECIMAL)
-                            sourceDataTable.addColumnMetadata("Liability", java.sql.Types.DECIMAL)
-                            sourceDataTable.addColumnMetadata("LumpsumPayable", java.sql.Types.DECIMAL)
-                            sourceDataTable.addColumnMetadata("Posted_to_Cbs", java.sql.Types.INTEGER)//BOOLEAN
-                            sourceDataTable.addColumnMetadata("Post_picked_Cbs", java.sql.Types.INTEGER)//BOOLEAN
-                            sourceDataTable.addColumnMetadata("Date_to_Cbs", java.sql.Types.VARCHAR)
-                            sourceDataTable.addColumnMetadata("Date_from_Cbs", java.sql.Types.VARCHAR)
-                            sourceDataTable.addColumnMetadata("StatusCode_Cbs", java.sql.Types.INTEGER)
-                            sourceDataTable.addColumnMetadata("StatusMessage_Cbs", java.sql.Types.VARCHAR)
-                            sourceDataTable.addColumnMetadata("ResponseData_Cbs", java.sql.Types.VARCHAR)
-
-                            sourceDataTable.addRow(BigDecimal(myMemberNo), BigDecimal(myMemberId), strProjectionType,
-                              strCalc_date, strExit_date, strExit_reason,
-                              myExit_age, myYears_worked, myTotalBenefits,
-                              myPurchasePrice, myAnnualPension, myMonthlyPension,
-                              myTaxOnMonthlyPension, myNetMonthlyPension, myCommutedLumpsum,
-                              myTaxFreeLumpsum, myTaxableAmount, myWitholdingTax,
-                              myLiability, myLumpsumPayable, posted_to_Cbs,
-                              post_picked_Cbs, strDate_to_Cbs, strDate_from_Cbs,
-                              myStatusCode_Cbs, strStatusMessage_Cbs, strResponseData
-                            )
-
-                            myTxnID = insertEchannelsMemberProjectionBenefitsDetailsRequests(sourceDataTable)
-                          }
-                          catch {
-                            case io: Throwable =>
-                              Log_errors(strApifunction + " : " + io.getMessage())
-                            case ex: Exception =>
-                              Log_errors(strApifunction + " : " + ex.getMessage())
-                          }
-
-                          //sendProjectionBenefitsResponseEchannel(memberno, statuscode, statusdescription, myMemberProjectionBenefitsDetailsResponse_Batch)
-                          //sendProjectionBenefitsResponseEchannel(myresponse_MemberProjectionBenefitsData)
-                          val f = Future {sendProjectionBenefitsResponseEchannel(myresponse_MemberProjectionBenefitsData, myTxnID)}
-                        }
-
-                      }
-                    }
-                    else {
-                      //TESTS ONLY
-                      //println("error occured myData.value.get != None : " + start_time_DB)
-                      //Lets log the status code returned by CBS webservice
-                      val myStatusCode : Int = res.status.intValue()
-                      val strStatusMessage: String = "Failed"
-
-                      try {
-
-                        //var myTxnID : java.math.BigDecimal = new java.math.BigDecimal(0)
-                        var start_time_DB : String  = ""
-                        val stop_time_DB : String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
-                        var memberNo: Int = 0
-                        /*
-                        if (myEntryID.value.isEmpty != true){
-                          if (myEntryID.value.get != None){
-                            val myVal = myEntryID.value.get
-                            if (myVal.get != None){
-                              myTxnID = myVal.get
-                            }
-                          }
-                        }
-                        */
-
-                        if (myStart_time.value.isEmpty != true){
-                          if (myStart_time.value.get != None){
-                            val myVal = myStart_time.value.get
-                            if (myVal.get != None){
-                              start_time_DB = myVal.get
-                            }
-                          }
-                        }
-
-                        if (myMember_No.value.isEmpty != true) {
-                          if (myMember_No.value.get != None) {
-                            val myVal = myMember_No.value.get
-                            if (myVal.get != None) {
-                              memberNo = myVal.get
-                            }
-                          }
-                        }
-
-                        val strMessage: String = "member_no - " + myMember_No + ", status - " + myStatusCode + ", status message - " + strStatusMessage
-                        Log_errors(strApifunction + " : " + strMessage + " - myData.value.getOrElse(None) != None. error occured.")
-
-                        var strCalc_date: String = ""
-                        var strExit_date: String = ""
-                        var strExit_reason: String = ""
-
-                        //Integers only
-                        //var myScheme_id: Integer = 0
-                        //var myMember_id: Integer = 0
-                        var myExit_age: Integer = 0
-                        var myYears_worked: BigDecimal = 0
-                        var myTotalBenefits: BigDecimal = 0
-                        var myPurchasePrice: BigDecimal = 0
-                        var myAnnualPension: BigDecimal = 0
-                        var myMonthlyPension: BigDecimal = 0
-                        var myTaxOnMonthlyPension: BigDecimal = 0
-                        var myNetMonthlyPension: BigDecimal = 0
-                        var myCommutedLumpsum: BigDecimal = 0
-                        var myTaxFreeLumpsum: BigDecimal = 0
-                        var myTaxableAmount: BigDecimal = 0
-                        var myWitholdingTax: BigDecimal = 0
-                        var myLiability: BigDecimal = 0
-                        var myLumpsumPayable: BigDecimal = 0
-                        val strResponseData: String = "No Response Data received"
-
-                        //val posted_to_Cbs: Boolean = false
-                        val posted_to_Cbs: Integer = 1
-                        val post_picked_Cbs: Integer = 1
-                        val strDate_to_Cbs: String = start_time_DB
-                        val strDate_from_Cbs: String = stop_time_DB
-                        val myStatusCode_Cbs : Integer = res.status.intValue()
-                        val strStatusMessage_Cbs: String = "Failure occured when sending the request to API"
-                        //UpdateLogsOutgoingLipaNaMpesaRequests(myTxnID, posted_to_Mpesa, strDate_to_Mpesa, strDate_from_Mpesa, myStatusCode_Mpesa, strStatusMessage_Mpesa)
-                        val myMemberProjectionBenefitsDetailsResponse_Batch = new MemberProjectionBenefitsDetailsResponse_Batch(strCalc_date, strExit_date, strExit_reason, myExit_age, myYears_worked, myTotalBenefits, myPurchasePrice, myAnnualPension, myMonthlyPension, myTaxOnMonthlyPension, myNetMonthlyPension, myCommutedLumpsum, myTaxFreeLumpsum, myTaxableAmount, myWitholdingTax, myLiability, myLumpsumPayable)
-                        val statuscode: Int = 1
-                        val statusdescription: String = strStatusMessage_Cbs
-                        val myresponse_MemberProjectionBenefitsData =  MemberProjectionBenefitsDetailsResponse_BatchData(memberNo, statuscode, statusdescription, myMemberProjectionBenefitsDetailsResponse_Batch)
-                        var myTxnID: java.math.BigDecimal = new java.math.BigDecimal(0)
-
-                        //sendProjectionBenefitsResponseEchannel(memberno, statuscode, statusdescription, myMemberProjectionBenefitsDetailsResponse_Batch)
-                        //sendProjectionBenefitsResponseEchannel(myresponse_MemberProjectionBenefitsData)
-
-                        try{
-
-                          val sourceDataTable = new SQLServerDataTable
-                          sourceDataTable.addColumnMetadata("MemberNo", java.sql.Types.NUMERIC)
-                          sourceDataTable.addColumnMetadata("MemberId", java.sql.Types.NUMERIC)
-                          sourceDataTable.addColumnMetadata("ProjectionType", java.sql.Types.VARCHAR)
-                          sourceDataTable.addColumnMetadata("Calc_date", java.sql.Types.VARCHAR)
-                          sourceDataTable.addColumnMetadata("Exit_date", java.sql.Types.VARCHAR)
-                          sourceDataTable.addColumnMetadata("Exit_reason", java.sql.Types.VARCHAR)
-                          sourceDataTable.addColumnMetadata("Exit_age", java.sql.Types.INTEGER)
-                          sourceDataTable.addColumnMetadata("Years_worked", java.sql.Types.DECIMAL)
-                          sourceDataTable.addColumnMetadata("TotalBenefits", java.sql.Types.DECIMAL)
-                          sourceDataTable.addColumnMetadata("PurchasePrice", java.sql.Types.DECIMAL)
-                          sourceDataTable.addColumnMetadata("AnnualPension", java.sql.Types.DECIMAL)
-                          sourceDataTable.addColumnMetadata("MonthlyPension", java.sql.Types.DECIMAL)
-                          sourceDataTable.addColumnMetadata("TaxOnMonthlyPension", java.sql.Types.DECIMAL)
-                          sourceDataTable.addColumnMetadata("NetMonthlyPension", java.sql.Types.DECIMAL)
-                          sourceDataTable.addColumnMetadata("CommutedLumpsum", java.sql.Types.DECIMAL)
-                          sourceDataTable.addColumnMetadata("TaxFreeLumpsum", java.sql.Types.DECIMAL)
-                          sourceDataTable.addColumnMetadata("TaxableAmount", java.sql.Types.DECIMAL)
-                          sourceDataTable.addColumnMetadata("WitholdingTax", java.sql.Types.DECIMAL)
-                          sourceDataTable.addColumnMetadata("Liability", java.sql.Types.DECIMAL)
-                          sourceDataTable.addColumnMetadata("LumpsumPayable", java.sql.Types.DECIMAL)
-                          sourceDataTable.addColumnMetadata("Posted_to_Cbs", java.sql.Types.INTEGER)//BOOLEAN
-                          sourceDataTable.addColumnMetadata("Post_picked_Cbs", java.sql.Types.INTEGER)//BOOLEAN
-                          sourceDataTable.addColumnMetadata("Date_to_Cbs", java.sql.Types.VARCHAR)
-                          sourceDataTable.addColumnMetadata("Date_from_Cbs", java.sql.Types.VARCHAR)
-                          sourceDataTable.addColumnMetadata("StatusCode_Cbs", java.sql.Types.INTEGER)
-                          sourceDataTable.addColumnMetadata("StatusMessage_Cbs", java.sql.Types.VARCHAR)
-                          sourceDataTable.addColumnMetadata("ResponseData_Cbs", java.sql.Types.VARCHAR)
-
-                          sourceDataTable.addRow(BigDecimal(myMemberNo), BigDecimal(myMemberId), strProjectionType,
-                            strCalc_date, strExit_date, strExit_reason,
-                            myExit_age, myYears_worked, myTotalBenefits,
-                            myPurchasePrice, myAnnualPension, myMonthlyPension,
-                            myTaxOnMonthlyPension, myNetMonthlyPension, myCommutedLumpsum,
-                            myTaxFreeLumpsum, myTaxableAmount, myWitholdingTax,
-                            myLiability, myLumpsumPayable, posted_to_Cbs,
-                            post_picked_Cbs, strDate_to_Cbs, strDate_from_Cbs,
-                            myStatusCode_Cbs, strStatusMessage_Cbs, strResponseData
-                          )
-
-                          myTxnID = insertEchannelsMemberProjectionBenefitsDetailsRequests(sourceDataTable)
-                        }
-                        catch {
-                          case io: Throwable =>
-                            Log_errors(strApifunction + " : " + io.getMessage())
-                          case ex: Exception =>
-                            Log_errors(strApifunction + " : " + ex.getMessage())
-                        }
-
-                        val ftr = Future {sendProjectionBenefitsResponseEchannel(myresponse_MemberProjectionBenefitsData, myTxnID)}
-                      }
-                      catch
-                        {
-                          case ex: Exception =>
-                            Log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured.")
-                          case t: Throwable =>
-                            Log_errors(strApifunction + " : " + t.getMessage + " - t exception error occured.")
-                        }
-                    }
-                  }
-                  */
+                  mystatuscode = 0
+                  strStatusMessage = "successful"
                 }
                 else {
-
                   //Lets log the status code returned by CBS webservice
-                  val myStatusCode : Int = res.status.intValue()
-                  val strStatusMessage: String = "Failed"
-                  /*
-                  try {
-
-                    //var myTxnID : java.math.BigDecimal = new java.math.BigDecimal(0)
-                    var start_time_DB : String  = ""
-                    val stop_time_DB : String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
-                    var memberNo: Int = 0
-                    /*
-                    if (myEntryID.value.isEmpty != true){
-                      if (myEntryID.value.get != None){
-                        val myVal = myEntryID.value.get
-                        if (myVal.get != None){
-                          myTxnID = myVal.get
-                        }
-                      }
-                    }
-                    */
-
-                    if (myStart_time.value.isEmpty != true){
-                      if (myStart_time.value.get != None){
-                        val myVal = myStart_time.value.get
-                        if (myVal.get != None){
-                          start_time_DB = myVal.get
-                        }
-                      }
-                    }
-
-                    if (myMember_No.value.isEmpty != true) {
-                      if (myMember_No.value.get != None) {
-                        val myVal = myMember_No.value.get
-                        if (myVal.get != None) {
-                          memberNo = myVal.get
-                        }
-                      }
-                    }
-
-                    val strMessage: String = "member_no - " + myMember_No + ", status - " + myStatusCode + ", status message - " + strStatusMessage
-                    log_errors(strApifunction + " : " + strMessage + " - http != 200 error occured. error occured.")
-
-                    var strCalc_date: String = ""
-                    var strExit_date: String = ""
-                    var strExit_reason: String = ""
-
-                    //Integers only
-                    //var myScheme_id: Integer = 0
-                    //var myMember_id: Integer = 0
-                    var myExit_age: Integer = 0
-                    var myYears_worked: BigDecimal = 0
-                    var myTotalBenefits: BigDecimal = 0
-                    var myPurchasePrice: BigDecimal = 0
-                    var myAnnualPension: BigDecimal = 0
-                    var myMonthlyPension: BigDecimal = 0
-                    var myTaxOnMonthlyPension: BigDecimal = 0
-                    var myNetMonthlyPension: BigDecimal = 0
-                    var myCommutedLumpsum: BigDecimal = 0
-                    var myTaxFreeLumpsum: BigDecimal = 0
-                    var myTaxableAmount: BigDecimal = 0
-                    var myWitholdingTax: BigDecimal = 0
-                    var myLiability: BigDecimal = 0
-                    var myLumpsumPayable: BigDecimal = 0
-                    val strResponseData: String = "No Response Data received"
-
-                    //val posted_to_Cbs: Boolean = false
-                    val posted_to_Cbs: Integer = 1
-                    val post_picked_Cbs: Integer = 1
-                    val strDate_to_Cbs: String = start_time_DB
-                    val strDate_from_Cbs: String = stop_time_DB
-                    val myStatusCode_Cbs : Integer = res.status.intValue()
-                    val strStatusMessage_Cbs: String = "Failure occured when sending the request to API"
-                    //UpdateLogsOutgoingLipaNaMpesaRequests(myTxnID, posted_to_Mpesa, strDate_to_Mpesa, strDate_from_Mpesa, myStatusCode_Mpesa, strStatusMessage_Mpesa)
-                    val myMemberProjectionBenefitsDetailsResponse_Batch = new MemberProjectionBenefitsDetailsResponse_Batch(strCalc_date, strExit_date, strExit_reason, myExit_age, myYears_worked, myTotalBenefits, myPurchasePrice, myAnnualPension, myMonthlyPension, myTaxOnMonthlyPension, myNetMonthlyPension, myCommutedLumpsum, myTaxFreeLumpsum, myTaxableAmount, myWitholdingTax, myLiability, myLumpsumPayable)
-                    val statuscode: Int = 1
-                    val statusdescription: String = strStatusMessage_Cbs
-                    val myresponse_MemberProjectionBenefitsData =  MemberProjectionBenefitsDetailsResponse_BatchData(memberNo, statuscode, statusdescription, myMemberProjectionBenefitsDetailsResponse_Batch)
-                    var myTxnID: java.math.BigDecimal = new java.math.BigDecimal(0)
-
-                    //sendProjectionBenefitsResponseEchannel(memberno, statuscode, statusdescription, myMemberProjectionBenefitsDetailsResponse_Batch)
-                    //sendProjectionBenefitsResponseEchannel(myresponse_MemberProjectionBenefitsData)
-
-                    try{
-
-                      val sourceDataTable = new SQLServerDataTable
-                      sourceDataTable.addColumnMetadata("MemberNo", java.sql.Types.NUMERIC)
-                      sourceDataTable.addColumnMetadata("MemberId", java.sql.Types.NUMERIC)
-                      sourceDataTable.addColumnMetadata("ProjectionType", java.sql.Types.VARCHAR)
-                      sourceDataTable.addColumnMetadata("Calc_date", java.sql.Types.VARCHAR)
-                      sourceDataTable.addColumnMetadata("Exit_date", java.sql.Types.VARCHAR)
-                      sourceDataTable.addColumnMetadata("Exit_reason", java.sql.Types.VARCHAR)
-                      sourceDataTable.addColumnMetadata("Exit_age", java.sql.Types.INTEGER)
-                      sourceDataTable.addColumnMetadata("Years_worked", java.sql.Types.DECIMAL)
-                      sourceDataTable.addColumnMetadata("TotalBenefits", java.sql.Types.DECIMAL)
-                      sourceDataTable.addColumnMetadata("PurchasePrice", java.sql.Types.DECIMAL)
-                      sourceDataTable.addColumnMetadata("AnnualPension", java.sql.Types.DECIMAL)
-                      sourceDataTable.addColumnMetadata("MonthlyPension", java.sql.Types.DECIMAL)
-                      sourceDataTable.addColumnMetadata("TaxOnMonthlyPension", java.sql.Types.DECIMAL)
-                      sourceDataTable.addColumnMetadata("NetMonthlyPension", java.sql.Types.DECIMAL)
-                      sourceDataTable.addColumnMetadata("CommutedLumpsum", java.sql.Types.DECIMAL)
-                      sourceDataTable.addColumnMetadata("TaxFreeLumpsum", java.sql.Types.DECIMAL)
-                      sourceDataTable.addColumnMetadata("TaxableAmount", java.sql.Types.DECIMAL)
-                      sourceDataTable.addColumnMetadata("WitholdingTax", java.sql.Types.DECIMAL)
-                      sourceDataTable.addColumnMetadata("Liability", java.sql.Types.DECIMAL)
-                      sourceDataTable.addColumnMetadata("LumpsumPayable", java.sql.Types.DECIMAL)
-                      sourceDataTable.addColumnMetadata("Posted_to_Cbs", java.sql.Types.INTEGER)//BOOLEAN
-                      sourceDataTable.addColumnMetadata("Post_picked_Cbs", java.sql.Types.INTEGER)//BOOLEAN
-                      sourceDataTable.addColumnMetadata("Date_to_Cbs", java.sql.Types.VARCHAR)
-                      sourceDataTable.addColumnMetadata("Date_from_Cbs", java.sql.Types.VARCHAR)
-                      sourceDataTable.addColumnMetadata("StatusCode_Cbs", java.sql.Types.INTEGER)
-                      sourceDataTable.addColumnMetadata("StatusMessage_Cbs", java.sql.Types.VARCHAR)
-                      sourceDataTable.addColumnMetadata("ResponseData_Cbs", java.sql.Types.VARCHAR)
-
-                      sourceDataTable.addRow(BigDecimal(myMemberNo), BigDecimal(myMemberId), strProjectionType,
-                        strCalc_date, strExit_date, strExit_reason,
-                        myExit_age, myYears_worked, myTotalBenefits,
-                        myPurchasePrice, myAnnualPension, myMonthlyPension,
-                        myTaxOnMonthlyPension, myNetMonthlyPension, myCommutedLumpsum,
-                        myTaxFreeLumpsum, myTaxableAmount, myWitholdingTax,
-                        myLiability, myLumpsumPayable, posted_to_Cbs,
-                        post_picked_Cbs, strDate_to_Cbs, strDate_from_Cbs,
-                        myStatusCode_Cbs, strStatusMessage_Cbs, strResponseData
-                      )
-
-                      myTxnID = insertEchannelsMemberProjectionBenefitsDetailsRequests(sourceDataTable)
-                    }
-                    catch {
-                      case io: Throwable =>
-                        Log_errors(strApifunction + " : " + io.getMessage())
-                      case ex: Exception =>
-                        Log_errors(strApifunction + " : " + ex.getMessage())
-                    }
-
-                    val ftr = Future {sendProjectionBenefitsResponseEchannel(myresponse_MemberProjectionBenefitsData, myTxnID)}
-                  }
-                  catch
-                    {
-                      case ex: Exception =>
-                        Log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured.")
-                      case t: Throwable =>
-                        Log_errors(strApifunction + " : " + t.getMessage + " - t exception error occured.")
-                    }
-                    */
+                  strStatusMessage = "Failed"
                 }
+
+                myHttpStatusCode = res.status.intValue()
+
+                if (myEntryID.value.isEmpty != true) {
+                  if (myEntryID.value.get != None) {
+                    val myVal = myEntryID.value.get
+                    if (myVal.get != None) {
+                      myID = myVal.get
+                    }
+                  }
+                }
+
+                val strSQL: String = "update [dbo].[OutgoingSingleCreditTransferPaymentDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
+                ", [StatusCode_IpslApi] = " + mystatuscode + ", [StatusMessage_IpslApi] = '" + strStatusMessage +
+                "', [ResponseMessage_IpslApi] = '" + strResponseData + 
+                "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
+                insertUpdateRecord(strSQL)
               }
-            //println(res)
-            //case Failure(_)   => sys.error("something wrong")
             case Failure(f) =>
-              println("start 3: " + f.getMessage)
-            //myDataManagement.Log_errors("sendRegistrationRequests - main : " + f.getMessage + "exception error occured. Failure.")
-            /*
-            try {
+              //println("start 3: " + f.getMessage)
+              val dateFromIpslApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+              var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
+              val myHttpStatusCode: Int = 500
+              val strStatusMessage: String = "Failure occured when sending the request to API. " + f.getMessage
 
-              //Log_errors(strApifunction + " : " + f.getMessage + " - ex exception error occured.")
-              log_errors(strApifunction + " : Failure - " + f.getMessage + " - ex exception error occured.")
-
-              //var myTxnID : java.math.BigDecimal = new java.math.BigDecimal(0)
-              var start_time_DB : String  = ""
-              val stop_time_DB : String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
-              var memberNo: Int = 0
-              /*
-              if (myEntryID.value.isEmpty != true){
-                if (myEntryID.value.get != None){
+              if (myEntryID.value.isEmpty != true) {
+                if (myEntryID.value.get != None) {
                   val myVal = myEntryID.value.get
-                  if (myVal.get != None){
-                    myTxnID = myVal.get
-                  }
-                }
-              }
-              */
-
-              if (myStart_time.value.isEmpty != true){
-                if (myStart_time.value.get != None){
-                  val myVal = myStart_time.value.get
-                  if (myVal.get != None){
-                    start_time_DB = myVal.get
-                  }
-                }
-              }
-
-              if (myMember_No.value.isEmpty != true) {
-                if (myMember_No.value.get != None) {
-                  val myVal = myMember_No.value.get
                   if (myVal.get != None) {
-                    memberNo = myVal.get
+                    myID = myVal.get
                   }
                 }
               }
 
-              var strCalc_date: String = ""
-              var strExit_date: String = ""
-              var strExit_reason: String = ""
-
-              //Integers only
-              //var myScheme_id: Integer = 0
-              //var myMember_id: Integer = 0
-              var myExit_age: Integer = 0
-              var myYears_worked: BigDecimal = 0
-              var myTotalBenefits: BigDecimal = 0
-              var myPurchasePrice: BigDecimal = 0
-              var myAnnualPension: BigDecimal = 0
-              var myMonthlyPension: BigDecimal = 0
-              var myTaxOnMonthlyPension: BigDecimal = 0
-              var myNetMonthlyPension: BigDecimal = 0
-              var myCommutedLumpsum: BigDecimal = 0
-              var myTaxFreeLumpsum: BigDecimal = 0
-              var myTaxableAmount: BigDecimal = 0
-              var myWitholdingTax: BigDecimal = 0
-              var myLiability: BigDecimal = 0
-              var myLumpsumPayable: BigDecimal = 0
-              val strResponseData: String = "No Response Data received"
-
-              //val posted_to_Cbs: Boolean = false
-              val posted_to_Cbs: Integer = 1
-              val post_picked_Cbs: Integer = 1
-              val strDate_to_Cbs: String = start_time_DB
-              val strDate_from_Cbs: String = stop_time_DB
-              val myStatusCode_Cbs : Integer = 404
-              val strStatusMessage_Cbs: String = "Failure occured when sending the request to API"
-              //UpdateLogsOutgoingLipaNaMpesaRequests(myTxnID, posted_to_Mpesa, strDate_to_Mpesa, strDate_from_Mpesa, myStatusCode_Mpesa, strStatusMessage_Mpesa)
-              val myMemberProjectionBenefitsDetailsResponse_Batch = new MemberProjectionBenefitsDetailsResponse_Batch(strCalc_date, strExit_date, strExit_reason, myExit_age, myYears_worked, myTotalBenefits, myPurchasePrice, myAnnualPension, myMonthlyPension, myTaxOnMonthlyPension, myNetMonthlyPension, myCommutedLumpsum, myTaxFreeLumpsum, myTaxableAmount, myWitholdingTax, myLiability, myLumpsumPayable)
-              val statuscode: Int = 1
-              val statusdescription: String = strStatusMessage_Cbs
-              val myresponse_MemberProjectionBenefitsData =  MemberProjectionBenefitsDetailsResponse_BatchData(memberNo, statuscode, statusdescription, myMemberProjectionBenefitsDetailsResponse_Batch)
-              var myTxnID: java.math.BigDecimal = new java.math.BigDecimal(0)
-
-              //sendProjectionBenefitsResponseEchannel(memberno, statuscode, statusdescription, myMemberProjectionBenefitsDetailsResponse_Batch)
-              //sendProjectionBenefitsResponseEchannel(myresponse_MemberProjectionBenefitsData)
-
-              try{
-
-                val sourceDataTable = new SQLServerDataTable
-                sourceDataTable.addColumnMetadata("MemberNo", java.sql.Types.NUMERIC)
-                sourceDataTable.addColumnMetadata("MemberId", java.sql.Types.NUMERIC)
-                sourceDataTable.addColumnMetadata("ProjectionType", java.sql.Types.VARCHAR)
-                sourceDataTable.addColumnMetadata("Calc_date", java.sql.Types.VARCHAR)
-                sourceDataTable.addColumnMetadata("Exit_date", java.sql.Types.VARCHAR)
-                sourceDataTable.addColumnMetadata("Exit_reason", java.sql.Types.VARCHAR)
-                sourceDataTable.addColumnMetadata("Exit_age", java.sql.Types.INTEGER)
-                sourceDataTable.addColumnMetadata("Years_worked", java.sql.Types.DECIMAL)
-                sourceDataTable.addColumnMetadata("TotalBenefits", java.sql.Types.DECIMAL)
-                sourceDataTable.addColumnMetadata("PurchasePrice", java.sql.Types.DECIMAL)
-                sourceDataTable.addColumnMetadata("AnnualPension", java.sql.Types.DECIMAL)
-                sourceDataTable.addColumnMetadata("MonthlyPension", java.sql.Types.DECIMAL)
-                sourceDataTable.addColumnMetadata("TaxOnMonthlyPension", java.sql.Types.DECIMAL)
-                sourceDataTable.addColumnMetadata("NetMonthlyPension", java.sql.Types.DECIMAL)
-                sourceDataTable.addColumnMetadata("CommutedLumpsum", java.sql.Types.DECIMAL)
-                sourceDataTable.addColumnMetadata("TaxFreeLumpsum", java.sql.Types.DECIMAL)
-                sourceDataTable.addColumnMetadata("TaxableAmount", java.sql.Types.DECIMAL)
-                sourceDataTable.addColumnMetadata("WitholdingTax", java.sql.Types.DECIMAL)
-                sourceDataTable.addColumnMetadata("Liability", java.sql.Types.DECIMAL)
-                sourceDataTable.addColumnMetadata("LumpsumPayable", java.sql.Types.DECIMAL)
-                sourceDataTable.addColumnMetadata("Posted_to_Cbs", java.sql.Types.INTEGER)//BOOLEAN
-                sourceDataTable.addColumnMetadata("Post_picked_Cbs", java.sql.Types.INTEGER)//BOOLEAN
-                sourceDataTable.addColumnMetadata("Date_to_Cbs", java.sql.Types.VARCHAR)
-                sourceDataTable.addColumnMetadata("Date_from_Cbs", java.sql.Types.VARCHAR)
-                sourceDataTable.addColumnMetadata("StatusCode_Cbs", java.sql.Types.INTEGER)
-                sourceDataTable.addColumnMetadata("StatusMessage_Cbs", java.sql.Types.VARCHAR)
-                sourceDataTable.addColumnMetadata("ResponseData_Cbs", java.sql.Types.VARCHAR)
-
-                sourceDataTable.addRow(BigDecimal(myMemberNo), BigDecimal(myMemberId), strProjectionType,
-                  strCalc_date, strExit_date, strExit_reason,
-                  myExit_age, myYears_worked, myTotalBenefits,
-                  myPurchasePrice, myAnnualPension, myMonthlyPension,
-                  myTaxOnMonthlyPension, myNetMonthlyPension, myCommutedLumpsum,
-                  myTaxFreeLumpsum, myTaxableAmount, myWitholdingTax,
-                  myLiability, myLumpsumPayable, posted_to_Cbs,
-                  post_picked_Cbs, strDate_to_Cbs, strDate_from_Cbs,
-                  myStatusCode_Cbs, strStatusMessage_Cbs, strResponseData
-                )
-
-                myTxnID = insertEchannelsMemberProjectionBenefitsDetailsRequests(sourceDataTable)
-              }
-              catch {
-                case io: Throwable =>
-                  Log_errors(strApifunction + " : " + io.getMessage())
-                case ex: Exception =>
-                  Log_errors(strApifunction + " : " + ex.getMessage())
-              }
-
-              val ftr = Future {sendProjectionBenefitsResponseEchannel(myresponse_MemberProjectionBenefitsData, myTxnID)}
-
-            }
-            catch
-            {
-              case ex: Exception =>
-                log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured.")
-              case t: Throwable =>
-                log_errors(strApifunction + " : " + t.getMessage + " - t exception error occured.")
-            }
-            */
+              val strSQL: String = "update [dbo].[OutgoingSingleCreditTransferPaymentDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
+              ", [StatusCode_IpslApi] = 1, [StatusMessage_IpslApi] = '" + strStatusMessage +
+              "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
+              insertUpdateRecord(strSQL)
           }
-
       }
     }
     catch
-      {
-        case ex: Exception =>
-          isSuccessful = false
-          log_errors(strApifunction + " : " + ex.getMessage + "exception error occured.")
-        case t: Throwable =>
-          isSuccessful = false
-          log_errors(strApifunction + " : " + t.getMessage + "t exception error occured.")
-      }
-    finally
     {
+      case ex: Exception =>
+        isSuccessful = false
+        log_errors(strApifunction + " : " + ex.getMessage + "exception error occured.")
+      case t: Throwable =>
+        isSuccessful = false
+        log_errors(strApifunction + " : " + t.getMessage + "t exception error occured.")
     }
-
   }
   def sendAccountVerificationResponseEchannel(myID: java.math.BigDecimal, myAccountVerificationData: AccountVerificationDetailsResponse_BatchData): Unit = {
 
@@ -9235,7 +8118,7 @@ class CbsEngine @Inject()
     try{
       val dateToCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
       //var strRequestData: String = ""
-      val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Posted_to_CbsApi_Out] = 1, [Post_picked_CbsApi_Out] = 1, [RequestMessage_CbsApi_Out] = '" + myjsonData + "', [Date_to_CbsApi_Out] = '" + dateToCbsApi + "' where ID = " + myID + ";"
+      val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Posted_to_CbsApi_Out] = 1, [Post_picked_CbsApi_Out] = 1, [RequestMessage_CbsApi_Out] = '" + myjsonData + "', [Date_to_CbsApi_Out] = '" + dateToCbsApi + "' where [ID] = " + myID + ";"
       insertUpdateRecord(strSQL)
     }
     catch{
@@ -9267,7 +8150,7 @@ class CbsEngine @Inject()
             case Success(res) =>
               //println("start 2: " + strApifunction + " " + res.status.intValue())
               val dateFromCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
-              var myTxnID: java.math.BigDecimal = new java.math.BigDecimal(0)
+              var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
               var myHttpStatusCode: Int = 0
               var mystatuscode: Int = 1
               var strStatusMessage: String = "Failed processing"
@@ -9359,7 +8242,7 @@ class CbsEngine @Inject()
                 if (myEntryID.value.get != None){
                   val myVal = myEntryID.value.get
                   if (myVal.get != None){
-                    myTxnID = myVal.get
+                    myID = myVal.get
                   }
                 }
               }
@@ -9367,7 +8250,7 @@ class CbsEngine @Inject()
               val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Response_Received_CbsApi_Out] = 1, [HttpStatusCode_CbsApi_Out] = " + myHttpStatusCode + 
               ", [StatusCode_CbsApi_Out] = " + mystatuscode + ", [StatusMessage_CbsApi_Out] = '" + strStatusMessage +
               "', [ResponseMessage_CbsApi_Out] = '" + strResponseData + 
-              "', [Date_from_CbsApi_Out] = '" + dateFromCbsApi + "' where ID = " + myTxnID + ";"
+              "', [Date_from_CbsApi_Out] = '" + dateFromCbsApi + "' where [ID] = " + myID + ";"
               insertUpdateRecord(strSQL)
               //println("myTxnID - " + myTxnID)
               //println("strSQL - " + strSQL)
@@ -9375,14 +8258,14 @@ class CbsEngine @Inject()
             case Failure(f)   =>
               try {
                 val dateFromCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
-                var myTxnID: java.math.BigDecimal = new java.math.BigDecimal(0)
+                var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
                 log_errors(strApifunction + " : Failure - " + f.getMessage + " - ex exception error occured.")
 
                 if (myEntryID.value.isEmpty != true){
                   if (myEntryID.value.get != None){
                     val myVal = myEntryID.value.get
                     if (myVal.get != None){
-                      myTxnID = myVal.get
+                      myID = myVal.get
                     }
                   }
                 }
@@ -9392,7 +8275,7 @@ class CbsEngine @Inject()
 
                 val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Response_Received_CbsApi_Out] = 1, [HttpStatusCode_CbsApi_Out] = " + myHttpStatusCode + 
                 ", [StatusCode_CbsApi_Out] = 1, [StatusMessage_CbsApi_Out] = '" + strStatusMessage +
-                "', [Date_from_CbsApi_Out] = '" + dateFromCbsApi + "' where ID = " + myTxnID + ";"
+                "', [Date_from_CbsApi_Out] = '" + dateFromCbsApi + "' where [ID] = " + myID + ";"
                 insertUpdateRecord(strSQL)
               }
               catch
