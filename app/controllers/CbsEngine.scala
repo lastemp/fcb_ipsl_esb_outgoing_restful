@@ -2690,6 +2690,7 @@ class CbsEngine @Inject()
           else {
             responseMessage = "Invalid Request Data"
           }
+          insertApiValidationRequests(strChannelType, strUserName, strPassword, strClientIP, strApifunction, responseCode, responseMessage)
         }
       }
       catch
@@ -4237,6 +4238,7 @@ class CbsEngine @Inject()
           else {
             responseMessage = "Invalid Request Data"
           }
+          insertApiValidationRequests(strChannelType, strUserName, strPassword, strClientIP, strApifunction, responseCode, responseMessage)
         }
 
       }
@@ -9261,7 +9263,7 @@ class CbsEngine @Inject()
       myDB.withConnection { implicit myconn =>
         try{
           val mystmt: CallableStatement = myconn.prepareCall(strSQL)
-          mystmt.registerOutParameter("myID", java.sql.Types.INTEGER)
+          mystmt.registerOutParameter("myID", java.sql.Types.BIGINT)
           mystmt.registerOutParameter("responseCode", java.sql.Types.INTEGER)
           mystmt.registerOutParameter("responseMessage", java.sql.Types.VARCHAR)
           mystmt.setBigDecimal(1, myAccountVerificationTableDetails.batchreference)
@@ -9308,7 +9310,7 @@ class CbsEngine @Inject()
       myDB.withConnection { implicit myconn =>
         try{
           val mystmt: CallableStatement = myconn.prepareCall(strSQL)
-          mystmt.registerOutParameter("myID", java.sql.Types.INTEGER)
+          mystmt.registerOutParameter("myID", java.sql.Types.BIGINT)
           mystmt.registerOutParameter("responseCode", java.sql.Types.INTEGER)
           mystmt.registerOutParameter("responseMessage", java.sql.Types.VARCHAR)
           mystmt.setBigDecimal(1, mySingleCreditTransferPaymentTableDetails.batchreference)
@@ -9449,6 +9451,40 @@ class CbsEngine @Inject()
       }
     }
   }
+  def insertApiValidationRequests(strChannelType: String, strUserName: String, strPassword: String, strClientIP: String, myApifunction: String, responseCode: Int, responseMessage: String): Unit = {
+    Future {
+      val strApifunction: String = "insertApiValidationRequests"
+      val strSQL: String = "{ call dbo.InsertApiValidationRequests(?,?,?,?,?,?,?) }"
+      try {
+        myDB.withConnection { implicit myconn =>
+          try{
+            val mystmt: CallableStatement = myconn.prepareCall(strSQL)
+            mystmt.setString(1,strChannelType)
+            mystmt.setString(2,strUserName)
+            mystmt.setString(3,strPassword)
+            mystmt.setString(4,strClientIP)
+            mystmt.setString(5,myApifunction)
+            mystmt.setInt(6,responseCode)
+            mystmt.setString(7,responseMessage)
+
+            mystmt.execute()
+            
+          }
+          catch{
+            case ex : Exception =>
+              log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured." + " clientip - " + strClientIP)
+            case t: Throwable =>
+              log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " clientip - " + strClientIP)
+          }
+        }
+      }catch {
+        case ex: Exception =>
+          log_errors(strApifunction + " : " + ex.getMessage + " exception error occured." + " clientip - " + strClientIP)
+        case t: Throwable =>
+          log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " clientip - " + strClientIP)
+      }
+    }
+  }
   def insertUpdateRecord(strSQL: String): Unit = {
     Future {
       val isValid: Boolean = {
@@ -9487,7 +9523,7 @@ class CbsEngine @Inject()
     var responseCode: Int = 1
     var responseMessage: String = "Error occured during processing, please try again."
 
-    val strSQL : String = "{ call dbo.ValidateClientAPI(?,?,?,?,?,?,?) }"
+    val strSQL: String = "{ call dbo.ValidateClientAPI(?,?,?,?,?,?,?) }"
     try {
       myDB.withConnection { implicit myconn =>
         try{
