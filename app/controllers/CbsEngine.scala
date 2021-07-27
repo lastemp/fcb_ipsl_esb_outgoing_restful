@@ -1357,9 +1357,9 @@ class CbsEngine @Inject()
   val strDateRegex: String = "^((19|2[0-9])[0-9]{2})-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$" //"yyyy-mm-dd"
   val strNumbersOnlyRegex: String = "[0-9]+" //validate numbers only
   //
-  val firstAgentIdentification: String = "2031" //Request creator
-  val assignerAgentIdentification: String = "2031" //party that deliveres request to IPSL
-  val assigneeAgentIdentification: String = "009" //party that processes request i.e IPSL
+  val firstAgentIdentification: String = "0074" //Request creator
+  val assignerAgentIdentification: String = firstAgentIdentification //party that deliveres request to IPSL
+  val assigneeAgentIdentification: String = "9999" //party that processes request i.e IPSL
   //
   val chargeBearer: String = "SLEV"
   val settlementMethod: String = "CLRG"
@@ -1410,6 +1410,8 @@ class CbsEngine @Inject()
       var isValidPurposeCode: Boolean = false
       var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
       var strClientIP: String = ""
+      var strChannelType: String = ""
+      var strChannelCallBackUrl: String = ""
       var strRequest: String = ""
 
       var myAmount: BigDecimal = 0
@@ -1447,12 +1449,12 @@ class CbsEngine @Inject()
         //var strRequest: String = ""
         var strRequestHeader: String = ""
         var strAuthToken: String = ""
-        var isDataFound : Boolean = false
-        var isAuthTokenFound : Boolean = false
-        var isCredentialsFound : Boolean = false
-        var strChannelType : String = ""
-        var strUserName : String = ""
-        var strPassword : String = ""
+        var isDataFound: Boolean = false
+        var isAuthTokenFound: Boolean = false
+        var isCredentialsFound: Boolean = false
+        //var strChannelType: String = ""
+        var strUserName: String = ""
+        var strPassword: String = ""
         //var strClientIP : String = ""
 
         if (!request.body.asJson.isEmpty) {
@@ -1496,6 +1498,19 @@ class CbsEngine @Inject()
               }
               else{
                 strChannelType = ""
+              }
+            }
+          }
+
+          if (request.headers.get("ChannelCallBackUrl") != None){
+            val myheaderChannelType = request.headers.get("ChannelCallBackUrl")
+            if (myheaderChannelType.get != None){
+              strChannelCallBackUrl = myheaderChannelType.get.toString
+              if (strChannelCallBackUrl != null){
+                strChannelCallBackUrl = strChannelCallBackUrl.trim
+              }
+              else{
+                strChannelCallBackUrl = ""
               }
             }
           }
@@ -2514,7 +2529,7 @@ class CbsEngine @Inject()
                           chargeBearer, mandateidentification, assignerAgentIdentification, assigneeAgentIdentification, 
                           myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
 
-                        val myTableResponseDetails = addOutgoingSingleCreditTransferPaymentDetails(mySingleCreditTransferPaymentTableDetails)
+                        val myTableResponseDetails = addOutgoingSingleCreditTransferPaymentDetails(mySingleCreditTransferPaymentTableDetails, strChannelType, strChannelCallBackUrl)
                         myID = myTableResponseDetails.id
                         responseCode = myTableResponseDetails.responsecode
                         responseMessage = myTableResponseDetails.responsemessage
@@ -2755,7 +2770,7 @@ class CbsEngine @Inject()
             chargeBearer, mandateidentification, assignerAgentIdentification, assigneeAgentIdentification, 
             myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
           //println("jsonResponse + " + jsonResponse.toString())
-          addOutgoingSingleCreditTransferPaymentDetailsArchive(responseCode, responseMessage, jsonResponse.toString(), mySingleCreditTransferPaymentTableDetails)    
+          addOutgoingSingleCreditTransferPaymentDetailsArchive(responseCode, responseMessage, jsonResponse.toString(), mySingleCreditTransferPaymentTableDetails, strChannelType, strChannelCallBackUrl)    
         }
       }
       catch{
@@ -2798,13 +2813,13 @@ class CbsEngine @Inject()
         var strRequest: String = ""
         var strRequestHeader: String = ""
         var strAuthToken: String = ""
-        var isDataFound : Boolean = false
-        var isAuthTokenFound : Boolean = false
-        var isCredentialsFound : Boolean = false
-        var strChannelType : String = ""
-        var strUserName : String = ""
-        var strPassword : String = ""
-        var strClientIP : String = ""
+        var isDataFound: Boolean = false
+        var isAuthTokenFound: Boolean = false
+        var isCredentialsFound: Boolean = false
+        var strChannelType: String = ""
+        var strUserName: String = ""
+        var strPassword: String = ""
+        var strClientIP: String = ""
 
         if (request.body.asJson.isEmpty == false) {
           isDataFound = true
@@ -3724,6 +3739,7 @@ class CbsEngine @Inject()
       val phneSchemeName: String = SchemeName.PHNE.toString.toUpperCase
       var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
       var strClientIP: String = ""
+      var strChannelType: String = ""
       var strRequest: String = ""
 
       try
@@ -3734,10 +3750,10 @@ class CbsEngine @Inject()
         var isDataFound: Boolean = false
         var isAuthTokenFound: Boolean = false
         var isCredentialsFound: Boolean = false
-        var strChannelType: String = ""
+        //var strChannelType: String = ""
         var strUserName: String = ""
         var strPassword: String = ""
-        //var strClientIP : String = ""
+        //var strClientIP: String = ""
 
         if (!request.body.asJson.isEmpty) {
           isDataFound = true
@@ -4148,7 +4164,7 @@ class CbsEngine @Inject()
                         val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
                         val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
                         
-                        val myAccountVerificationTableResponseDetails = addOutgoingAccountVerificationDetails(myAccountVerificationTableDetails)
+                        val myAccountVerificationTableResponseDetails = addOutgoingAccountVerificationDetails(myAccountVerificationTableDetails, strChannelType)
                         myID = myAccountVerificationTableResponseDetails.id
                         responseCode = myAccountVerificationTableResponseDetails.responsecode
                         responseMessage = myAccountVerificationTableResponseDetails.responsemessage
@@ -4409,10 +4425,10 @@ class CbsEngine @Inject()
         var isDataFound : Boolean = false
         var isAuthTokenFound : Boolean = false
         var isCredentialsFound : Boolean = false
-        var strChannelType : String = ""
-        var strUserName : String = ""
-        var strPassword : String = ""
-        var strClientIP : String = ""
+        var strChannelType: String = ""
+        var strUserName: String = ""
+        var strPassword: String = ""
+        var strClientIP: String = ""
 
         if (request.body.asJson.isEmpty == false) {
           isDataFound = true
@@ -5080,24 +5096,24 @@ class CbsEngine @Inject()
       val startDate : String =  new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new java.util.Date)
       var isProcessed : Boolean = false
       var entryID: Int = 0
-      var responseCode : Int = 1
-      var responseMessage : String = "Error occured during processing, please try again."
+      var responseCode: Int = 1
+      var responseMessage: String = "Error occured during processing, please try again."
       var myCoop_AcctoPesalink_PaymentDetailsResponse_BatchData : Seq[Coop_AcctoPesalink_PaymentDetailsResponse_Batch] = Seq.empty[Coop_AcctoPesalink_PaymentDetailsResponse_Batch]
       var myBatchNo: BigDecimal = 0
-      val strApifunction : String = "addAccountToPesalinkTransferPaymentDetailsCoopBank"
+      val strApifunction: String = "addAccountToPesalinkTransferPaymentDetailsCoopBank"
 
       try
       {
         var strRequest: String = ""
         var strRequestHeader: String = ""
         var strAuthToken: String = ""
-        var isDataFound : Boolean = false
-        var isAuthTokenFound : Boolean = false
-        var isCredentialsFound : Boolean = false
-        var strChannelType : String = ""
-        var strUserName : String = ""
-        var strPassword : String = ""
-        var strClientIP : String = ""
+        var isDataFound: Boolean = false
+        var isAuthTokenFound: Boolean = false
+        var isCredentialsFound: Boolean = false
+        var strChannelType: String = ""
+        var strUserName: String = ""
+        var strPassword: String = ""
+        var strClientIP: String = ""
 
         if (request.body.asJson.isEmpty == false) {
           isDataFound = true
@@ -9252,13 +9268,13 @@ class CbsEngine @Inject()
           </ds:KeyInfo>
         </ds:Signature>
     }
-  def addOutgoingAccountVerificationDetails(myAccountVerificationTableDetails: AccountVerificationTableDetails): AccountVerificationTableResponseDetails = {
+  def addOutgoingAccountVerificationDetails(myAccountVerificationTableDetails: AccountVerificationTableDetails, strChannelType: String): AccountVerificationTableResponseDetails = {
     val strApifunction: String = "addOutgoingAccountVerificationDetails"
     var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
     var responseCode: Int = 1
     var responseMessage: String = ""
 
-    val strSQL : String = "{ call dbo.Add_OutgoingAccountVerificationDetails(?,?,?,?,?,?,?,?,?,?,?,?,?) }"
+    val strSQL : String = "{ call dbo.Add_OutgoingAccountVerificationDetails(?,?,?,?,?,?,?,?,?,?,?,?,?,?) }"
     try {
       myDB.withConnection { implicit myconn =>
         try{
@@ -9276,6 +9292,7 @@ class CbsEngine @Inject()
           mystmt.setString(8,myAccountVerificationTableDetails.requestmessagecbsapi)
           mystmt.setString(9,myAccountVerificationTableDetails.datefromcbsapi)
           mystmt.setString(10,myAccountVerificationTableDetails.remoteaddresscbsapi)
+          mystmt.setString(11,strChannelType)
           mystmt.execute()
           myID = mystmt.getBigDecimal("myID")
           responseCode = mystmt.getInt("responseCode")
@@ -9299,13 +9316,13 @@ class CbsEngine @Inject()
     val myAccountVerificationTableResponseDetails = AccountVerificationTableResponseDetails(myID, responseCode, responseMessage)
     myAccountVerificationTableResponseDetails
   }
-  def addOutgoingSingleCreditTransferPaymentDetails(mySingleCreditTransferPaymentTableDetails: SingleCreditTransferPaymentTableDetails): SingleCreditTransferPaymentTableResponseDetails = {
+  def addOutgoingSingleCreditTransferPaymentDetails(mySingleCreditTransferPaymentTableDetails: SingleCreditTransferPaymentTableDetails, strChannelType: String, strChannelCallBackUrl: String): SingleCreditTransferPaymentTableResponseDetails = {
     val strApifunction: String = "addOutgoingSingleCreditTransferPaymentDetails"
     var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
     var responseCode: Int = 1
     var responseMessage: String = ""
 
-    val strSQL : String = "{ call dbo.Add_OutgoingSingleCreditTransferPaymentDetails(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) }"
+    val strSQL : String = "{ call dbo.Add_OutgoingSingleCreditTransferPaymentDetails(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) }"
     try {
       myDB.withConnection { implicit myconn =>
         try{
@@ -9338,6 +9355,8 @@ class CbsEngine @Inject()
           mystmt.setString(23,mySingleCreditTransferPaymentTableDetails.requestmessagecbsapi)
           mystmt.setString(24,mySingleCreditTransferPaymentTableDetails.datefromcbsapi)
           mystmt.setString(25,mySingleCreditTransferPaymentTableDetails.remoteaddresscbsapi)
+          mystmt.setString(26,strChannelType)
+          mystmt.setString(27,strChannelCallBackUrl)
           mystmt.execute()
           myID = mystmt.getBigDecimal("myID")
           responseCode = mystmt.getInt("responseCode")
@@ -9398,10 +9417,10 @@ class CbsEngine @Inject()
       }
     }
   }
-  def addOutgoingSingleCreditTransferPaymentDetailsArchive(responseCode: Int, responseMessage: String, responsemessagecbsapi: String, mySingleCreditTransferPaymentTableDetails: SingleCreditTransferPaymentTableDetails): Unit = {
+  def addOutgoingSingleCreditTransferPaymentDetailsArchive(responseCode: Int, responseMessage: String, responsemessagecbsapi: String, mySingleCreditTransferPaymentTableDetails: SingleCreditTransferPaymentTableDetails, strChannelType: String, strChannelCallBackUrl: String): Unit = {
     Future {
       val strApifunction: String = "addOutgoingSingleCreditTransferPaymentDetailsArchive"
-      val strSQL : String = "{ call dbo.Add_OutgoingSingleCreditTransferPaymentDetails_Archive(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) }"
+      val strSQL : String = "{ call dbo.Add_OutgoingSingleCreditTransferPaymentDetails_Archive(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) }"
       try {
         myDB.withConnection { implicit myconn =>
           try{
@@ -9434,6 +9453,8 @@ class CbsEngine @Inject()
             mystmt.setInt(26,responseCode)
             mystmt.setString(27,responseMessage)
             mystmt.setString(28,responsemessagecbsapi)
+            mystmt.setString(29,strChannelType)
+            mystmt.setString(30,strChannelCallBackUrl)
             mystmt.execute()
           }
           catch{
