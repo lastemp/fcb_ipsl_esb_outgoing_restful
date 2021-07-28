@@ -4,7 +4,7 @@ GET        /                               controllers.HomeController.index
 #+NOCSRF
 # Test IPSL APIs: ESB system will invoke these APIs by posting outgoing requests.
 POST        /iso20022/v1/verification-request              controllers.IpslEngine.getAccountVerificationResponseDetails
-POST        /getsinglecredittransferresponsedetails              controllers.IpslEngine.getSingleCreditTransferResponseDetails
+POST        /iso20022/v1/credit-transfer              controllers.IpslEngine.getSingleCreditTransferResponseDetails
 POST        /getbulkcredittransferresponsedetails              controllers.IpslEngine.getBulkCreditTransferResponseDetails
 # BANK APIs: e-Channels/ESB-CBS systems will invoke these APIs by posting requests.
 # The requests will be forwarded to IPLS for processing.

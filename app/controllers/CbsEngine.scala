@@ -6437,25 +6437,23 @@ class CbsEngine @Inject()
     }(myExecutionContext)
   }
   def sendAccountVerificationRequestsIpsl(myID: java.math.BigDecimal, myRequestData: String): Unit = {
-    val strApifunction : String = "sendAccountVerificationRequestsIpsl"
-    var strProjectionType  : String = "RetirementsReduced"
-    var strApiURL  : String = "http://localhost:9001/iso20022/v1/verification-request"
+    val strApifunction: String = "sendAccountVerificationRequestsIpsl"
+    var strApiURL: String = "http://localhost:9001/iso20022/v1/verification-request"
 
-    val myuri : Uri = strApiURL //"http://172.16.109.253:8088/Xi/api/getProjectionsForMember/283632/60/6973/Retirements Reduced"
+    val myuri: Uri = strApiURL
 
-    var isValidData : Boolean = false
-    var isSuccessful : Boolean = false
-    var myXmlData : String = ""
+    var isValidData: Boolean = false
+    var isSuccessful: Boolean = false
+    var myXmlData: String = ""
   
     try {
       isValidData = true //TESTS ONLY
       if (isValidData) {
-
         //val myDataManagement = new DataManagement
         //val accessToken: String = GetCbsApiAuthorizationHeader(strDeveloperId)
 
-        var strUserName: String = "testUid"
-        var strPassWord: String = "testPwd"
+        //var strUserName: String = "testUid"
+        //var strPassWord: String = "testPwd"
         /*
         try {
           strUserName = getCbsApiUserName
@@ -6472,6 +6470,7 @@ class CbsEngine @Inject()
             isSuccessful = false//strname = "no data"//println("Got some other kind of exception")
         }
         */
+        /*
         if (strUserName == null){
           strUserName = ""
         }
@@ -6489,7 +6488,7 @@ class CbsEngine @Inject()
           log_errors(strApifunction + " : Failure in fetching  Api UserName - " + strPassWord + " , application error occured.")
           return
         }
-
+        */
         try{
           val dateToIpslApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
           var strRequestData: String = ""
@@ -6503,6 +6502,8 @@ class CbsEngine @Inject()
           //val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Posted_to_IpslApi] = 1, [Post_picked_IpslApi] = 1, [RequestMessage_IpslApi] = '" + strRequestData + "', [Date_to_IpslApi] = '" + dateToIpslApi + "' where ID = " + myID + ";"
           val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Posted_to_IpslApi] = 1, [Post_picked_IpslApi] = 1, [RequestMessage_IpslApi] = '" + strRequestData + "', [Date_to_IpslApi] = '" + dateToIpslApi + "' where [ID] = " + myID + ";"
           insertUpdateRecord(strSQL)
+
+          log_data(strApifunction + " : " + " channeltype - IPSL"  + " , >> outgoing request >> - " + myRequestData + " , ID - " + myID)
         }
         catch{
           case ex: Exception =>
@@ -6519,10 +6520,11 @@ class CbsEngine @Inject()
         //***working*** val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(GET, uri = myuri).withHeaders(RawHeader("username", strUserName),RawHeader("password", strPassWord)))
         //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(GET, uri = myuri).withHeaders(RawHeader("username", "FundMasterApi"),RawHeader("password", "n6,e$=p8QK\\+c^h~")))
         /* TESTS ONLY */
-        val accessToken: String = "sassasasss"
+        //val accessToken: String = "sassasasss"
         myXmlData = myRequestData
         val data = HttpEntity(ContentType.WithCharset(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`), myXmlData)
-        val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization", "bearer " + accessToken)))
+        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization", "bearer " + accessToken)))
+        val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data))
         //val myEntryID: Future[java.math.BigDecimal] = Future(entryID)
         var start_time_DB: String = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
         val myStart_time: Future[String] = Future(start_time_DB)
@@ -6553,6 +6555,17 @@ class CbsEngine @Inject()
                     val x = myData.asInstanceOf[HttpEntity.Strict].getData().decodeString(StandardCharsets.UTF_8)
                     strResponseData = x.toString
                     //println("res.entity x - " + x.toString)
+                    if (myEntryID.value.isEmpty != true) {
+                      if (myEntryID.value.get != None) {
+                        val myVal = myEntryID.value.get
+                        if (myVal.get != None) {
+                          myID = myVal.get
+                        }
+                      }
+                    }
+
+                    log_data(strApifunction + " : " + " channeltype - IPSL"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + res.status.intValue())
+
                     val y: scala.xml.Node = scala.xml.XML.loadString(x)
                     val myAccountVerification = AccountVerificationResponse.fromXml(y)
                     //println("myAccountVerification - " + myAccountVerification.toString)
@@ -6597,7 +6610,7 @@ class CbsEngine @Inject()
 
                       val myAccountVerificationDetailsResponse_Batch = AccountVerificationDetailsResponse_Batch(strTransactionReference, strAccountNumber, strAccountname, strBankCode)
                       val myAccountVerificationResponse = AccountVerificationDetailsResponse_BatchData(strMessageReference, responseCode, responseMessage, myAccountVerificationDetailsResponse_Batch)
-
+                      /*
                       if (myEntryID.value.isEmpty != true) {
                         if (myEntryID.value.get != None) {
                           val myVal = myEntryID.value.get
@@ -6606,7 +6619,7 @@ class CbsEngine @Inject()
                           }
                         }
                       }
-
+                      */
                       val f = Future {sendAccountVerificationResponseEchannel(myID, myAccountVerificationResponse)}
                       
                       val strStatusMessage: String = "Successful"
@@ -6635,7 +6648,7 @@ class CbsEngine @Inject()
                 else {
 
                   //Lets log the status code returned by CBS webservice
-                  //val myStatusCode: Int = res.status.intValue()
+                  val strResponseData: String = ""
                   val strStatusMessage: String = "Failed"
 
                   if (myEntryID.value.isEmpty != true) {
@@ -6651,6 +6664,8 @@ class CbsEngine @Inject()
                   ", [StatusCode_IpslApi] = 1, [StatusMessage_IpslApi] = '" + strStatusMessage +
                   "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
                   insertUpdateRecord(strSQL)
+
+                  log_data(strApifunction + " : " + " channeltype - IPSL"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + res.status.intValue())
                   
                 }
               }
@@ -6659,10 +6674,12 @@ class CbsEngine @Inject()
             case Failure(f) =>
               //println("start 3: " + f.getMessage)
               //myDataManagement.Log_errors("sendRegistrationRequests - main : " + f.getMessage + "exception error occured. Failure.")
+              val strResponseData: String = ""
               val dateFromIpslApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
               var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
-              val myStatusCode_Cbs: Int = 500
-              val strStatusMessage: String = "Failure occured when sending the request to API. " + f.getMessage
+              val myHttpStatusCode: Int = 500
+              val strHttpErrorMessage: String = f.getMessage
+              val strStatusMessage: String = "Failure occured when sending the request to API. " + strHttpErrorMessage
 
               if (myEntryID.value.isEmpty != true) {
                 if (myEntryID.value.get != None) {
@@ -6673,10 +6690,12 @@ class CbsEngine @Inject()
                 }
               }
 
-              val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myStatusCode_Cbs + 
+              val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
               ", [StatusCode_IpslApi] = 1, [StatusMessage_IpslApi] = '" + strStatusMessage +
               "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
               insertUpdateRecord(strSQL)
+
+              log_data(strApifunction + " : " + " channeltype - IPSL"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode + " , httperrormessage - " + strHttpErrorMessage)
               
           }
       }
@@ -8006,10 +8025,10 @@ class CbsEngine @Inject()
 
   }
   def sendSingleCreditTransferRequestsIpsl(myID: java.math.BigDecimal, myRequestData: String): Unit = {
-    val strApifunction : String = "sendSingleCreditTransferRequestsIpsl"
-    var strApiURL  : String = "http://localhost:9001/getsinglecredittransferresponsedetails"
+    val strApifunction: String = "sendSingleCreditTransferRequestsIpsl"
+    var strApiURL: String = "http://localhost:9001/iso20022/v1/credit-transfer"
     
-    val myuri : Uri = strApiURL //"http://172.16.109.253:8088/Xi/api/getProjectionsForMember/283632/60/6973/Retirements Reduced"
+    val myuri : Uri = strApiURL
 
     var isValidData : Boolean = false
     var isSuccessful : Boolean = false
@@ -8023,8 +8042,8 @@ class CbsEngine @Inject()
         //val myDataManagement = new DataManagement
         //val accessToken: String = GetCbsApiAuthorizationHeader(strDeveloperId)
 
-        var strUserName: String = "testUid"
-        var strPassWord: String = "testPwd"
+        //var strUserName: String = "testUid"
+        //var strPassWord: String = "testPwd"
         /*
         try {
           strUserName = getCbsApiUserName
@@ -8041,6 +8060,7 @@ class CbsEngine @Inject()
             isSuccessful = false//strname = "no data"//println("Got some other kind of exception")
         }
         */
+        /*
         if (strUserName == null){
           strUserName = ""
         }
@@ -8058,7 +8078,7 @@ class CbsEngine @Inject()
           log_errors(strApifunction + " : Failure in fetching  Api UserName - " + strPassWord + " , application error occured.")
           return
         }
-
+        */
         try{
           val dateToIpslApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
           var strRequestData: String = ""
@@ -8071,6 +8091,8 @@ class CbsEngine @Inject()
           */
           val strSQL: String = "update [dbo].[OutgoingSingleCreditTransferPaymentDetails] set [Posted_to_IpslApi] = 1, [Post_picked_IpslApi] = 1, [RequestMessage_IpslApi] = '" + strRequestData + "', [Date_to_IpslApi] = '" + dateToIpslApi + "' where [ID] = " + myID + ";"
           insertUpdateRecord(strSQL)
+
+          log_data(strApifunction + " : " + " channeltype - IPSL"  + " , >> outgoing request >> - " + myRequestData + " , ID - " + myID)
         }
         catch{
           case ex: Exception =>
@@ -8087,10 +8109,11 @@ class CbsEngine @Inject()
         //***working*** val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(GET, uri = myuri).withHeaders(RawHeader("username", strUserName),RawHeader("password", strPassWord)))
         //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(GET, uri = myuri).withHeaders(RawHeader("username", "FundMasterApi"),RawHeader("password", "n6,e$=p8QK\\+c^h~")))
         /* TESTS ONLY */
-        val accessToken: String = "sassasasss"
+        //val accessToken: String = "sassasasss"
         myXmlData = myRequestData
         val data = HttpEntity(ContentType.WithCharset(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`), myXmlData)
-        val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization", "bearer " + accessToken)))
+        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization", "bearer " + accessToken)))
+        val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data))
         val myEntryID: Future[java.math.BigDecimal] = Future(myID)
         //var start_time_DB: String = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
         //val myStart_time: Future[String] = Future(start_time_DB)
@@ -8140,13 +8163,16 @@ class CbsEngine @Inject()
                 "', [ResponseMessage_IpslApi] = '" + strResponseData + 
                 "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
                 insertUpdateRecord(strSQL)
+
+                log_data(strApifunction + " : " + " channeltype - IPSL"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode)
               }
             case Failure(f) =>
-              //println("start 3: " + f.getMessage)
               val dateFromIpslApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
               var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
               val myHttpStatusCode: Int = 500
-              val strStatusMessage: String = "Failure occured when sending the request to API. " + f.getMessage
+              val strHttpErrorMessage: String = f.getMessage
+              val strStatusMessage: String = "Failure occured when sending the request to API. " + strHttpErrorMessage
+              val strResponseData: String = ""
 
               if (myEntryID.value.isEmpty != true) {
                 if (myEntryID.value.get != None) {
@@ -8161,6 +8187,8 @@ class CbsEngine @Inject()
               ", [StatusCode_IpslApi] = 1, [StatusMessage_IpslApi] = '" + strStatusMessage +
               "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
               insertUpdateRecord(strSQL)
+
+              log_data(strApifunction + " : " + " channeltype - IPSL"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode + " , httperrormessage - " + strHttpErrorMessage)
           }
       }
     }
@@ -8181,6 +8209,7 @@ class CbsEngine @Inject()
     var isValidData : Boolean = false
     var myjsonData : String = ""
     val strApifunction : String = "sendAccountVerificationResponseEchannel"
+    var strChannelType : String = ""
 
     try{
       if (myAccountVerificationData != null){
@@ -8230,6 +8259,8 @@ class CbsEngine @Inject()
       //var strRequestData: String = ""
       val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Posted_to_CbsApi_Out] = 1, [Post_picked_CbsApi_Out] = 1, [RequestMessage_CbsApi_Out] = '" + myjsonData + "', [Date_to_CbsApi_Out] = '" + dateToCbsApi + "' where [ID] = " + myID + ";"
       insertUpdateRecord(strSQL)
+
+      log_data(strApifunction + " : " + " channeltype - "  + strChannelType + " , >> outgoing request >> - " + myjsonData + " , ID - " + myID)
     }
     catch{
       case ex: Exception =>
@@ -8278,6 +8309,7 @@ class CbsEngine @Inject()
                       val myTransactionResponse =  myData.value.get
                       if (myTransactionResponse.get != None){
                         strResponseData = myTransactionResponse.toString()
+                        
                         if (myTransactionResponse.get.statuscode != None) {
                           val myData = myTransactionResponse.get.statuscode
                           strstatuscode = myData.get.toString()
@@ -8341,6 +8373,7 @@ class CbsEngine @Inject()
 
                   myHttpStatusCode = res.status.intValue()
                   strStatusMessage = "Successful"
+
                 }
                 else{
                   myHttpStatusCode = res.status.intValue()
@@ -8364,12 +8397,15 @@ class CbsEngine @Inject()
               insertUpdateRecord(strSQL)
               //println("myTxnID - " + myTxnID)
               //println("strSQL - " + strSQL)
+              log_data(strApifunction + " : " + " channeltype - echannel"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode)
 
             case Failure(f)   =>
               try {
                 val dateFromCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
                 var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
-                log_errors(strApifunction + " : Failure - " + f.getMessage + " - ex exception error occured.")
+                val strHttpErrorMessage: String = f.getMessage
+                val strResponseData: String = ""
+                //log_errors(strApifunction + " : Failure - " + f.getMessage + " - ex exception error occured.")
 
                 if (myEntryID.value.isEmpty != true){
                   if (myEntryID.value.get != None){
@@ -8381,12 +8417,14 @@ class CbsEngine @Inject()
                 }
 
                 val myHttpStatusCode: Int = 500
-                val strStatusMessage: String = "Failure occured when sending the request to API. " + f.getMessage
+                val strStatusMessage: String = "Failure occured when sending the request to API. " + strHttpErrorMessage
 
                 val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Response_Received_CbsApi_Out] = 1, [HttpStatusCode_CbsApi_Out] = " + myHttpStatusCode + 
                 ", [StatusCode_CbsApi_Out] = 1, [StatusMessage_CbsApi_Out] = '" + strStatusMessage +
                 "', [Date_from_CbsApi_Out] = '" + dateFromCbsApi + "' where [ID] = " + myID + ";"
                 insertUpdateRecord(strSQL)
+
+                log_data(strApifunction + " : " + " channeltype - echannel"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode + " , httperrormessage - " + strHttpErrorMessage)
               }
               catch
               {
@@ -9587,87 +9625,85 @@ class CbsEngine @Inject()
     myClientApiResponseDetails
   }  
   def log_data(mydetail : String) : Unit = {
-    //var strpath_file2 : String = "C:\\Program Files\\Biometric_System\\mps1\\Logs.txt"
-    try{
-      var strdetail = ""//println(new java.util.Date)
-      val str_Date  = new SimpleDateFormat("dd-MM-yyyy").format(new java.util.Date)
-      //Lets create a new date-folder when date changes
-      if (strFileDate.equals(str_Date)== false){
-        //Initialise these two fields
-        /*
-        strpath_file = strApplication_path + "\\Logs"+ "\\Logs.txt"
-        strpath_file2 = strApplication_path + "\\Logs" + "\\Errors.txt"
-        var is_Successful : Boolean = create_Folderpaths
-        writer_data = new PrintWriter(new BufferedWriter(new FileWriter(strpath_file,true)))
-        */
-        var is_Successful : Boolean = create_Folderpaths(strApplication_path)
-        strFileDate = str_Date
-      }
-      //var writer_data = new PrintWriter(new BufferedWriter(new FileWriter(strpath_file2,true)))
-      //writer.println(strdetail)
-      //strdetail  =  mydetail + " - " + new java.util.Date
+    Future {
+      try{
+        var strdetail = ""//println(new java.util.Date)
+        val str_Date  = new SimpleDateFormat("dd-MM-yyyy").format(new java.util.Date)
+        //Lets create a new date-folder when date changes
+        if (strFileDate.equals(str_Date)== false){
+          //Initialise these two fields
+          /*
+          strpath_file = strApplication_path + "\\Logs"+ "\\Logs.txt"
+          strpath_file2 = strApplication_path + "\\Logs" + "\\Errors.txt"
+          var is_Successful : Boolean = create_Folderpaths
+          writer_data = new PrintWriter(new BufferedWriter(new FileWriter(strpath_file,true)))
+          */
+          var is_Successful : Boolean = create_Folderpaths(strApplication_path)
+          strFileDate = str_Date
+        }
+        //var writer_data = new PrintWriter(new BufferedWriter(new FileWriter(strpath_file2,true)))
+        //writer.println(strdetail)
+        //strdetail  =  mydetail + " - " + new java.util.Date
 
-      val requestDate : String =  new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new java.util.Date)
-      strdetail  =  mydetail + " - " + requestDate
+        val requestDate : String =  new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new java.util.Date)
+        strdetail  =  mydetail + " - " + requestDate
 
-      writer_data.append(strdetail)
-      writer_data.append(System.lineSeparator())
-      writer_data.append("======================================================================")
-      writer_data.append(System.lineSeparator())
-      if (writer_data != null) {
-        //writer_data.close()
-        //writer_data = null
-        writer_data.flush()
+        writer_data.append(strdetail)
+        writer_data.append(System.lineSeparator())
+        writer_data.append("======================================================================")
+        writer_data.append(System.lineSeparator())
+        if (writer_data != null) {
+          //writer_data.close()
+          //writer_data = null
+          writer_data.flush()
+        }
       }
-    }
-    catch {
-      case io: IOException =>
-        io.printStackTrace()
-      //strErrorMsg = io.toString
-      case ex : Exception =>
-        ex.printStackTrace()
-      //strErrorMsg = ex.toString
-    }
-    finally {
+      catch {
+        case io: IOException =>
+          io.printStackTrace()
+        //strErrorMsg = io.toString
+        case ex : Exception =>
+          ex.printStackTrace()
+        //strErrorMsg = ex.toString
+      }  
     }
   }
   def log_errors(mydetail : String) : Unit = {
-    //, strpath_file2 : String
-    try{
-      var strdetail = ""//println(new java.util.Date)
-      val str_Date  = new SimpleDateFormat("dd-MM-yyyy").format(new java.util.Date)
-      //Lets create a new date-folder when date changes
-      if (strFileDate.equals(str_Date)== false){
-        //Initialise these two fields
-        /*
-        strpath_file = strApplication_path + "\\Logs"+ "\\Logs.txt"
-        strpath_file2 = strApplication_path + "\\Logs" + "\\Errors.txt"
-        var is_Successful : Boolean = create_Folderpaths
-        writer_errors = new PrintWriter(new BufferedWriter(new FileWriter(strpath_file2,true)))
-        */
-        var is_Successful : Boolean = create_Folderpaths(strApplication_path)
-        strFileDate = str_Date
+    Future {
+      try{
+        var strdetail = ""//println(new java.util.Date)
+        val str_Date  = new SimpleDateFormat("dd-MM-yyyy").format(new java.util.Date)
+        //Lets create a new date-folder when date changes
+        if (strFileDate.equals(str_Date)== false){
+          //Initialise these two fields
+          /*
+          strpath_file = strApplication_path + "\\Logs"+ "\\Logs.txt"
+          strpath_file2 = strApplication_path + "\\Logs" + "\\Errors.txt"
+          var is_Successful : Boolean = create_Folderpaths
+          writer_errors = new PrintWriter(new BufferedWriter(new FileWriter(strpath_file2,true)))
+          */
+          var is_Successful : Boolean = create_Folderpaths(strApplication_path)
+          strFileDate = str_Date
+        }
+        //var writer_errors = new PrintWriter(new BufferedWriter(new FileWriter(strpath_file2,true)))
+        //writer.println(strdetail)
+        strdetail  =  mydetail + " - " + new java.util.Date
+        writer_errors.append(strdetail)
+        writer_errors.append(System.lineSeparator())
+        writer_errors.append("======================================================================")
+        writer_errors.append(System.lineSeparator())
+        if (writer_errors != null) {
+          writer_errors.flush()
+        }
       }
-      //var writer_errors = new PrintWriter(new BufferedWriter(new FileWriter(strpath_file2,true)))
-      //writer.println(strdetail)
-      strdetail  =  mydetail + " - " + new java.util.Date
-      writer_errors.append(strdetail)
-      writer_errors.append(System.lineSeparator())
-      writer_errors.append("======================================================================")
-      writer_errors.append(System.lineSeparator())
-      if (writer_errors != null) {
-        writer_errors.flush()
+      catch {
+        case io: IOException =>
+          io.printStackTrace()
+        //strErrorMsg = io.toString
+        case ex : Exception =>
+          ex.printStackTrace()
+        //strErrorMsg = ex.toString
       }
-    }
-    catch {
-      case io: IOException =>
-        io.printStackTrace()
-      //strErrorMsg = io.toString
-      case ex : Exception =>
-        ex.printStackTrace()
-      //strErrorMsg = ex.toString
-    }
-    finally {
     }
   }
   def create_Folderpaths(strApplication_path : String): Boolean = {
