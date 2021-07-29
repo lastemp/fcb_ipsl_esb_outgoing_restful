@@ -1382,6 +1382,8 @@ class CbsEngine @Inject()
   val receiverKeyStorePwd: String = "5{zN5,4UMf-ZST+5"
   val receiverKeyStorePwdCharArray = receiverKeyStorePwd.toCharArray()
   val publicKey: PublicKey = getPublicKey()
+  val strOutgoingAccountVerificationUrlIpsl: String = getOutgoingAccountVerificationUrlIpsl()
+  val strOutgoingSingleCreditTransferUrlIpsl: String = getOutgoingSingleCreditTransferUrlIpsl()
 
   def addSingleCreditTransferPaymentDetails = Action.async { request =>
     Future {
@@ -2543,7 +2545,7 @@ class CbsEngine @Inject()
                           val f = Future {
                             //println("singleCreditTransferPaymentInfo - " + singleCreditTransferPaymentInfo)
                             val myRespData: String = getSingleCreditTransferDetails(singleCreditTransferPaymentInfo, isAccSchemeName)
-                            sendSingleCreditTransferRequestsIpsl(myID, myRespData)
+                            sendSingleCreditTransferRequestsIpsl(myID, myRespData, strOutgoingSingleCreditTransferUrlIpsl)
                           }
                         }
                       }
@@ -2770,7 +2772,7 @@ class CbsEngine @Inject()
             chargeBearer, mandateidentification, assignerAgentIdentification, assigneeAgentIdentification, 
             myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
           //println("jsonResponse + " + jsonResponse.toString())
-          addOutgoingSingleCreditTransferPaymentDetailsArchive(responseCode, responseMessage, jsonResponse.toString(), mySingleCreditTransferPaymentTableDetails, strChannelType, strChannelCallBackUrl)    
+          addOutgoingSingleCreditTransferPaymentDetailsArchive(responseCode, responseMessage, jsonResponse.toString(), mySingleCreditTransferPaymentTableDetails, strChannelType, strChannelCallBackUrl)
         }
       }
       catch{
@@ -3740,6 +3742,7 @@ class CbsEngine @Inject()
       var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
       var strClientIP: String = ""
       var strChannelType: String = ""
+      var strChannelCallBackUrl: String = ""
       var strRequest: String = ""
 
       try
@@ -3796,6 +3799,19 @@ class CbsEngine @Inject()
               }
               else{
                 strChannelType = ""
+              }
+            }
+          }
+
+          if (request.headers.get("ChannelCallBackUrl") != None){
+            val myheaderChannelType = request.headers.get("ChannelCallBackUrl")
+            if (myheaderChannelType.get != None){
+              strChannelCallBackUrl = myheaderChannelType.get.toString
+              if (strChannelCallBackUrl != null){
+                strChannelCallBackUrl = strChannelCallBackUrl.trim
+              }
+              else{
+                strChannelCallBackUrl = ""
               }
             }
           }
@@ -4164,7 +4180,7 @@ class CbsEngine @Inject()
                         val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
                         val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
                         
-                        val myAccountVerificationTableResponseDetails = addOutgoingAccountVerificationDetails(myAccountVerificationTableDetails, strChannelType)
+                        val myAccountVerificationTableResponseDetails = addOutgoingAccountVerificationDetails(myAccountVerificationTableDetails, strChannelType, strChannelCallBackUrl)
                         myID = myAccountVerificationTableResponseDetails.id
                         responseCode = myAccountVerificationTableResponseDetails.responsecode
                         responseMessage = myAccountVerificationTableResponseDetails.responsemessage
@@ -4303,8 +4319,8 @@ class CbsEngine @Inject()
         //println("accountVerificationDetails - " + accountVerificationDetails.toString)
         val f = Future {
           val myRespData: String = getAccountVerificationDetails(accountVerificationDetails, isAccSchemeName)
-          sendAccountVerificationRequestsIpsl(myID, myRespData)
-        }  
+          sendAccountVerificationRequestsIpsl(myID, myRespData, strOutgoingAccountVerificationUrlIpsl, strChannelType, strChannelCallBackUrl)
+        }
 
         val dateToCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
         val myCode: Int = {
@@ -4340,7 +4356,7 @@ class CbsEngine @Inject()
 
           val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
           
-          addOutgoingAccountVerificationDetailsArchive(responseCode, responseMessage, jsonResponse.toString(), myAccountVerificationTableDetails)
+          addOutgoingAccountVerificationDetailsArchive(responseCode, responseMessage, jsonResponse.toString(), myAccountVerificationTableDetails, strChannelType, strChannelCallBackUrl)
         }
         catch{
           case ex: Exception =>
@@ -6436,9 +6452,9 @@ class CbsEngine @Inject()
       r
     }(myExecutionContext)
   }
-  def sendAccountVerificationRequestsIpsl(myID: java.math.BigDecimal, myRequestData: String): Unit = {
+  def sendAccountVerificationRequestsIpsl(myID: java.math.BigDecimal, myRequestData: String, strApiURL: String, strChannelType: String, strCallBackApiURL: String): Unit = {
     val strApifunction: String = "sendAccountVerificationRequestsIpsl"
-    var strApiURL: String = "http://localhost:9001/iso20022/v1/verification-request"
+    //var strApiURL: String = "http://localhost:9001/iso20022/v1/verification-request"
 
     val myuri: Uri = strApiURL
 
@@ -6529,7 +6545,9 @@ class CbsEngine @Inject()
         var start_time_DB: String = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
         val myStart_time: Future[String] = Future(start_time_DB)
         val myEntryID: Future[java.math.BigDecimal] = Future(myID)
-        //TESTS ONLY
+        val myChannelType: Future[String] = Future(strChannelType)
+        val myCallBackApiURL: Future[String] = Future(strCallBackApiURL)
+        //TESTS ONLY 
         //println("start 1: " + start_time_DB)
 
         responseFuture
@@ -6546,6 +6564,8 @@ class CbsEngine @Inject()
                   var strResponseData: String = ""
                   val strIntRegex: String = "[0-9]+" //Integers only
                   val strDecimalRegex: String = "^[0-9]*\\.?[0-9]+$" //Decimals
+                  var strChannelType: String = ""
+                  var strCallBackApiURL: String = ""
                   //val resByteStr: String = res.entity.toString
                   //val resByteStr: akka.util.ByteString = res.entity
                   //println("res.entity - " + res.entity.toString())
@@ -6560,6 +6580,24 @@ class CbsEngine @Inject()
                         val myVal = myEntryID.value.get
                         if (myVal.get != None) {
                           myID = myVal.get
+                        }
+                      }
+                    }
+
+                    if (myChannelType.value.isEmpty != true) {
+                      if (myChannelType.value.get != None) {
+                        val myVal = myChannelType.value.get
+                        if (myVal.get != None) {
+                          strChannelType = myVal.get
+                        }
+                      }
+                    }
+
+                    if (myCallBackApiURL.value.isEmpty != true) {
+                      if (myCallBackApiURL.value.get != None) {
+                        val myVal = myCallBackApiURL.value.get
+                        if (myVal.get != None) {
+                          strCallBackApiURL = myVal.get
                         }
                       }
                     }
@@ -6620,7 +6658,7 @@ class CbsEngine @Inject()
                         }
                       }
                       */
-                      val f = Future {sendAccountVerificationResponseEchannel(myID, myAccountVerificationResponse)}
+                      val f = Future {sendAccountVerificationResponseEchannel(myID, myAccountVerificationResponse, strChannelType, strCallBackApiURL)}
                       
                       val strStatusMessage: String = "Successful"
                       strResponseData = ""//TESTS ONLY
@@ -8024,9 +8062,9 @@ class CbsEngine @Inject()
     }
 
   }
-  def sendSingleCreditTransferRequestsIpsl(myID: java.math.BigDecimal, myRequestData: String): Unit = {
+  def sendSingleCreditTransferRequestsIpsl(myID: java.math.BigDecimal, myRequestData: String, strApiURL: String): Unit = {
     val strApifunction: String = "sendSingleCreditTransferRequestsIpsl"
-    var strApiURL: String = "http://localhost:9001/iso20022/v1/credit-transfer"
+    //var strApiURL: String = "http://localhost:9001/iso20022/v1/credit-transfer"
     
     val myuri : Uri = strApiURL
 
@@ -8202,14 +8240,13 @@ class CbsEngine @Inject()
         log_errors(strApifunction + " : " + t.getMessage + "t exception error occured.")
     }
   }
-  def sendAccountVerificationResponseEchannel(myID: java.math.BigDecimal, myAccountVerificationData: AccountVerificationDetailsResponse_BatchData): Unit = {
+  def sendAccountVerificationResponseEchannel(myID: java.math.BigDecimal, myAccountVerificationData: AccountVerificationDetailsResponse_BatchData, strChannelType: String, strApiURL: String): Unit = {
 
-    var strApiURL: String = "http://localhost:9001/addaccountverificationreesponsebcbs"
-    var isSuccessful : Boolean = false
-    var isValidData : Boolean = false
-    var myjsonData : String = ""
-    val strApifunction : String = "sendAccountVerificationResponseEchannel"
-    var strChannelType : String = ""
+    //var strApiURL: String = "http://localhost:9001/addaccountverificationreesponsebcbs"
+    var isSuccessful: Boolean = false
+    var isValidData: Boolean = false
+    var myjsonData: String = ""
+    val strApifunction: String = "sendAccountVerificationResponseEchannel"
 
     try{
       if (myAccountVerificationData != null){
@@ -8282,6 +8319,7 @@ class CbsEngine @Inject()
         //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data))
         val accessToken: String = "hsbjbahvs7ahvshvshv"
         val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization","Bearer " + accessToken)))
+        val myChannelType: Future[String] = Future(strChannelType)
 
         //TESTS ONLY
         //println("start 1: " + strApifunction + " " + start_time_DB+ " " + myjsonData)
@@ -8296,6 +8334,7 @@ class CbsEngine @Inject()
               var mystatuscode: Int = 1
               var strStatusMessage: String = "Failed processing"
               var strResponseData: String = ""
+              var strChannelType: String = ""
 
               if (res.status != None){
                 if (res.status.intValue() == 200){
@@ -8390,6 +8429,15 @@ class CbsEngine @Inject()
                 }
               }
 
+              if (myChannelType.value.isEmpty != true){
+                if (myChannelType.value.get != None){
+                  val myVal = myChannelType.value.get
+                  if (myVal.get != None){
+                    strChannelType = myVal.get
+                  }
+                }
+              }
+
               val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Response_Received_CbsApi_Out] = 1, [HttpStatusCode_CbsApi_Out] = " + myHttpStatusCode + 
               ", [StatusCode_CbsApi_Out] = " + mystatuscode + ", [StatusMessage_CbsApi_Out] = '" + strStatusMessage +
               "', [ResponseMessage_CbsApi_Out] = '" + strResponseData + 
@@ -8397,7 +8445,7 @@ class CbsEngine @Inject()
               insertUpdateRecord(strSQL)
               //println("myTxnID - " + myTxnID)
               //println("strSQL - " + strSQL)
-              log_data(strApifunction + " : " + " channeltype - echannel"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode)
+              log_data(strApifunction + " : " + " channeltype - "    + strChannelType + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode)
 
             case Failure(f)   =>
               try {
@@ -9306,13 +9354,13 @@ class CbsEngine @Inject()
           </ds:KeyInfo>
         </ds:Signature>
     }
-  def addOutgoingAccountVerificationDetails(myAccountVerificationTableDetails: AccountVerificationTableDetails, strChannelType: String): AccountVerificationTableResponseDetails = {
+  def addOutgoingAccountVerificationDetails(myAccountVerificationTableDetails: AccountVerificationTableDetails, strChannelType: String, strChannelCallBackUrl: String): AccountVerificationTableResponseDetails = {
     val strApifunction: String = "addOutgoingAccountVerificationDetails"
     var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
     var responseCode: Int = 1
     var responseMessage: String = ""
 
-    val strSQL : String = "{ call dbo.Add_OutgoingAccountVerificationDetails(?,?,?,?,?,?,?,?,?,?,?,?,?,?) }"
+    val strSQL : String = "{ call dbo.Add_OutgoingAccountVerificationDetails(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) }"
     try {
       myDB.withConnection { implicit myconn =>
         try{
@@ -9331,6 +9379,7 @@ class CbsEngine @Inject()
           mystmt.setString(9,myAccountVerificationTableDetails.datefromcbsapi)
           mystmt.setString(10,myAccountVerificationTableDetails.remoteaddresscbsapi)
           mystmt.setString(11,strChannelType)
+          mystmt.setString(12,strChannelCallBackUrl)
           mystmt.execute()
           myID = mystmt.getBigDecimal("myID")
           responseCode = mystmt.getInt("responseCode")
@@ -9417,10 +9466,10 @@ class CbsEngine @Inject()
     val mySingleCreditTransferPaymentTableResponseDetails = SingleCreditTransferPaymentTableResponseDetails(myID, responseCode, responseMessage)
     mySingleCreditTransferPaymentTableResponseDetails
   } 
-  def addOutgoingAccountVerificationDetailsArchive(responseCode: Int, responseMessage: String, responsemessagecbsapi: String, myAccountVerificationTableDetails: AccountVerificationTableDetails): Unit = {
+  def addOutgoingAccountVerificationDetailsArchive(responseCode: Int, responseMessage: String, responsemessagecbsapi: String, myAccountVerificationTableDetails: AccountVerificationTableDetails, strChannelType: String, strChannelCallBackUrl: String): Unit = {
     Future {
       val strApifunction: String = "addOutgoingAccountVerificationDetailsArchive"
-      val strSQL : String = "{ call dbo.Add_OutgoingAccountVerificationDetails_Archive(?,?,?,?,?,?,?,?,?,?,?,?,?) }"
+      val strSQL : String = "{ call dbo.Add_OutgoingAccountVerificationDetails_Archive(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) }"
       try {
         myDB.withConnection { implicit myconn =>
           try{
@@ -9438,6 +9487,8 @@ class CbsEngine @Inject()
             mystmt.setInt(11,responseCode)
             mystmt.setString(12,responseMessage)
             mystmt.setString(13,responsemessagecbsapi)
+            mystmt.setString(14,strChannelType)
+            mystmt.setString(15,strChannelCallBackUrl)
             mystmt.execute()
           }
           catch{
@@ -9624,6 +9675,74 @@ class CbsEngine @Inject()
     val myClientApiResponseDetails = ClientApiResponseDetails(responseCode, responseMessage)
     myClientApiResponseDetails
   }  
+  def getOutgoingAccountVerificationUrlIpsl(): String = {
+
+    var strURL: String = ""
+    val strSQL: String = "{ call dbo.GetOutgoingAccountVerificationUrlIpsl(?) }"
+    val strApifunction: String = "getOutgoingAccountVerificationUrlIpsl"
+
+    try {
+      myDB.withConnection { implicit myconn =>
+        try{
+          val mystmt: CallableStatement = myconn.prepareCall(strSQL)
+          mystmt.registerOutParameter("OutgoingAccountVerificationUrlIpsl", java.sql.Types.VARCHAR)
+          mystmt.execute()
+          strURL = mystmt.getString("OutgoingAccountVerificationUrlIpsl")
+        }
+        catch{
+          case io: IOException =>
+            log_errors(strApifunction + " : " + io.getMessage + " - io exception error occured.")
+          case ex : Exception =>
+            log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured.")
+          case t: Throwable =>
+            log_errors(strApifunction + " : " + t.getMessage + " - t exception error occured.")
+        }
+      }
+    }catch {
+      case io: IOException =>
+        log_errors(strApifunction + " : " + io.getMessage + " - io exception error occured.")
+      case ex : Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured.")
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " - t exception error occured.")
+    }
+
+    return  strURL
+  }
+  def getOutgoingSingleCreditTransferUrlIpsl(): String = {
+
+    var strURL: String = ""
+    val strSQL: String = "{ call dbo.GetOutgoingSingleCreditTransferUrlIpsl(?) }"
+    val strApifunction: String = "getOutgoingSingleCreditTransferUrlIpsl"
+
+    try {
+      myDB.withConnection { implicit myconn =>
+        try{
+          val mystmt: CallableStatement = myconn.prepareCall(strSQL)
+          mystmt.registerOutParameter("OutgoingSingleCreditTransferUrlIpsl", java.sql.Types.VARCHAR)
+          mystmt.execute()
+          strURL = mystmt.getString("OutgoingSingleCreditTransferUrlIpsl")
+        }
+        catch{
+          case io: IOException =>
+            log_errors(strApifunction + " : " + io.getMessage + " - io exception error occured.")
+          case ex : Exception =>
+            log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured.")
+          case t: Throwable =>
+            log_errors(strApifunction + " : " + t.getMessage + " - t exception error occured.")
+        }
+      }
+    }catch {
+      case io: IOException =>
+        log_errors(strApifunction + " : " + io.getMessage + " - io exception error occured.")
+      case ex : Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured.")
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " - t exception error occured.")
+    }
+
+    return  strURL
+  }
   def log_data(mydetail : String) : Unit = {
     Future {
       try{
