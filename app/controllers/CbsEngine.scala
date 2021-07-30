@@ -1357,33 +1357,33 @@ class CbsEngine @Inject()
   val strDateRegex: String = "^((19|2[0-9])[0-9]{2})-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$" //"yyyy-mm-dd"
   val strNumbersOnlyRegex: String = "[0-9]+" //validate numbers only
   //
-  val firstAgentIdentification: String = "0074" //Request creator
+  val firstAgentIdentification: String = getSettings("assignerAgentCode")//"0074" //Request creator
   val assignerAgentIdentification: String = firstAgentIdentification //party that deliveres request to IPSL
-  val assigneeAgentIdentification: String = "9999" //party that processes request i.e IPSL
+  val assigneeAgentIdentification: String = getSettings("assigneeAgentCode")//"9999" //party that processes request i.e IPSL
   //
-  val chargeBearer: String = "SLEV"
-  val settlementMethod: String = "CLRG"
-  val clearingSystem: String = "IPS"
-  val serviceLevel: String = "P2PT"
-  val localInstrumentCode: String = "INST"
-  val categoryPurpose: String = "IBNK"
+  val chargeBearer: String = getSettings("chargeBearer")//"SLEV"
+  val settlementMethod: String = getSettings("settlementMethod")//"CLRG"
+  val clearingSystem: String = getSettings("clearingSystem")//"IPS"
+  val serviceLevel: String = getSettings("serviceLevel")//"P2PT"
+  val localInstrumentCode: String = getSettings("localInstrumentCode")//"INST"
+  val categoryPurpose: String = getSettings("categoryPurpose")//"IBNK"
 
-  val keystore_type: String = "PKCS12"
-  val encryptionAlgorithm: String = "RSA"
-  val messageHashAlgorithm: String = "SHA-256"
-  val sender_keystore_path: String = "certsconf/sender_keystore.p12"
-  val senderKeyPairName: String = "senderKeyPair"
-  val senderKeyStorePwd: String = "CYv.BF33*cpb%s4U"
+  val keystore_type: String =  getSettings("keyStoreType")//"PKCS12"
+  val encryptionAlgorithm: String =  getSettings("encryptionAlgorithm")//"RSA"
+  val messageHashAlgorithm: String =  getSettings("messageHashAlgorithm")//"SHA-256"
+  val sender_keystore_path: String =  getSettings("senderKeyStorePath")//"certsconf/sender_keystore.p12"
+  val senderKeyPairName: String =  getSettings("senderKeyPairName")//"senderKeyPair"
+  val senderKeyStorePwd: String =  getSettings("senderKeyStorePwd")//"CYv.BF33*cpb%s4U"
   val senderKeyStorePwdCharArray = senderKeyStorePwd.toCharArray()
   val privateKey: PrivateKey = getPrivateKey()
 
-  val receiver_keystore_path: String = "certsconf/receiver_keystore.p12"
-  val receiverKeyPairName: String = "receiverKeyPair"
-  val receiverKeyStorePwd: String = "5{zN5,4UMf-ZST+5"
+  val receiver_keystore_path: String = getSettings("receiverKeyStorePath")//"certsconf/receiver_keystore.p12"
+  val receiverKeyPairName: String = getSettings("receiverKeyPairName")//"receiverKeyPair"
+  val receiverKeyStorePwd: String = getSettings("receiverKeyStorePwd")//"5{zN5,4UMf-ZST+5"
   val receiverKeyStorePwdCharArray = receiverKeyStorePwd.toCharArray()
   val publicKey: PublicKey = getPublicKey()
-  val strOutgoingAccountVerificationUrlIpsl: String = getOutgoingAccountVerificationUrlIpsl()
-  val strOutgoingSingleCreditTransferUrlIpsl: String = getOutgoingSingleCreditTransferUrlIpsl()
+  val strOutgoingAccountVerificationUrlIpsl: String = getSettings("OutgoingAccountVerificationUrlIpsl")
+  val strOutgoingSingleCreditTransferUrlIpsl: String = getSettings("OutgoingSingleCreditTransferUrlIpsl")
 
   def addSingleCreditTransferPaymentDetails = Action.async { request =>
     Future {
@@ -9742,6 +9742,44 @@ class CbsEngine @Inject()
     }
 
     return  strURL
+  }
+  def getSettings(strParamKey: String): String = {
+
+    var strParamValue: String = ""
+    val strSQL: String = "{ call dbo.GetSettings(?,?) }"
+    val strApifunction: String = "getSettings"
+
+    if (strParamKey == null) return strParamValue
+    if (strParamKey.trim.length == 0) return strParamValue
+
+    try {
+      myDB.withConnection { implicit myconn =>
+        try{
+          val mystmt: CallableStatement = myconn.prepareCall(strSQL)
+          mystmt.registerOutParameter("ParamValue", java.sql.Types.VARCHAR)
+          mystmt.setString(1,strParamKey)
+          mystmt.execute()
+          strParamValue = mystmt.getString("ParamValue")
+        }
+        catch{
+          case io: IOException =>
+            log_errors(strApifunction + " : " + io.getMessage + " - io exception error occured." + " ParamKey - " + strParamKey)
+          case ex : Exception =>
+            log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured." + " ParamKey - " + strParamKey)
+          case t: Throwable =>
+            log_errors(strApifunction + " : " + t.getMessage + " - t exception error occured." + " ParamKey - " + strParamKey)
+        }
+      }
+    }catch {
+      case io: IOException =>
+        log_errors(strApifunction + " : " + io.getMessage + " - io exception error occured." + " ParamKey - " + strParamKey)
+      case ex : Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured." + " ParamKey - " + strParamKey)
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " - t exception error occured." + " ParamKey - " + strParamKey)
+    }
+
+    return  strParamValue
   }
   def log_data(mydetail : String) : Unit = {
     Future {
