@@ -42,6 +42,12 @@ import java.io.FileInputStream
 import java.security.KeyStore
 import java.security.PublicKey
 import java.security.PrivateKey
+//send pem certificate in http request
+import java.io.InputStream
+import java.security.{ KeyStore, SecureRandom }
+import java.security.cert.{ Certificate, CertificateFactory }
+import javax.net.ssl.{ KeyManagerFactory, SSLContext, TrustManagerFactory }
+import akka.http.scaladsl.ConnectionContext 
 //import scala.util.control.Breaks
 //import scala.util.control.Breaks.break
 //import oracle.jdbc.OracleTypes
@@ -1382,8 +1388,8 @@ class CbsEngine @Inject()
   val receiverKeyStorePwd: String = getSettings("receiverKeyStorePwd")//"5{zN5,4UMf-ZST+5"
   val receiverKeyStorePwdCharArray = receiverKeyStorePwd.toCharArray()
   val publicKey: PublicKey = getPublicKey()
-  val strOutgoingAccountVerificationUrlIpsl: String = getSettings("OutgoingAccountVerificationUrlIpsl")
-  val strOutgoingSingleCreditTransferUrlIpsl: String = getSettings("OutgoingSingleCreditTransferUrlIpsl")
+  val strOutgoingAccountVerificationUrlIpsl: String = getSettings("outgoingAccountVerificationUrlIpsl")
+  val strOutgoingSingleCreditTransferUrlIpsl: String = getSettings("outgoingSingleCreditTransferUrlIpsl")
 
   def addSingleCreditTransferPaymentDetails = Action.async { request =>
     Future {
@@ -6530,6 +6536,21 @@ class CbsEngine @Inject()
             log_errors(strApifunction + " : " + tr.getMessage())
         }
 
+        val strCertPath: String = "certsconf/ipslservice.crt"
+        val clientContext = {
+          val certStore = KeyStore.getInstance(KeyStore.getDefaultType)
+          certStore.load(null, null)
+          // only do this if you want to accept a custom root CA. Understand what you are doing!
+          certStore.setCertificateEntry("ca", loadX509Certificate(strCertPath))
+
+          val certManagerFactory = TrustManagerFactory.getInstance("SunX509")
+          certManagerFactory.init(certStore)
+
+          val context = SSLContext.getInstance("TLS")//TLSv1.2, TLSv1.3
+          context.init(null, certManagerFactory.getTrustManagers, new SecureRandom)
+          ConnectionContext.httpsClient(context)
+        }
+
         //val data = HttpEntity(ContentType(MediaTypes.`application/json`), myjsonData)
         //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization", "bearer " + accessToken)))
         //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("username", strUserName),RawHeader("password", strPassWord)))
@@ -6540,7 +6561,10 @@ class CbsEngine @Inject()
         myXmlData = myRequestData
         val data = HttpEntity(ContentType.WithCharset(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`), myXmlData)
         //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization", "bearer " + accessToken)))
-        val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data))
+        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data))
+        //val conctx = Http().setDefaultClientHttpsContext(Http().createClientHttpsContext(Http().sslConfig))
+        //val conctx = Http().createClientHttpsContext(Http().sslConfig)
+        val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data), connectionContext = clientContext)
         //val myEntryID: Future[java.math.BigDecimal] = Future(entryID)
         var start_time_DB: String = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
         val myStart_time: Future[String] = Future(start_time_DB)
@@ -8151,7 +8175,9 @@ class CbsEngine @Inject()
         myXmlData = myRequestData
         val data = HttpEntity(ContentType.WithCharset(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`), myXmlData)
         //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization", "bearer " + accessToken)))
-        val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data))
+        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data))
+        val conctx = Http().createClientHttpsContext(Http().sslConfig)
+        val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data), connectionContext = conctx)
         val myEntryID: Future[java.math.BigDecimal] = Future(myID)
         //var start_time_DB: String = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
         //val myStart_time: Future[String] = Future(start_time_DB)
@@ -9781,6 +9807,25 @@ class CbsEngine @Inject()
 
     return  strParamValue
   }
+  def resourceStream_old(resourceName: String): InputStream = {
+    val is = getClass.getClassLoader.getResourceAsStream(resourceName)
+    require(is ne null, s"Resource $resourceName not found")
+    is
+  }
+  def getResourceStream(resourceName: String): InputStream = {
+    try {
+      val myInputStream: InputStream = new FileInputStream(resourceName)
+      return  myInputStream
+    }catch {
+      case ex: Exception =>
+        log_errors("getResourceStream : " + ex.getMessage + " exception error occured.")
+      case t: Throwable =>
+        log_errors("getResourceStream : " + t.getMessage + " exception error occured.")
+    }
+    return null
+  }
+  def loadX509Certificate(resourceName: String): Certificate =
+    CertificateFactory.getInstance("X.509").generateCertificate(getResourceStream(resourceName))
   def log_data(mydetail : String) : Unit = {
     Future {
       try{
