@@ -687,7 +687,8 @@ class CbsEngine @Inject()
 
     // (a) convert SingleCreditTransfer fields to XML
     def toXml = {
-      var prettyPrinter = new scala.xml.PrettyPrinter(80, 4)//value 80 represents max length of "<Document>" header
+      //var prettyPrinter = new scala.xml.PrettyPrinter(80, 4)//value 80 represents max length of "<Document>" header
+      val prettyPrinter = new scala.xml.PrettyPrinter(2850, 4)//value 80 represents max length of "<Document>" header
       val a = toXmlGroupHeaderInformation
       val groupHeaderInfo: String = a.toString
       val b = toXmlCreditTransferTransactionInformation
@@ -716,6 +717,7 @@ class CbsEngine @Inject()
 	    val encodedSignatureValue: String = myEncodedSignatureValue.replace(" ","").trim
       println("encodedSignatureValue - " + encodedSignatureValue.length)
       println("encodedSignatureValue 2 - " + encodedSignatureValue.replace(" ","").trim.length)
+      println("encodedSignatureValue 2 - " + encodedSignatureValue.replace(" ","").trim.length)
 
       val myVar2 = Base64.getDecoder.decode(encodedSignatureValue)
       val decryptedMessageHash = decryptedSignatureValue(myVar2)
@@ -734,12 +736,15 @@ class CbsEngine @Inject()
           signatureInfo +
           "</Document>"
       }
-      val x = encodedSignatureValue.length
-      val y = "<ds:SignatureValue></ds:SignatureValue>".length + 7//value 7 is a default value given
+      //val x = encodedSignatureValue.length
+      //val y = "<ds:SignatureValue></ds:SignatureValue>".length + 7//value 7 is a default value given
+      val x = encodedX509Certificate.length
+      val y = "<ds:X509Certificate></ds:X509Certificate>".length + 18//value 18 is a default value given
       val z = x  + y// var z equals the width value of the document
-      prettyPrinter = new scala.xml.PrettyPrinter(z, 4)//set it this was because one of the fields has a variable length eg 344
+      println("z: encodedX509Certificate len: " + z)
+      //prettyPrinter = new scala.xml.PrettyPrinter(z, 4)//set it this was because one of the fields has a variable length eg 344
       val xmlData: scala.xml.Node = scala.xml.XML.loadString(finalRequestData)
-      val singleCreditTransfer = prettyPrinter.format(xmlData)
+      val singleCreditTransfer = prettyPrinter.format(xmlData)//<ds:X509Certificate>xxx</ds:X509Certificate>
       singleCreditTransfer
 
     }
@@ -1717,7 +1722,10 @@ class CbsEngine @Inject()
                     //val localinstrumentcode: String = localInstrumentCode
                     //val categorypurpose: String = categoryPurpose
 
-                    val creationDateTime: String = new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
+                    //val creationDateTime: String = new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
+                    val t1: String =  new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
+                    val t2: String =  new SimpleDateFormat("HH:mm:ss").format(new java.util.Date)
+                    val creationDateTime: String = t1 + "T" + t2
                     /*
                     val schemeName: String = {
                       mySchemeMode match {
@@ -4297,7 +4305,9 @@ class CbsEngine @Inject()
 
     try{
       var isAccSchemeName: Boolean = false
-      val creationDateTime: String = new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
+      val t1: String =  new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
+      val t2: String =  new SimpleDateFormat("HH:mm:ss").format(new java.util.Date)
+      val creationDateTime: String = t1 + "T" + t2
       val schemeName: String = {
         var scheme: String = ""
           if (strSchemeName.equalsIgnoreCase(accSchemeName)){
@@ -6535,13 +6545,32 @@ class CbsEngine @Inject()
           case tr: Throwable =>
             log_errors(strApifunction + " : " + tr.getMessage())
         }
-
+        /*
         val strCertPath: String = "certsconf/ipslservice.crt"
         val clientContext = {
           val certStore = KeyStore.getInstance(KeyStore.getDefaultType)
           certStore.load(null, null)
           // only do this if you want to accept a custom root CA. Understand what you are doing!
           certStore.setCertificateEntry("ca", loadX509Certificate(strCertPath))
+
+          val certManagerFactory = TrustManagerFactory.getInstance("SunX509")
+          certManagerFactory.init(certStore)
+
+          val context = SSLContext.getInstance("TLS")//TLSv1.2, TLSv1.3
+          context.init(null, certManagerFactory.getTrustManagers, new SecureRandom)
+          ConnectionContext.httpsClient(context)
+        }
+        */
+        val strCertPath: String = "certsconf/bank0074.p12"
+        val strCaChainCertPath: String = "certsconf/ca_chain.crt.pem"
+        val clientContext = {
+          val certStore = KeyStore.getInstance("PKCS12")
+          val myKeyStore: InputStream = getResourceStream(strCertPath)
+          val password: String = "K+S2>v/dmUE%XBc+9^"
+          val myPassword = password.toCharArray()
+          certStore.load(myKeyStore, myPassword)
+          // only do this if you want to accept a custom root CA. Understand what you are doing!
+          certStore.setCertificateEntry("ca", loadX509Certificate(strCaChainCertPath))
 
           val certManagerFactory = TrustManagerFactory.getInstance("SunX509")
           certManagerFactory.init(certStore)
@@ -9194,11 +9223,18 @@ class CbsEngine @Inject()
       }
       */
       /* contents of public certificate are assigned to var certificateData */
-	  val messageDigest = MessageDigest.getInstance(messageHashAlgorithm)
-      val certificateData: String = "MIICuzCCAaOgAwIBAgIEDHHXijANBgkqhkiG9w0BAQsFADAOMQwwCgYDVQQDEwNE\nTVQwHhcNMjEwNDIxMDgxMzAyWhcNMjIwNDIxMDgxMzAyWjAOMQwwCgYDVQQDEwNE\nTVQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCyH2Pko8qpq+UKuJiU\n4kGz9tl8+6vaQtrHy+Pt6QqNi1y3L7qxCSkdRicQFJYRxLBwlz7Ri5C0D7GUCQ7o\n3/iKTQZX/yz/VhS7lVNi0K6zAvckBhgTJc0xJGgjSQgHuWKY7IYqiCIZyOvjPAb3\nFw2UWaeCEiLojG1z4Q4kNrGm8smmL4E51Y55N6AmJ/KOh/o9QrTa37dwiaKmdXbw\n2ZjrIHe3c7rQl4oSaeTq4AolbM9GUGywreZTHROb8IT0/pjymrdlmx1WA25acrAx\nj8tT6edDoNSqDvv9y6Tvxh1CxJiwZZCOlb8PVCFrhqSgUspx8fFQQ1ZFHpzr7K8l\nE3xRAgMBAAGjITAfMB0GA1UdDgQWBBTTbHcCrp0I71O7mV6qfwB0hchXSjANBgkq\nhkiG9w0BAQsFAAOCAQEAbswVclSDdPW0UHMAHjhZc1kjUH1YYgq7fl8FU9ovk0d4\ncyJ5kW62OS+1V+JE+4TNNcQKFFdQzW+/hev42aXIWzjSosWDQ727mHt3oQgfohMf\nRTCq04LxLVVeEaFMnbpP4eWhCBfV7pJlo/DeILsa2UuonyIaDV4hxBTzRu3d6r1l\nVk/KM7nGUEWTRaU/jq1M6W5SY+hgyNHsD/vz8lIItSprkcL2lFFmweR5RVBWeXzD\nZyWvELHOH9CRZi0x6jNIIM14J9CIIW6Zubd+bpwEcPDVJfVX0FxT7XnPK1fGU1Q/\nZQnP838LmG3FOz5Q0VvWTommrktY45QfX0uSvGR52w=="
-      val byteArray = certificateData.getBytes
-      val messageHash = messageDigest.digest(byteArray)
-      strX509Certificate = new String(messageHash)
+	    val messageDigest = MessageDigest.getInstance(messageHashAlgorithm)
+      //val certificateData: String = "MIICuzCCAaOgAwIBAgIEDHHXijANBgkqhkiG9w0BAQsFADAOMQwwCgYDVQQDEwNE\nTVQwHhcNMjEwNDIxMDgxMzAyWhcNMjIwNDIxMDgxMzAyWjAOMQwwCgYDVQQDEwNE\nTVQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCyH2Pko8qpq+UKuJiU\n4kGz9tl8+6vaQtrHy+Pt6QqNi1y3L7qxCSkdRicQFJYRxLBwlz7Ri5C0D7GUCQ7o\n3/iKTQZX/yz/VhS7lVNi0K6zAvckBhgTJc0xJGgjSQgHuWKY7IYqiCIZyOvjPAb3\nFw2UWaeCEiLojG1z4Q4kNrGm8smmL4E51Y55N6AmJ/KOh/o9QrTa37dwiaKmdXbw\n2ZjrIHe3c7rQl4oSaeTq4AolbM9GUGywreZTHROb8IT0/pjymrdlmx1WA25acrAx\nj8tT6edDoNSqDvv9y6Tvxh1CxJiwZZCOlb8PVCFrhqSgUspx8fFQQ1ZFHpzr7K8l\nE3xRAgMBAAGjITAfMB0GA1UdDgQWBBTTbHcCrp0I71O7mV6qfwB0hchXSjANBgkq\nhkiG9w0BAQsFAAOCAQEAbswVclSDdPW0UHMAHjhZc1kjUH1YYgq7fl8FU9ovk0d4\ncyJ5kW62OS+1V+JE+4TNNcQKFFdQzW+/hev42aXIWzjSosWDQ727mHt3oQgfohMf\nRTCq04LxLVVeEaFMnbpP4eWhCBfV7pJlo/DeILsa2UuonyIaDV4hxBTzRu3d6r1l\nVk/KM7nGUEWTRaU/jq1M6W5SY+hgyNHsD/vz8lIItSprkcL2lFFmweR5RVBWeXzD\nZyWvELHOH9CRZi0x6jNIIM14J9CIIW6Zubd+bpwEcPDVJfVX0FxT7XnPK1fGU1Q/\nZQnP838LmG3FOz5Q0VvWTommrktY45QfX0uSvGR52w=="
+      //seal certificate that was signed by ipsl i.e bank0074_seal.cert.pem
+      val strCertPath: String = "certsconf/bank0074_seal.cert.pem"
+      val myInputStream: InputStream = getResourceStream(strCertPath)
+      val certificateData: String = scala.io.Source.fromInputStream(myInputStream).mkString
+      //TESTS ONLY
+      //val byteArray = certificateData.getBytes
+      //val messageHash = messageDigest.digest(byteArray)
+      //strX509Certificate = new String(messageHash)
+      //TESTS ONLY
+      strX509Certificate = certificateData
       //println("certificateData - " + certificateData)
       //println("X509Certificate - " + strX509Certificate)
       /*
