@@ -9285,7 +9285,12 @@ class CbsEngine @Inject()
 
     try {
       val senderKeyStore: KeyStore = getSenderKeyStore()
-      val privateKey: PrivateKey = senderKeyStore.getKey(senderKeyPairName, senderKeyStorePwdCharArray).asInstanceOf[PrivateKey]
+      //val privateKey: PrivateKey = senderKeyStore.getKey(senderKeyPairName, senderKeyStorePwdCharArray).asInstanceOf[PrivateKey]
+      //TEST ONLY
+      //val privateKey: PrivateKey = senderKeyStore.getKey("1", senderKeyStorePwdCharArray).asInstanceOf[PrivateKey]
+      val strCaChainCertPath: String = "certsconf/ca_chain.crt.pem"
+      senderKeyStore.setCertificateEntry("ca", loadX509Certificate(strCaChainCertPath))
+      val privateKey: PrivateKey = senderKeyStore.getKey("1", senderKeyStorePwdCharArray).asInstanceOf[PrivateKey]
       return privateKey
     }catch {
       case ex: Exception =>
