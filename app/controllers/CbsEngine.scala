@@ -5,6 +5,7 @@ import java.nio.charset.{StandardCharsets}//Charset,
 import java.nio.file.{Files, Paths}
 import java.sql.{CallableStatement}//, ResultSet
 import java.text.SimpleDateFormat
+import java.util.UUID
 
 import play.api.mvc._
 import play.api.libs.json._
@@ -53,6 +54,36 @@ import akka.http.scaladsl.ConnectionContext
 //import oracle.jdbc.OracleTypes
 //import com.microsoft.sqlserver.jdbc.SQLServerDataTable
 //(cc: ControllerComponents,myDB : Database,myExecutionContext: MyExecutionContext)
+//Java Digital signature
+import org.w3c.dom.Document
+import org.w3c.dom.Element
+
+import javax.xml.XMLConstants
+import javax.xml.crypto.XMLStructure
+import javax.xml.crypto.dsig._
+import javax.xml.crypto.dsig.dom.DOMSignContext
+import javax.xml.crypto.dsig.keyinfo.KeyInfo
+import javax.xml.crypto.dsig.keyinfo.KeyInfoFactory
+import javax.xml.crypto.dsig.keyinfo.X509Data
+import javax.xml.crypto.dsig.keyinfo.X509IssuerSerial
+import javax.xml.crypto.dsig.spec.C14NMethodParameterSpec
+import javax.xml.crypto.dsig.spec.TransformParameterSpec
+import javax.xml.parsers.DocumentBuilder
+import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.transform.TransformerFactory
+import javax.xml.transform.dom.DOMSource
+import javax.xml.transform.stream.StreamResult
+import java.io._
+import java.nio.charset.StandardCharsets
+import java.security.Key
+import java.security.KeyStore
+import java.security.cert.X509Certificate
+import java.util.Arrays
+import java.util.Collections
+import java.util.List
+import java.util.Objects
+import org.xml.sax.InputSource
+
 trait MyExecutionContext extends ExecutionContext
 
 class MyExecutionContextImpl @Inject()(system: ActorSystem)
@@ -290,15 +321,16 @@ class CbsEngine @Inject()
 
     // (a) convert AccountVerification fields to XML
     def toXml = {
-      var prettyPrinter = new scala.xml.PrettyPrinter(80, 4)//value 80 represents max length of "<Document>" header
+      //var prettyPrinter = new scala.xml.PrettyPrinter(80, 4)//value 80 represents max length of "<Document>" header
+      val prettyPrinter = new scala.xml.PrettyPrinter(2850, 4)//value 80 represents max length of "<Document>" header
       val a = toXmlAssignmentInformation
       val assignmentInfo: String = a.toString
       val b = toXmlVerificationInformation
       val verificationInfo = b.toString
       val requestType: String = "accountverification"
       val SignatureId: String = getSignatureId(requestType)
-      val myReferenceURI: String = getReferenceURI(requestType)
-      val myKeyInfoId: String = getKeyInfoId(requestType)
+      val myKeyInfoId: String = getKeyInfoId()
+      val myReferenceURI: String = getReferenceURI(myKeyInfoId)
       val myX509Certificate: String = getX509Certificate()
       val encodedX509Certificate: String = Base64.getEncoder.encodeToString(myX509Certificate.getBytes)
 	  	/*
@@ -323,7 +355,7 @@ class CbsEngine @Inject()
       val encodedDigestValue: String = Base64.getEncoder.encodeToString(myDigestValue.getBytes)
       val mySignatureValue = getSignatureValue(requestData)
       val myEncodedSignatureValue: String = Base64.getEncoder.encodeToString(mySignatureValue)
-	    val encodedSignatureValue: String = myEncodedSignatureValue.replace(" ","").trim
+	    val encodedSignatureValue: String = myEncodedSignatureValue//myEncodedSignatureValue.replace(" ","").trim
       println("encodedSignatureValue - " + encodedSignatureValue.length)
       println("encodedSignatureValue 2 - " + encodedSignatureValue.replace(" ","").trim.length)
       //val encodedSignatureValue: String = new String(Base64.getEncoder().encode(mySignatureValue.getBytes(StandardCharsets.UTF_8)))
@@ -366,12 +398,13 @@ class CbsEngine @Inject()
           signatureInfo +
           "</Document>"
       }
-      val x = encodedSignatureValue.length
-      val y = "<ds:SignatureValue></ds:SignatureValue>".length + 7//value 7 is a default value given
-      val z = x  + y// var z equals the width value of the document
-      prettyPrinter = new scala.xml.PrettyPrinter(z, 4)//set it this was because one of the fields has a variable length eg 344
+      //val x = encodedSignatureValue.length
+      //val y = "<ds:SignatureValue></ds:SignatureValue>".length + 7//value 7 is a default value given
+      //val z = x  + y// var z equals the width value of the document
+      //prettyPrinter = new scala.xml.PrettyPrinter(z, 4)//set it this was because one of the fields has a variable length eg 344
       val xmlData: scala.xml.Node = scala.xml.XML.loadString(finalRequestData)
-      val accountVerification = prettyPrinter.format(xmlData)
+      //val accountVerification = prettyPrinter.format(xmlData)
+      val accountVerification = getSignedXml(requestData)
       accountVerification
     }
     def toXmlAssignmentInformation = {
@@ -695,8 +728,8 @@ class CbsEngine @Inject()
       val creditTransferTransactionInfo = b.toString
       val requestType: String = "singlecredittransfer"
       val SignatureId: String = getSignatureId(requestType)
-      val myReferenceURI: String = getReferenceURI(requestType)
-      val myKeyInfoId: String = getKeyInfoId(requestType)
+      val myKeyInfoId: String = getKeyInfoId()
+      val myReferenceURI: String = getReferenceURI(myKeyInfoId)
       val myX509Certificate: String = getX509Certificate()
       val encodedX509Certificate: String = Base64.getEncoder.encodeToString(myX509Certificate.getBytes)
 
@@ -1395,6 +1428,8 @@ class CbsEngine @Inject()
   val publicKey: PublicKey = getPublicKey()
   val strOutgoingAccountVerificationUrlIpsl: String = getSettings("outgoingAccountVerificationUrlIpsl")
   val strOutgoingSingleCreditTransferUrlIpsl: String = getSettings("outgoingSingleCreditTransferUrlIpsl")
+  val fac: XMLSignatureFactory = XMLSignatureFactory.getInstance("DOM")//private static final
+  val C14N: String = "http://www.w3.org/TR/2001/REC-xml-c14n-20010315"
 
   def addSingleCreditTransferPaymentDetails = Action.async { request =>
     Future {
@@ -6561,7 +6596,7 @@ class CbsEngine @Inject()
           ConnectionContext.httpsClient(context)
         }
         */
-        val strCertPath: String = "certsconf/bank0074.p12"
+        val strCertPath: String = "certsconf/bank0074_transport.p12"
         val strCaChainCertPath: String = "certsconf/ca_chain.crt.pem"
         val clientContext = {
           val certStore = KeyStore.getInstance("PKCS12")
@@ -9067,14 +9102,14 @@ class CbsEngine @Inject()
 
     return ""
   }
-  def getReferenceURI(requestType: String) : String = {
+  def getReferenceURI(keyInfoId: String) : String = {
     var referenceURI: String = ""
     val strApifunction: String = "getReferenceURI"
 
     //val strSQL : String = "{ call dbo.GetReturnDate_BVS(?) }"
     try {
-      if (requestType == null) return referenceURI
-      if (requestType.replace(" ","").trim.length == 0) return referenceURI
+      //if (requestType == null) return referenceURI
+      //if (requestType.replace(" ","").trim.length == 0) return referenceURI
       /*
       if (requestType.equalsIgnoreCase("accountverification")){
         signatureId = "_4614c57e-40ae-4cc2-aeb5-6e93ba1be1eb"
@@ -9088,6 +9123,7 @@ class CbsEngine @Inject()
         signatureId = ""
       }
       */
+      /*
       referenceURI = {
         requestType.replace(" ","").trim.toLowerCase match {
           case "accountverification" => "#_8401036a-cd29-4f5b-a48a-9ecf4d515d98"
@@ -9096,6 +9132,8 @@ class CbsEngine @Inject()
           case _ => ""
         }
       }
+      */
+      referenceURI = "#" + keyInfoId
       /*
       myDB.withConnection { implicit myconn =>
 
@@ -9116,9 +9154,9 @@ class CbsEngine @Inject()
       */
     }catch {
       case ex: Exception =>
-        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured." + " requestType - " + requestType)
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured." + " keyInfoId - " + keyInfoId)
       case t: Throwable =>
-        log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " requestType - " + requestType)
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " keyInfoId - " + keyInfoId)
     }
 
     referenceURI
@@ -9145,14 +9183,14 @@ class CbsEngine @Inject()
 
     return null
   }
-  def getKeyInfoId(requestType: String) : String = {
+  def getKeyInfoId() : String = {
     var keyInfoId: String = ""
     val strApifunction: String = "getKeyInfoId"
-
+    //requestType: String
     //val strSQL : String = "{ call dbo.GetReturnDate_BVS(?) }"
     try {
-      if (requestType == null) return keyInfoId
-      if (requestType.replace(" ","").trim.length == 0) return keyInfoId
+      //if (requestType == null) return keyInfoId
+      //if (requestType.replace(" ","").trim.length == 0) return keyInfoId
       /*
       if (requestType.equalsIgnoreCase("accountverification")){
         signatureId = "_4614c57e-40ae-4cc2-aeb5-6e93ba1be1eb"
@@ -9166,6 +9204,7 @@ class CbsEngine @Inject()
         signatureId = ""
       }
       */
+      /*
       keyInfoId = {
         requestType.replace(" ","").trim.toLowerCase match {
           case "accountverification" => "_8401036a-cd29-4f5b-a48a-9ecf4d515d98"
@@ -9174,6 +9213,8 @@ class CbsEngine @Inject()
           case _ => ""
         }
       }
+      */
+      keyInfoId = UUID.randomUUID.toString
       /*
       myDB.withConnection { implicit myconn =>
 
@@ -9194,9 +9235,9 @@ class CbsEngine @Inject()
       */
     }catch {
       case ex: Exception =>
-        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured." + " requestType - " + requestType)
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured." + " keyInfoId - " + keyInfoId)
       case t: Throwable =>
-        log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " requestType - " + requestType)
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " keyInfoId - " + keyInfoId)
     }
 
     keyInfoId
@@ -9285,12 +9326,12 @@ class CbsEngine @Inject()
 
     try {
       val senderKeyStore: KeyStore = getSenderKeyStore()
-      //val privateKey: PrivateKey = senderKeyStore.getKey(senderKeyPairName, senderKeyStorePwdCharArray).asInstanceOf[PrivateKey]
+      val privateKey: PrivateKey = senderKeyStore.getKey(senderKeyPairName, senderKeyStorePwdCharArray).asInstanceOf[PrivateKey]
       //TEST ONLY
       //val privateKey: PrivateKey = senderKeyStore.getKey("1", senderKeyStorePwdCharArray).asInstanceOf[PrivateKey]
-      val strCaChainCertPath: String = "certsconf/ca_chain.crt.pem"
-      senderKeyStore.setCertificateEntry("ca", loadX509Certificate(strCaChainCertPath))
-      val privateKey: PrivateKey = senderKeyStore.getKey("1", senderKeyStorePwdCharArray).asInstanceOf[PrivateKey]
+      //val strCaChainCertPath: String = "certsconf/ca_chain.crt.pem"
+      //senderKeyStore.setCertificateEntry("ca", loadX509Certificate(strCaChainCertPath))
+      //val privateKey: PrivateKey = senderKeyStore.getKey("1", senderKeyStorePwdCharArray).asInstanceOf[PrivateKey]
       return privateKey
     }catch {
       case ex: Exception =>
@@ -9865,6 +9906,99 @@ class CbsEngine @Inject()
     }
     return null
   }
+  def getSignedXml(sourceXml: String): String = {
+    var rawSignedXml: String = ""
+    try {
+      val keyStore: KeyStore = getSenderKeyStore()
+      val alias: String = senderKeyPairName
+      val password = senderKeyStorePwdCharArray
+      val myTransformParameterSpec: TransformParameterSpec = null
+      val envelopedTransform: Transform  = fac.newTransform(Transform.ENVELOPED, myTransformParameterSpec)
+      val c14NEXCTransform: Transform  = fac.newTransform(C14N, myTransformParameterSpec)
+      val transforms = Arrays.asList(envelopedTransform, c14NEXCTransform)
+      val digestMethod: DigestMethod = fac.newDigestMethod(DigestMethod.SHA256, null)
+      val ref: Reference = fac.newReference("", digestMethod, transforms, null, null)
+
+      // Create the SignedInfo.
+      val myC14NMethodParameterSpec: C14NMethodParameterSpec = null
+      val canonicalizationMethod: CanonicalizationMethod = fac.newCanonicalizationMethod(CanonicalizationMethod.INCLUSIVE, myC14NMethodParameterSpec)
+      // SignatureMethod signatureMethod                 = fac.newSignatureMethod(SignatureMethod.RSA_SHA256, null);
+      val signatureMethod: SignatureMethod = fac.newSignatureMethod("http://www.w3.org/2001/04/xmldsig-more#rsa-sha256", null)
+      val si: SignedInfo = fac.newSignedInfo(canonicalizationMethod, signatureMethod, Collections.singletonList(ref))
+
+      // Create the KeyInfo containing the X509Data.
+      val keyInfoFactory: KeyInfoFactory = fac.getKeyInfoFactory()
+      val certificate: X509Certificate = keyStore.getCertificate(alias).asInstanceOf[X509Certificate]
+
+      val newX509Data: X509Data = keyInfoFactory.newX509Data(Collections.singletonList(certificate))
+      val issuer: X509IssuerSerial = keyInfoFactory.newX509IssuerSerial(certificate.getIssuerX500Principal().getName(), certificate.getSerialNumber())
+
+      val data = Arrays.asList(newX509Data, issuer)
+      val keyInfo: KeyInfo = keyInfoFactory.newKeyInfo(data)
+
+      // Converts XML to Document
+      // System.setProperty("javax.xml.parsers.DocumentBuilderFactory", "org.apache.xerces.jaxp.DocumentBuilderFactoryImpl");
+      val dbf: DocumentBuilderFactory = DocumentBuilderFactory.newInstance()
+      // DocumentBuilderFactory dbf          = DocumentBuilderFactory.newInstance("com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl", this.getClass().getClassLoader());
+
+      dbf.setNamespaceAware(true)
+      dbf.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "")
+      dbf.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "")
+      val builder: DocumentBuilder = dbf.newDocumentBuilder()
+      //val doc: Document = builder.parse(sourceXml) this requires xml file path
+      val myInputSource = new InputSource(new StringReader(sourceXml))
+      val doc: Document = builder.parse(myInputSource)
+
+      // Create a DOMSignContext and specify the RSA PrivateKey and
+      // location of the resulting XMLSignature's parent element.
+      val key: Key = keyStore.getKey(alias, password)
+      if (key == null) {
+          throw new Exception(String.format("Private Key not found for alias '%s' in KS '%s'", alias, keyStore))
+      }
+
+      val dsc: DOMSignContext = new DOMSignContext(key, doc.getDocumentElement())
+      // ds:SignatureValue
+      dsc.setDefaultNamespacePrefix("ds")
+
+      // Adds <Signature> tag before a specific tag inside XML - with or without namespace
+
+      // Create the XMLSignature, but don't sign it yet.
+      val signature: XMLSignature = fac.newXMLSignature(si, keyInfo)
+      signature.sign(dsc); // Marshal, generate, and sign the enveloped signature.
+
+      this.removeWhitespaceFromSignature(doc)
+      val output: ByteArrayOutputStream = new ByteArrayOutputStream()
+      val transformerFactory: TransformerFactory = TransformerFactory.newInstance()
+      transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "")
+      transformerFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "")
+      transformerFactory.newTransformer().transform(new DOMSource(doc), new StreamResult(output))
+
+      rawSignedXml = output.toString()
+    }catch {
+      case ex: Exception =>//e.printStackTrace()
+        log_errors("getSignedXml : " + ex.getMessage + " exception error occured.")//ex.printStackTrace
+      case t: Throwable =>
+        log_errors("getSignedXml : " + t.getMessage + " throwable error occured.")
+    }
+    return rawSignedXml
+  }
+  def removeWhitespaceFromSignature(document: Document) : Unit =  {
+    try{
+      val sig: Element  = document.getElementsByTagName("ds:SignatureValue").item(0).asInstanceOf[Element];
+      val sigValue: String  = sig.getTextContent().replace("\r\n", "");
+      sig.setTextContent(sigValue);
+
+      val cert: Element  = document.getElementsByTagName("ds:X509Certificate").item(0).asInstanceOf[Element];
+      val certValue: String  = cert.getTextContent().replace("\r\n", "");
+      cert.setTextContent(certValue);
+    }
+    catch {
+      case ex: Exception =>
+        log_errors("removeWhitespaceFromSignature : " + ex.getMessage + " exception error occured.")
+      case t: Throwable =>
+        log_errors("removeWhitespaceFromSignature : " + t.getMessage + " exception error occured.")
+    }
+  }
   def loadX509Certificate(resourceName: String): Certificate =
     CertificateFactory.getInstance("X.509").generateCertificate(getResourceStream(resourceName))
   def log_data(mydetail : String) : Unit = {
@@ -10013,4 +10147,3 @@ class CbsEngine @Inject()
     return  is_Successful
   }
 }
-
