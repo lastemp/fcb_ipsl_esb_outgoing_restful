@@ -350,7 +350,7 @@ class CbsEngine @Inject()
 
       val xmlData1: scala.xml.Node = scala.xml.XML.loadString(c)
       val requestData: String = prettyPrinter.format(xmlData1)
-
+      /*
       val myDigestValue: String = getDigestValue(requestData)
       val encodedDigestValue: String = Base64.getEncoder.encodeToString(myDigestValue.getBytes)
       val mySignatureValue = getSignatureValue(requestData)
@@ -404,6 +404,7 @@ class CbsEngine @Inject()
       //prettyPrinter = new scala.xml.PrettyPrinter(z, 4)//set it this was because one of the fields has a variable length eg 344
       val xmlData: scala.xml.Node = scala.xml.XML.loadString(finalRequestData)
       //val accountVerification = prettyPrinter.format(xmlData)
+      */
       val accountVerification = getSignedXml(requestData)
       accountVerification
     }
@@ -722,6 +723,7 @@ class CbsEngine @Inject()
     def toXml = {
       //var prettyPrinter = new scala.xml.PrettyPrinter(80, 4)//value 80 represents max length of "<Document>" header
       val prettyPrinter = new scala.xml.PrettyPrinter(2850, 4)//value 80 represents max length of "<Document>" header
+      val currencyCode = "KES"
       val a = toXmlGroupHeaderInformation
       val groupHeaderInfo: String = a.toString
       val b = toXmlCreditTransferTransactionInformation
@@ -742,7 +744,7 @@ class CbsEngine @Inject()
 
       val xmlData1: scala.xml.Node = scala.xml.XML.loadString(c)
       val requestData: String = prettyPrinter.format(xmlData1)
-
+      /*
       val myDigestValue: String = getDigestValue(requestData)
       val encodedDigestValue: String = Base64.getEncoder.encodeToString(myDigestValue.getBytes)
       val mySignatureValue = getSignatureValue(requestData)
@@ -778,6 +780,8 @@ class CbsEngine @Inject()
       //prettyPrinter = new scala.xml.PrettyPrinter(z, 4)//set it this was because one of the fields has a variable length eg 344
       val xmlData: scala.xml.Node = scala.xml.XML.loadString(finalRequestData)
       val singleCreditTransfer = prettyPrinter.format(xmlData)//<ds:X509Certificate>xxx</ds:X509Certificate>
+      */
+      val singleCreditTransfer = getSignedXml(requestData)
       singleCreditTransfer
 
     }
@@ -824,7 +828,7 @@ class CbsEngine @Inject()
           <PmtId>
             <EndToEndId>{creditTransferTransactionInformation.paymentendtoendidentification}</EndToEndId>
           </PmtId>
-          <IntrBkSttlmAmt>{creditTransferTransactionInformation.interbanksettlementamount}</IntrBkSttlmAmt>
+          <IntrBkSttlmAmt Ccy="KES">{creditTransferTransactionInformation.interbanksettlementamount}</IntrBkSttlmAmt>
           <AccptncDtTm>{creditTransferTransactionInformation.acceptancedatetime}</AccptncDtTm>
           <ChrgBr>{creditTransferTransactionInformation.chargebearer}</ChrgBr>
           {getMandateRelatedInformation(creditTransferTransactionInformation.mandaterelatedinformation.mandateidentification)}
@@ -2359,7 +2363,7 @@ class CbsEngine @Inject()
                       if (messageidentification.length > 0 && messageidentification.length <= 35){
                         val isNumeric: Boolean = messageidentification.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
                         if (isNumeric){
-                          val myMessageidentification = messageidentification.toInt
+                          val myMessageidentification = BigDecimal(messageidentification)
                           if (myMessageidentification > 0){isValid = true}
                         }
                         else{
@@ -2374,7 +2378,7 @@ class CbsEngine @Inject()
                       if (paymentendtoendidentification.length > 0 && paymentendtoendidentification.length <= 35){
                         val isNumeric: Boolean = paymentendtoendidentification.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
                         if (isNumeric){
-                          val myPaymentendtoendidentification = paymentendtoendidentification.toInt
+                          val myPaymentendtoendidentification = BigDecimal(paymentendtoendidentification)
                           if (myPaymentendtoendidentification > 0){isValid = true}
                         }
                         else{
@@ -2404,7 +2408,7 @@ class CbsEngine @Inject()
                       if (debtoraccountinformationdebtoraccountidentification.length > 0 && debtoraccountinformationdebtoraccountidentification.length <= 35){
                         val isNumeric: Boolean = debtoraccountinformationdebtoraccountidentification.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
                         if (isNumeric){
-                          val myDebtoraccount = debtoraccountinformationdebtoraccountidentification.toInt
+                          val myDebtoraccount = BigDecimal(debtoraccountinformationdebtoraccountidentification)
                           if (myDebtoraccount > 0){isValid = true}
                         }
                         else{
@@ -2435,7 +2439,7 @@ class CbsEngine @Inject()
                       if (debtorinformationdebtorcontactphonenumber.length == 10 || debtorinformationdebtorcontactphonenumber.length == 12){
                         val isNumeric: Boolean = debtorinformationdebtorcontactphonenumber.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
                         if (isNumeric){
-                          val myPhonenumber = debtorinformationdebtorcontactphonenumber.toInt
+                          val myPhonenumber = BigDecimal(debtorinformationdebtorcontactphonenumber)
                           if (myPhonenumber > 0){isValid = true}
                         }
                       }
@@ -2447,7 +2451,7 @@ class CbsEngine @Inject()
                       if (creditoraccountinformationcreditoraccountidentification.length > 0 && creditoraccountinformationcreditoraccountidentification.length <= 35){
                         val isNumeric: Boolean = creditoraccountinformationcreditoraccountidentification.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
                         if (isNumeric){
-                          val myCreditoraccount = creditoraccountinformationcreditoraccountidentification.toInt
+                          val myCreditoraccount = BigDecimal(creditoraccountinformationcreditoraccountidentification)
                           if (myCreditoraccount > 0){isValid = true}
                         }
                         else{
@@ -2470,7 +2474,7 @@ class CbsEngine @Inject()
                       if (creditoragentinformationfinancialInstitutionIdentification.length > 0 && creditoragentinformationfinancialInstitutionIdentification.length <= 35){
                         val isNumeric: Boolean = creditoragentinformationfinancialInstitutionIdentification.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
                         if (isNumeric){
-                          val myCreditoragent = creditoragentinformationfinancialInstitutionIdentification.toInt
+                          val myCreditoragent = BigDecimal(creditoragentinformationfinancialInstitutionIdentification)
                           if (myCreditoragent > 0){isValid = true}
                         }
                       }
@@ -4141,7 +4145,7 @@ class CbsEngine @Inject()
                       if (strMessageReference.length > 0 && strMessageReference.length <= 35){
                         val isNumeric: Boolean = strMessageReference.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
                         if (isNumeric){
-                          val myMessageReference = strMessageReference.toInt
+                          val myMessageReference = BigDecimal(strMessageReference)
                           if (myMessageReference > 0){isValid = true}
                         }
                         else{
@@ -4156,7 +4160,7 @@ class CbsEngine @Inject()
                       if (strTransactionReference.length > 0 && strTransactionReference.length <= 35){
                         val isNumeric: Boolean = strTransactionReference.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
                         if (isNumeric){
-                          val myTransactionReference = strTransactionReference.toInt
+                          val myTransactionReference = BigDecimal(strTransactionReference)
                           if (myTransactionReference > 0){isValid = true}
                         }
                         else{
@@ -4189,7 +4193,8 @@ class CbsEngine @Inject()
                       if (strBankCode.length > 0 && strBankCode.length <= 35){
                         val isNumeric: Boolean = strBankCode.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
                         if (isNumeric){
-                          val myBankCode = strBankCode.toInt
+                          //val myBankCode = strBankCode.toInt
+                          val myBankCode = BigDecimal(strBankCode)
                           if (myBankCode > 0){isValid = true}
                         }
                         else{
@@ -6610,11 +6615,13 @@ class CbsEngine @Inject()
           val certManagerFactory = TrustManagerFactory.getInstance("SunX509")
           certManagerFactory.init(certStore)
 
+          val keyManagerFactory = KeyManagerFactory.getInstance("SunX509")
+          keyManagerFactory.init(certStore, myPassword)
+
           val context = SSLContext.getInstance("TLS")//TLSv1.2, TLSv1.3
-          context.init(null, certManagerFactory.getTrustManagers, new SecureRandom)
+          context.init(keyManagerFactory.getKeyManagers, certManagerFactory.getTrustManagers, new SecureRandom)
           ConnectionContext.httpsClient(context)
         }
-
         //val data = HttpEntity(ContentType(MediaTypes.`application/json`), myjsonData)
         //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization", "bearer " + accessToken)))
         //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("username", strUserName),RawHeader("password", strPassWord)))
@@ -6768,8 +6775,7 @@ class CbsEngine @Inject()
                         log_errors(strApifunction + " : " + tr.getMessage())
                     }
 
-                  }
-                  
+                  }  
                 }
                 else {
 
@@ -8229,6 +8235,27 @@ class CbsEngine @Inject()
             log_errors(strApifunction + " : " + tr.getMessage())
         }
 
+        val strCertPath: String = "certsconf/bank0074_transport.p12"
+        val strCaChainCertPath: String = "certsconf/ca_chain.crt.pem"
+        val clientContext = {
+          val certStore = KeyStore.getInstance("PKCS12")
+          val myKeyStore: InputStream = getResourceStream(strCertPath)
+          val password: String = "K+S2>v/dmUE%XBc+9^"
+          val myPassword = password.toCharArray()
+          certStore.load(myKeyStore, myPassword)
+          // only do this if you want to accept a custom root CA. Understand what you are doing!
+          certStore.setCertificateEntry("ca", loadX509Certificate(strCaChainCertPath))
+
+          val certManagerFactory = TrustManagerFactory.getInstance("SunX509")
+          certManagerFactory.init(certStore)
+
+          val keyManagerFactory = KeyManagerFactory.getInstance("SunX509")
+          keyManagerFactory.init(certStore, myPassword)
+
+          val context = SSLContext.getInstance("TLS")//TLSv1.2, TLSv1.3
+          context.init(keyManagerFactory.getKeyManagers, certManagerFactory.getTrustManagers, new SecureRandom)
+          ConnectionContext.httpsClient(context)
+        }
         //val data = HttpEntity(ContentType(MediaTypes.`application/json`), myjsonData)
         //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization", "bearer " + accessToken)))
         //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("username", strUserName),RawHeader("password", strPassWord)))
@@ -8240,8 +8267,9 @@ class CbsEngine @Inject()
         val data = HttpEntity(ContentType.WithCharset(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`), myXmlData)
         //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization", "bearer " + accessToken)))
         //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data))
-        val conctx = Http().createClientHttpsContext(Http().sslConfig)
-        val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data), connectionContext = conctx)
+        //val conctx = Http().createClientHttpsContext(Http().sslConfig)
+        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data), connectionContext = conctx)
+        val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data), connectionContext = clientContext)
         val myEntryID: Future[java.math.BigDecimal] = Future(myID)
         //var start_time_DB: String = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
         //val myStart_time: Future[String] = Future(start_time_DB)
@@ -9931,9 +9959,13 @@ class CbsEngine @Inject()
       val certificate: X509Certificate = keyStore.getCertificate(alias).asInstanceOf[X509Certificate]
 
       val newX509Data: X509Data = keyInfoFactory.newX509Data(Collections.singletonList(certificate))
-      val issuer: X509IssuerSerial = keyInfoFactory.newX509IssuerSerial(certificate.getIssuerX500Principal().getName(), certificate.getSerialNumber())
+      //Commented out on 10-08-2021: Emmanuel
+      //We do not need to send serial name and serial no to IPS
+      //val issuer: X509IssuerSerial = keyInfoFactory.newX509IssuerSerial(certificate.getIssuerX500Principal().getName(), certificate.getSerialNumber())
 
-      val data = Arrays.asList(newX509Data, issuer)
+      //Commented out on 10-08-2021: Emmanuel
+      //val data = Arrays.asList(newX509Data, issuer)
+      val data = Arrays.asList(newX509Data)
       val keyInfo: KeyInfo = keyInfoFactory.newKeyInfo(data)
 
       // Converts XML to Document
