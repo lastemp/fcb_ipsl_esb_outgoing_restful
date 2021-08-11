@@ -321,18 +321,18 @@ class CbsEngine @Inject()
 
     // (a) convert AccountVerification fields to XML
     def toXml = {
-      //var prettyPrinter = new scala.xml.PrettyPrinter(80, 4)//value 80 represents max length of "<Document>" header
-      val prettyPrinter = new scala.xml.PrettyPrinter(2850, 4)//value 80 represents max length of "<Document>" header
+      val prettyPrinter = new scala.xml.PrettyPrinter(80, 4)//value 80 represents max length of "<Document>" header
+      //val prettyPrinter = new scala.xml.PrettyPrinter(2850, 4)//value 80 represents max length of "<Document>" header
       val a = toXmlAssignmentInformation
       val assignmentInfo: String = a.toString
       val b = toXmlVerificationInformation
       val verificationInfo = b.toString
-      val requestType: String = "accountverification"
-      val SignatureId: String = getSignatureId(requestType)
-      val myKeyInfoId: String = getKeyInfoId()
-      val myReferenceURI: String = getReferenceURI(myKeyInfoId)
-      val myX509Certificate: String = getX509Certificate()
-      val encodedX509Certificate: String = Base64.getEncoder.encodeToString(myX509Certificate.getBytes)
+      //val requestType: String = "accountverification"
+      //val SignatureId: String = getSignatureId(requestType)
+      //val myKeyInfoId: String = getKeyInfoId()
+      //val myReferenceURI: String = getReferenceURI(myKeyInfoId)
+      //val myX509Certificate: String = getX509Certificate()
+      //val encodedX509Certificate: String = Base64.getEncoder.encodeToString(myX509Certificate.getBytes)
 	  	/*
       val c = {
         "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:acmt.023.001.02\"><IdVrfctnReq>" +
@@ -721,19 +721,19 @@ class CbsEngine @Inject()
 
     // (a) convert SingleCreditTransfer fields to XML
     def toXml = {
-      //var prettyPrinter = new scala.xml.PrettyPrinter(80, 4)//value 80 represents max length of "<Document>" header
-      val prettyPrinter = new scala.xml.PrettyPrinter(2850, 4)//value 80 represents max length of "<Document>" header
+      val prettyPrinter = new scala.xml.PrettyPrinter(80, 4)//value 80 represents max length of "<Document>" header
+      //val prettyPrinter = new scala.xml.PrettyPrinter(2850, 4)//value 80 represents max length of "<Document>" header
       val currencyCode = "KES"
       val a = toXmlGroupHeaderInformation
       val groupHeaderInfo: String = a.toString
       val b = toXmlCreditTransferTransactionInformation
       val creditTransferTransactionInfo = b.toString
-      val requestType: String = "singlecredittransfer"
-      val SignatureId: String = getSignatureId(requestType)
-      val myKeyInfoId: String = getKeyInfoId()
-      val myReferenceURI: String = getReferenceURI(myKeyInfoId)
-      val myX509Certificate: String = getX509Certificate()
-      val encodedX509Certificate: String = Base64.getEncoder.encodeToString(myX509Certificate.getBytes)
+      //val requestType: String = "singlecredittransfer"
+      //val SignatureId: String = getSignatureId(requestType)
+      //val myKeyInfoId: String = getKeyInfoId()
+      //val myReferenceURI: String = getReferenceURI(myKeyInfoId)
+      //val myX509Certificate: String = getX509Certificate()
+      //val encodedX509Certificate: String = Base64.getEncoder.encodeToString(myX509Certificate.getBytes)
 
       val c = {
         "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.008.001.09\"><FIToFICstmrCdtTrf>" +
