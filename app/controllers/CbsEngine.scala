@@ -869,7 +869,7 @@ class CbsEngine @Inject()
               </Othr>
             </FinInstnId>
           </CdtrAgt>
-          {getCreditorInformation(false)}
+          {getCreditorInformation(isAccSchemeName)}
           <CdtrAcct>
             <Id>
               <Othr>
@@ -937,10 +937,14 @@ class CbsEngine @Inject()
       }
       initiatingPartyInformation
     }
-    private def getCreditorInformation(IsCreditorInfoEnabled: Boolean) = {
+    private def getCreditorInformation(isAccSchemeName: Boolean) = {
       val creditorInformation = 
       {
-        if (IsCreditorInfoEnabled){
+        if (isAccSchemeName){//i.e ACC
+          <Cdtr/>
+        }
+        else//i.e PHNE 
+        {
           <Cdtr>
             <Nm>{creditTransferTransactionInformation.creditorinformation.creditorname}</Nm>
             <Id>
@@ -1763,8 +1767,8 @@ class CbsEngine @Inject()
 
                     //val creationDateTime: String = new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
                     val t1: String =  new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
-                    val t2: String =  new SimpleDateFormat("HH:mm:ss").format(new java.util.Date)
-                    val creationDateTime: String = t1 + "T" + t2
+                    val t2: String =  new SimpleDateFormat("HH:mm:ss.SSS").format(new java.util.Date)
+                    val creationDateTime: String = t1 + "T" + t2+ "Z"
                     /*
                     val schemeName: String = {
                       mySchemeMode match {
@@ -2064,6 +2068,7 @@ class CbsEngine @Inject()
                       }
 
                       //creditorinformationcreditorname
+                      /*
                       if (isValidPaymentdata){
                         val myData1 = myPaymentDetails.paymentdata.get
                         val isValid = {
@@ -2087,7 +2092,8 @@ class CbsEngine @Inject()
                           }
                         }
                       }
-
+                      */
+                      
                       //creditorinformationcreditorcontactphonenumber
                       /*
                       if (myPaymentDetails.paymentdata.creditaccountinformation.creditcontactinformation.phonenumber != None) {
@@ -2125,6 +2131,19 @@ class CbsEngine @Inject()
                         if (isValid){
                           val myData2 = myData1.creditaccountinformation.get
                           val myData3 = myData2.creditcontactinformation.get
+                          //creditorinformationcreditorname
+                          creditorinformationcreditorname = myData3.fullnames.getOrElse("").toString()
+                          if (creditorinformationcreditorname != null && creditorinformationcreditorname != None){
+                            creditorinformationcreditorname = creditorinformationcreditorname.trim
+                            if (creditorinformationcreditorname.length > 0){
+                              creditorinformationcreditorname = creditorinformationcreditorname.replace("'","")//Remove apostrophe
+                              creditorinformationcreditorname = creditorinformationcreditorname.replace("  "," ")//Remove double spaces
+                              creditorinformationcreditorname = creditorinformationcreditorname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              creditorinformationcreditorname = creditorinformationcreditorname.trim
+                            }
+                          }
+
+                          //creditorinformationcreditorcontactphonenumber
                           creditorinformationcreditorcontactphonenumber = myData3.phonenumber.getOrElse("").toString()
                           if (creditorinformationcreditorcontactphonenumber != null && creditorinformationcreditorcontactphonenumber != None){
                             creditorinformationcreditorcontactphonenumber = creditorinformationcreditorcontactphonenumber.trim
@@ -2436,12 +2455,16 @@ class CbsEngine @Inject()
 
                     isValidDebitPhoneNumber = {
                       var isValid: Boolean = false
-                      if (debtorinformationdebtorcontactphonenumber.length == 10 || debtorinformationdebtorcontactphonenumber.length == 12){
+                      //if (debtorinformationdebtorcontactphonenumber.length == 10 || debtorinformationdebtorcontactphonenumber.length == 12){
+                      if (debtorinformationdebtorcontactphonenumber.length == 14){
+                        /*
                         val isNumeric: Boolean = debtorinformationdebtorcontactphonenumber.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
                         if (isNumeric){
                           val myPhonenumber = BigDecimal(debtorinformationdebtorcontactphonenumber)
                           if (myPhonenumber > 0){isValid = true}
                         }
+                        */
+                        isValid = true
                       }
                       isValid
                     }
@@ -8840,13 +8863,15 @@ class CbsEngine @Inject()
       val debtoraccountinformationdebtoraccountname: String = creditTransferPaymentInfo.paymentdata.debitaccountinformation.debitaccountname//"paul wakimani"
       val debtoragentinformationfinancialInstitutionIdentification: String = creditTransferPaymentInfo.paymentdata.transferdefaultinformation.firstagentidentification//"2000"
       val creditoragentinformationfinancialInstitutionIdentification: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.bankcode//"1990"
-      val creditorinformationcreditorname: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.creditaccountname//"Nancy Mbera"
+      //val creditorinformationcreditorname: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.creditaccountname//"Nancy Mbera"
+      val creditorinformationcreditorname: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.creditcontactinformation.fullnames//"Nancy Mbera"
       val creditorinformationcreditororganisationidentification: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.bankcode//"1990"
       val creditorinformationcreditorcontactphonenumber: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.creditcontactinformation.phonenumber//"0756000000"
       val creditoraccountinformationcreditoraccountidentification: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.creditaccountnumber//"0756000000"
       val creditoraccountinformationcreditoraccountschemename: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.schemename//"PHNE"
       val creditoraccountinformationcreditoraccountname: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.creditaccountname//"Nancy Mbera"
-      val ultimatecreditorinformationcreditorname: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.creditaccountname//"Nancy Mbera"
+      //val ultimatecreditorinformationcreditorname: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.creditaccountname//"Nancy Mbera"
+      val ultimatecreditorinformationcreditorname: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.creditcontactinformation.fullnames//"Nancy Mbera"
       val ultimatecreditorinformationcreditororganisationidentification: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.bankcode//"1990"
       val ultimatecreditorinformationcreditorcontactphonenumber: String = creditTransferPaymentInfo.paymentdata.creditaccountinformation.creditcontactinformation.phonenumber//"0756000000"
       val purposeinformationpurposecode: String = creditTransferPaymentInfo.paymentdata.purposeinformation.purposecode//""
