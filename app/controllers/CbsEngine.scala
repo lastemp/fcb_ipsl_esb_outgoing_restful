@@ -10041,13 +10041,13 @@ class CbsEngine @Inject()
   }
   def removeWhitespaceFromSignature(document: Document) : Unit =  {
     try{
-      val sig: Element  = document.getElementsByTagName("ds:SignatureValue").item(0).asInstanceOf[Element];
-      val sigValue: String  = sig.getTextContent().replace("\r\n", "");
-      sig.setTextContent(sigValue);
+      val sig: Element  = document.getElementsByTagName("ds:SignatureValue").item(0).asInstanceOf[Element]
+      val sigValue: String  = sig.getTextContent().replace("\r\n", "")
+      sig.setTextContent(sigValue)
 
-      val cert: Element  = document.getElementsByTagName("ds:X509Certificate").item(0).asInstanceOf[Element];
-      val certValue: String  = cert.getTextContent().replace("\r\n", "");
-      cert.setTextContent(certValue);
+      val cert: Element  = document.getElementsByTagName("ds:X509Certificate").item(0).asInstanceOf[Element]
+      val certValue: String  = cert.getTextContent().replace("\r\n", "")
+      cert.setTextContent(certValue)
     }
     catch {
       case ex: Exception =>
