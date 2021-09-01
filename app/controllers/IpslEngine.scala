@@ -10951,6 +10951,43 @@ class IpslEngine @Inject()
       r
     }(myExecutionContext)
   }
+  def getPaymentCancellationResponseDetails = Action.async { request =>
+    Future {
+      val startDate : String =  new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new java.util.Date)
+      var isProcessed : Boolean = false
+      var entryID: Int = 0
+      var responseCode : Int = 1
+      var responseMessage : String = "Error occured during processing, please try again."
+      val strApifunction : String = "getPaymentCancellationResponseDetails"
+      var strRequest: String = ""
+
+      implicit val xmlResponseData_Writes = Json.writes[xmlResponseData]
+
+      try{
+        println("start 1 getPaymentCancellationResponseDetails: Request received")
+        if (!request.body.asXml.isEmpty){
+          strRequest = request.body.asXml.get.toString()
+          println("start 2 getPaymentCancellationResponseDetails: Request data - " + System.lineSeparator() + strRequest)
+        }
+      }
+      catch{
+        case ex: Exception =>
+        //log_errors(strApifunction + " : " + ex.getMessage())
+        case io: IOException =>
+        //log_errors(strApifunction + " : " + io.getMessage())
+        case tr: Throwable =>
+        //log_errors(strApifunction + " : " + tr.getMessage())
+      }
+
+      val myData: String = "Message accepted for processing."
+
+      val myResponseData = new textResponseData(myData)
+
+      val textResponse = Accepted(myResponseData.text.toString).as("text/plain")
+      val r: Result = textResponse
+      r
+    }(myExecutionContext)
+  }
   def addAccountVerificationRequestEsbCbs = Action.async { request =>
     Future {
       val startDate : String =  new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new java.util.Date)
