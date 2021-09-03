@@ -244,7 +244,8 @@ class CbsEngine @Inject()
   case class CreditTransferPaymentInfo(transactionreference: String, amount: BigDecimal, debitaccountinformation: DebitAccountInfo, creditaccountinformation: CreditAccountInfo, mandateinformation: TransferMandateInfo, remittanceinformation: TransferRemittanceInfo, purposeinformation: TransferPurposeInfo, transferdefaultinformation: TransferDefaultInfo)
   case class SingleCreditTransferPaymentInfo(messagereference: String, creationdatetime: String, numberoftransactions: Int, totalinterbanksettlementamount: BigDecimal, paymentdata: CreditTransferPaymentInfo)
   case class OriginalGroupInfo(originalmessageidentification: String, originalmessagenameidentification: String,  originalcreationdatetime: String, originalendtoendidentification: String)
-  case class PaymentCancellationInfo(transactionreference: String, amount: BigDecimal, debitaccountinformation: DebitAccountInfo, creditaccountinformation: CreditAccountInfo, mandateinformation: TransferMandateInfo, remittanceinformation: TransferRemittanceInfo, purposeinformation: TransferPurposeInfo, transferdefaultinformation: TransferDefaultInfo, originalgroupinformation: OriginalGroupInfo)
+  case class CancellationStatusReasonInfo(originatorname: String, reasoncode: String, additionalinformation: String)
+  case class PaymentCancellationInfo(transactionreference: String, amount: BigDecimal, debitaccountinformation: DebitAccountInfo, creditaccountinformation: CreditAccountInfo, mandateinformation: TransferMandateInfo, remittanceinformation: TransferRemittanceInfo, purposeinformation: TransferPurposeInfo, transferdefaultinformation: TransferDefaultInfo, originalgroupinformation: OriginalGroupInfo, cancellationstatusreasoninformation: CancellationStatusReasonInfo)
   case class SinglePaymentCancellationInfo(messagereference: String, creationdatetime: String, numberoftransactions: Int, totalinterbanksettlementamount: BigDecimal, paymentdata: PaymentCancellationInfo)
 
   /*** Xml data ***/
@@ -1473,13 +1474,27 @@ class CbsEngine @Inject()
               <OrgnlCreDtTm>{cancellationDetails.cancellationTransactionInformationAndStatus.originalGroupInformationAndStatus.originalcreationdatetime}</OrgnlCreDtTm>
             </OrgnlGrpInf>
             <OrgnlEndToEndId>{cancellationDetails.cancellationTransactionInformationAndStatus.originalendtoendidentification}</OrgnlEndToEndId>
+            <CxlRsnInf>
+              <Orgtr>
+                <Id>
+                  <OrgId>
+                    <Othr>
+                      <Id>{cancellationAssignmentInformation.instructingagentinformation.financialInstitutionIdentification}</Id>
+                    </Othr>
+                  </OrgId>
+                </Id>
+              </Orgtr>
+              <Rsn>
+                <Cd>{cancellationDetails.cancellationTransactionInformationAndStatus.cancellationStatusReasonInformation.reasoncode}</Cd></Rsn>
+              <AddtlInf>{cancellationDetails.cancellationTransactionInformationAndStatus.cancellationStatusReasonInformation.additionalinformation}</AddtlInf>
+            </CxlRsnInf>
             <OrgnlTxRef>
               <IntrBkSttlmAmt Ccy="KES">{cancellationDetails.cancellationTransactionInformationAndStatus.originalTransactionReference.interbanksettlementamount}</IntrBkSttlmAmt>
               {getRequestedExecutionDateInformation(false)}
               {getSettlementInformation(false)}
               {getPaymentTypeInformation(false)}
               {getMandateRelatedInformation(false)}
-              {getRemmittanceInformation(false)}
+              {getRemmittanceInformation(cancellationDetails.cancellationTransactionInformationAndStatus.originalTransactionReference.remittanceInformation.unstructured)}
               {getUltimateDebtorInformation(false)}
               <Dbtr>
                 <Pty>
@@ -1584,22 +1599,22 @@ class CbsEngine @Inject()
       }
       mandateRelatedInformation
     }
-    private def getRemmittanceInformation(IsRemmittanceInfoEnabled: Boolean) = {
+    private def getRemmittanceInformation(unstructured: String) = {
       val remmittanceInformation = 
       {
-        if (IsRemmittanceInfoEnabled){
+        if (unstructured.length > 0){
           <RmtInf>
             <Ustrd>{cancellationDetails.cancellationTransactionInformationAndStatus.originalTransactionReference.remittanceInformation.unstructured}</Ustrd>
-            {getTaxRemittanceReferenceNumber(false)}
+            {getTaxRemittanceReferenceNumber(cancellationDetails.cancellationTransactionInformationAndStatus.originalTransactionReference.remittanceInformation.taxremittancereferencenumber)}
           </RmtInf>
         }
       }
       remmittanceInformation
     }
-    private def getTaxRemittanceReferenceNumber(isTaxRemittanceRefNoEnabled: Boolean) = {
+    private def getTaxRemittanceReferenceNumber(taxRemittanceRefNo: String) = {
       val taxRemittanceReferenceNumber = 
       {
-        if (isTaxRemittanceRefNoEnabled){
+        if (taxRemittanceRefNo.length > 0){
           <Strd>
             <TaxRmt>
               <RefNb>{cancellationDetails.cancellationTransactionInformationAndStatus.originalTransactionReference.remittanceInformation.taxremittancereferencenumber}</RefNb>
@@ -4833,9 +4848,14 @@ class CbsEngine @Inject()
 
     try{
       var isAccSchemeName: Boolean = false
+      /*
       val t1: String =  new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
       val t2: String =  new SimpleDateFormat("HH:mm:ss").format(new java.util.Date)
       val creationDateTime: String = t1 + "T" + t2
+      */
+      val t1: String =  new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
+      val t2: String =  new SimpleDateFormat("HH:mm:ss.SSS").format(new java.util.Date)
+      val creationDateTime: String = t1 + "T" + t2+ "Z"
       val schemeName: String = {
         var scheme: String = ""
           if (strSchemeName.equalsIgnoreCase(accSchemeName)){
@@ -6180,6 +6200,11 @@ class CbsEngine @Inject()
 
                         creditoraccountinformationcreditoraccountschemename = schemeName
 
+                        //TESTS ONLY
+                        val originatorname: String = ""
+                        val reasoncode: String = "FRAD"
+                        val additionalinformation: String = "Fraudulent entry"
+
                         val transferDefaultInfo = TransferDefaultInfo(firstAgentIdentification, assigneeAgentIdentification, chargeBearer, settlementMethod, clearingSystem, serviceLevel, localInstrumentCode, categoryPurpose)
                         val debitcontactinformation = ContactInfo(debtorinformationdebtorname, debtorinformationdebtorcontactphonenumber)
                         val debitAccountInfo = DebitAccountInfo(debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, debitcontactinformation, SchemeName.ACC.toString.toUpperCase)
@@ -6189,7 +6214,8 @@ class CbsEngine @Inject()
                         val remittanceInfo = TransferRemittanceInfo(remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber)
                         val mandateInfo = TransferMandateInfo(mandateidentification)
                         val originalGroupInfo = OriginalGroupInfo(originalmessageidentification, originalmessagenameidentification,  originalcreationdatetime, originalendtoendidentification)
-                        val paymentdata = PaymentCancellationInfo(paymentendtoendidentification, interbanksettlementamount, debitAccountInfo, creditAccountInfo, mandateInfo, remittanceInfo, purposeInfo, transferDefaultInfo, originalGroupInfo)
+                        val cancellationStatusReasonInfo = CancellationStatusReasonInfo(originatorname, reasoncode, additionalinformation)
+                        val paymentdata = PaymentCancellationInfo(paymentendtoendidentification, interbanksettlementamount, debitAccountInfo, creditAccountInfo, mandateInfo, remittanceInfo, purposeInfo, transferDefaultInfo, originalGroupInfo, cancellationStatusReasonInfo)
                         val singlePaymentCancellationInfo = SinglePaymentCancellationInfo(messageidentification, creationDateTime, numberoftransactions, totalinterbanksettlementamount, paymentdata)
                         /*  
                         val f = Future {
@@ -11273,9 +11299,9 @@ class CbsEngine @Inject()
       val originalendtoendidentification: String = paymentCancellationInfo.paymentdata.originalgroupinformation.originalendtoendidentification
       val transactioncancellationstatus: String = ""
       //Cancellation status reason Information
-      val originatorname: String = ""
-      val reasoncode: String = ""
-      val additionalinformation: String = ""
+      val originatorname: String = paymentCancellationInfo.paymentdata.cancellationstatusreasoninformation.originatorname
+      val reasoncode: String = paymentCancellationInfo.paymentdata.cancellationstatusreasoninformation.reasoncode
+      val additionalinformation: String = paymentCancellationInfo.paymentdata.cancellationstatusreasoninformation.additionalinformation
       //val totalinterbanksettlementamount: BigDecimal = paymentCancellationInfo.totalinterbanksettlementamount
       val settlementmethod: String = paymentCancellationInfo.paymentdata.transferdefaultinformation.settlementmethod//"CLRG"
       val clearingSystem: String = paymentCancellationInfo.paymentdata.transferdefaultinformation.clearingsystem//"IPS"
