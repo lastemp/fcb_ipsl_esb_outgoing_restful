@@ -10893,7 +10893,7 @@ class IpslEngine @Inject()
         println("start 1 getSingleCreditTransferResponseDetails: Request received")
         if (!request.body.asXml.isEmpty){
           strRequest = request.body.asXml.get.toString()
-          println("start 2 getSingleCreditTransferResponseDetails: Request data - " + System.lineSeparator() + strRequest)
+          //println("start 2 getSingleCreditTransferResponseDetails: Request data - " + System.lineSeparator() + strRequest)
         }
       }
       catch{

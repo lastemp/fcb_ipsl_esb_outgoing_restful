@@ -202,9 +202,15 @@ class CbsEngine @Inject()
     val ACC, PHNE = Value
   }
   */
+  /*
   object SchemeName extends Enumeration {
     type SchemeName = Value
-    val ACC, PHNE = Value
+    val ACC, PHNE, WALLET = Value
+  }
+  */
+  object SchemeName extends Enumeration {
+    type SchemeName = Value
+    val ACCOUNT, PHONE, WALLET = Value
   }
 
   //AccountVerification Details i.e AccountVerification request to IPSL through ESB
@@ -759,7 +765,13 @@ class CbsEngine @Inject()
   }
 
   //SingleCreditTransfer
-  class SingleCreditTransfer(val groupHeaderInformation: GroupHeaderInformation, val creditTransferTransactionInformation: CreditTransferTransactionInformation, val isAccSchemeName: Boolean) {
+  //class SingleCreditTransfer(val groupHeaderInformation: GroupHeaderInformation, val creditTransferTransactionInformation: CreditTransferTransactionInformation, val isAccSchemeName: Boolean) {
+  class SingleCreditTransfer(val groupHeaderInformation: GroupHeaderInformation, val creditTransferTransactionInformation: CreditTransferTransactionInformation) {
+
+    val accSchemeName: String = SchemeName.ACCOUNT.toString.toUpperCase
+    val phneSchemeName: String = SchemeName.PHONE.toString.toUpperCase
+    val walletSchemeName: String = SchemeName.WALLET.toString.toUpperCase
+    val walletSchemeNameIpsl: String = "PHNE"
 
     // (a) convert SingleCreditTransfer fields to XML
     def toXml = {
@@ -825,7 +837,6 @@ class CbsEngine @Inject()
       */
       val singleCreditTransfer = getSignedXml(requestData)
       singleCreditTransfer
-
     }
     def toXmlGroupHeaderInformation = {
         <GrpHdr>
@@ -911,15 +922,8 @@ class CbsEngine @Inject()
               </Othr>
             </FinInstnId>
           </CdtrAgt>
-          {getCreditorInformation(isAccSchemeName)}
-          <CdtrAcct>
-            <Id>
-              <Othr>
-                {getCreditorAccountIdentification(isAccSchemeName)}
-              </Othr>
-            </Id>
-            <Nm>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccountname}</Nm>
-          </CdtrAcct>
+          {getCreditorInformation(creditTransferTransactionInformation.creditoraccountinformation.creditoraccountschemename)}
+          {getCreditorAccountInformation(creditTransferTransactionInformation.creditoraccountinformation.creditoraccountschemename)}
           {getUltimateCreditorInformation(false)}
           <Purp>
             <Prtry>{creditTransferTransactionInformation.purposeinformation.purposecode}</Prtry>
@@ -979,30 +983,61 @@ class CbsEngine @Inject()
       }
       initiatingPartyInformation
     }
-    private def getCreditorInformation(isAccSchemeName: Boolean) = {
+    private def getCreditorInformation(schemeName: String) = {
       val creditorInformation = 
       {
-        if (isAccSchemeName){//i.e ACC
-          <Cdtr/>
-        }
-        else//i.e PHNE 
-        {
+        if (schemeName.equalsIgnoreCase(phneSchemeName)){//i.e PHONE
           <Cdtr>
             <Nm>{creditTransferTransactionInformation.creditorinformation.creditorname}</Nm>
-            <Id>
-              <OrgId>
-                <Othr>
-                  <Id>{creditTransferTransactionInformation.creditorinformation.creditororganisationidentification}</Id>
-                </Othr>
-              </OrgId>
-            </Id>
             <CtctDtls>
               <PhneNb>{creditTransferTransactionInformation.creditorinformation.creditorcontactphonenumber}</PhneNb>
             </CtctDtls>
           </Cdtr>
         }
+        else//i.e ACCOUNT, WALLET 
+        {
+          <Cdtr/>
+        }
       }
       creditorInformation
+    }
+    private def getCreditorAccountInformation(schemeName: String) = {
+      val creditorAccountInformation = 
+      {
+        if (schemeName.equalsIgnoreCase(accSchemeName)){//i.e ACCOUNT 
+          <CdtrAcct>
+            <Id>
+              <Othr>
+                <Id>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccountidentification}</Id>
+              </Othr>
+            </Id>
+            {getCreditorAccountName(creditTransferTransactionInformation.creditoraccountinformation.creditoraccountname)}
+          </CdtrAcct>
+        }
+        else if (schemeName.equalsIgnoreCase(walletSchemeName)){//i.e WALLET 
+          <CdtrAcct>
+            <Id>
+              <Othr>
+                <Id>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccountidentification}</Id>
+                <SchmeNm>
+                  <Prtry>{walletSchemeNameIpsl}</Prtry>
+                </SchmeNm>
+              </Othr>
+            </Id>
+            {getCreditorAccountName(creditTransferTransactionInformation.creditoraccountinformation.creditoraccountname)}
+          </CdtrAcct>
+        }
+      }
+      creditorAccountInformation
+    }
+    private def getCreditorAccountName(creditorAccname: String) = {
+      val creditorAccountName = 
+      {
+        if (creditorAccname.length > 0){
+          <Nm>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccountname}</Nm>
+        }
+      }
+      creditorAccountName
     }
     private def getUltimateCreditorInformation(IsUltimateCreditorInfoEnabled: Boolean) = {
       val ultimateCreditorInformation = 
@@ -1041,6 +1076,7 @@ class CbsEngine @Inject()
       }
       accountIdentification
     }
+    /*
     private def getCreditorAccountIdentification(isAccSchemeName: Boolean) = {
       val accountIdentification = 
       {
@@ -1057,6 +1093,7 @@ class CbsEngine @Inject()
       }
       accountIdentification
     }
+    */
     private def getTaxRemittanceReferenceNumber(TaxRemittanceRef: String) = {
       val taxRemittanceReferenceNumber = 
       {
@@ -1118,13 +1155,18 @@ class CbsEngine @Inject()
         ultimatecreditorinformation, purposeinformation, remittanceinformation
       )
 
-      new SingleCreditTransfer(groupHeaderInformation, creditTransferTransactionInformation, false)
+      new SingleCreditTransfer(groupHeaderInformation, creditTransferTransactionInformation)
     }
 
   }
 
   //BulkCreditTransfer
-  class BulkCreditTransfer(val groupHeaderInformation: GroupHeaderInformation, val creditTransferTransactionInformationBatch: Seq[CreditTransferTransactionInformation], val isAccSchemeName: Boolean) {
+  class BulkCreditTransfer(val groupHeaderInformation: GroupHeaderInformation, val creditTransferTransactionInformationBatch: Seq[CreditTransferTransactionInformation]) {
+
+    val accSchemeName: String = SchemeName.ACCOUNT.toString.toUpperCase
+    val phneSchemeName: String = SchemeName.PHONE.toString.toUpperCase
+    val walletSchemeName: String = SchemeName.WALLET.toString.toUpperCase
+    val walletSchemeNameIpsl: String = "PHNE"
 
     // (a) convert BulkCreditTransfer fields to XML
     def toXml = {
@@ -1253,15 +1295,8 @@ class CbsEngine @Inject()
               </Othr>
             </FinInstnId>
           </CdtrAgt>
-          {getCreditorInformation(isAccSchemeName, creditTransferTransactionInformation)}
-          <CdtrAcct>
-            <Id>
-              <Othr>
-                {getCreditorAccountIdentification(isAccSchemeName, creditTransferTransactionInformation)}
-              </Othr>
-            </Id>
-            <Nm>{creditTransferTransactionInformation.creditoraccountinformation.creditoraccountname}</Nm>
-          </CdtrAcct>
+          {getCreditorInformation(creditTransferTransactionInformation.creditoraccountinformation.creditoraccountschemename, creditTransferTransactionInformation.creditorinformation.creditorname, creditTransferTransactionInformation.creditorinformation.creditorcontactphonenumber)}
+          {getCreditorAccountInformation(creditTransferTransactionInformation.creditoraccountinformation.creditoraccountschemename, creditTransferTransactionInformation.creditoraccountinformation.creditoraccountidentification, creditTransferTransactionInformation.creditoraccountinformation.creditoraccountname)}
           {getUltimateCreditorInformation(false, creditTransferTransactionInformation)}
           <Purp>
             <Prtry>{creditTransferTransactionInformation.purposeinformation.purposecode}</Prtry>
@@ -1321,30 +1356,61 @@ class CbsEngine @Inject()
       }
       initiatingPartyInformation
     }
-    private def getCreditorInformation(isAccSchemeName: Boolean, creditTransferTransactionInformation: CreditTransferTransactionInformation) = {
+    private def getCreditorInformation(schemeName: String, creditorname: String, creditorcontactphonenumber: String) = {
       val creditorInformation = 
       {
-        if (isAccSchemeName){//i.e ACC
-          <Cdtr/>
-        }
-        else//i.e PHNE 
-        {
+        if (schemeName.equalsIgnoreCase(phneSchemeName)){//i.e PHONE
           <Cdtr>
-            <Nm>{creditTransferTransactionInformation.creditorinformation.creditorname}</Nm>
-            <Id>
-              <OrgId>
-                <Othr>
-                  <Id>{creditTransferTransactionInformation.creditorinformation.creditororganisationidentification}</Id>
-                </Othr>
-              </OrgId>
-            </Id>
+            <Nm>{creditorname}</Nm>
             <CtctDtls>
-              <PhneNb>{creditTransferTransactionInformation.creditorinformation.creditorcontactphonenumber}</PhneNb>
+              <PhneNb>{creditorcontactphonenumber}</PhneNb>
             </CtctDtls>
           </Cdtr>
         }
+        else//i.e ACCOUNT, WALLET 
+        {
+          <Cdtr/>
+        }
       }
       creditorInformation
+    }
+    private def getCreditorAccountInformation(schemeName: String, creditoraccountidentification: String, creditoraccountname: String) = {
+      val creditorAccountInformation = 
+      {
+        if (schemeName.equalsIgnoreCase(accSchemeName)){//i.e ACCOUNT 
+          <CdtrAcct>
+            <Id>
+              <Othr>
+                <Id>{creditoraccountidentification}</Id>
+              </Othr>
+            </Id>
+            {getCreditorAccountName(creditoraccountname)}
+          </CdtrAcct>
+        }
+        else if (schemeName.equalsIgnoreCase(walletSchemeName)){//i.e WALLET 
+          <CdtrAcct>
+            <Id>
+              <Othr>
+                <Id>{creditoraccountidentification}</Id>
+                <SchmeNm>
+                  <Prtry>{walletSchemeNameIpsl}</Prtry>
+                </SchmeNm>
+              </Othr>
+            </Id>
+            {getCreditorAccountName(creditoraccountname)}
+          </CdtrAcct>
+        }
+      }
+      creditorAccountInformation
+    }
+    private def getCreditorAccountName(creditorAccname: String) = {
+      val creditorAccountName = 
+      {
+        if (creditorAccname.length > 0){
+          <Nm>{creditorAccname}</Nm>
+        }
+      }
+      creditorAccountName
     }
     private def getUltimateCreditorInformation(IsUltimateCreditorInfoEnabled: Boolean, creditTransferTransactionInformation: CreditTransferTransactionInformation) = {
       val ultimateCreditorInformation = 
@@ -1383,6 +1449,7 @@ class CbsEngine @Inject()
       }
       accountIdentification
     }
+    /*
     private def getCreditorAccountIdentification(isAccSchemeName: Boolean, creditTransferTransactionInformation: CreditTransferTransactionInformation) = {
       val accountIdentification = 
       {
@@ -1399,6 +1466,7 @@ class CbsEngine @Inject()
       }
       accountIdentification
     }
+    */
     private def getTaxRemittanceReferenceNumber(TaxRemittanceRef: String) = {
       val taxRemittanceReferenceNumber = 
       {
@@ -1461,7 +1529,7 @@ class CbsEngine @Inject()
       )
       var creditTransfertransactioninformationbatch = Seq[CreditTransferTransactionInformation]()
       creditTransfertransactioninformationbatch = creditTransfertransactioninformationbatch :+ creditTransferTransactionInformation
-      new BulkCreditTransfer(groupHeaderInformation, creditTransfertransactioninformationbatch, false)
+      new BulkCreditTransfer(groupHeaderInformation, creditTransfertransactioninformationbatch)
     }
   }
 
@@ -1975,6 +2043,7 @@ class CbsEngine @Inject()
   val strOutgoingAccountVerificationUrlIpsl: String = getSettings("outgoingAccountVerificationUrlIpsl")
   val strOutgoingSingleCreditTransferUrlIpsl: String = getSettings("outgoingSingleCreditTransferUrlIpsl")
   val strOutgoingPaymentCancellationUrlIpsl: String = getSettings("outgoingPaymentCancellationUrlIpsl")
+  val strOutgoingBulkCreditTransferUrlIpsl: String = getSettings("outgoingBulkCreditTransferUrlIpsl")
   val fac: XMLSignatureFactory = XMLSignatureFactory.getInstance("DOM")//private static final
   val C14N: String = "http://www.w3.org/TR/2001/REC-xml-c14n-20010315"
 
@@ -2323,8 +2392,9 @@ class CbsEngine @Inject()
                     val numberoftransactions: Int = 1
                     //val acceptancedatetime: String = new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
 
-                    val accSchemeName: String = SchemeName.ACC.toString.toUpperCase
-                    val phneSchemeName: String = SchemeName.PHNE.toString.toUpperCase
+                    val accSchemeName: String = SchemeName.ACCOUNT.toString.toUpperCase
+                    val phneSchemeName: String = SchemeName.PHONE.toString.toUpperCase
+                    val walletSchemeName: String = SchemeName.WALLET.toString.toUpperCase
 
                     if (strRequest != null && strRequest != None){
                       strRequest = strRequest.trim
@@ -2901,13 +2971,19 @@ class CbsEngine @Inject()
                     */
                     isValidSchemeName = {
                       var isValid: Boolean = false
-                      if (creditoraccountinformationcreditoraccountschemename.length == 0 || accSchemeName.length == 0){
+                      if (creditoraccountinformationcreditoraccountschemename.length == 0 || accSchemeName.length == 0 || phneSchemeName.length == 0 || walletSchemeName.length == 0){
                         isValid = false
                       }
                       else if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(accSchemeName)){
                         isValid = true
                       }
                       else if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(phneSchemeName)){
+                        isValid = true
+                        //Lets assign these values
+                        creditorinformationcreditorname = creditoraccountinformationcreditoraccountidentification
+                        creditorinformationcreditorcontactphonenumber = creditoraccountinformationcreditoraccountname
+                      }
+                      else if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(walletSchemeName)){
                         isValid = true
                       }
                       else {
@@ -3098,6 +3174,7 @@ class CbsEngine @Inject()
                       }
                       */
                       if (isValidInputData){
+                        /*
                         var isAccSchemeName: Boolean = false
                         val schemeName: String = {
                           var scheme: String = ""
@@ -3108,16 +3185,15 @@ class CbsEngine @Inject()
                           else if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(phneSchemeName)){
                             scheme = phneSchemeName
                           }
-
                           scheme
-
                         }
 
                         creditoraccountinformationcreditoraccountschemename = schemeName
+                        */
 
                         val transferDefaultInfo = TransferDefaultInfo(firstAgentIdentification, assigneeAgentIdentification, chargeBearer, settlementMethod, clearingSystem, serviceLevel, localInstrumentCode, categoryPurpose)
                         val debitcontactinformation = ContactInfo(debtorinformationdebtorname, debtorinformationdebtorcontactphonenumber)
-                        val debitAccountInfo = DebitAccountInfo(debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, debitcontactinformation, SchemeName.ACC.toString.toUpperCase)
+                        val debitAccountInfo = DebitAccountInfo(debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, debitcontactinformation, SchemeName.ACCOUNT.toString.toUpperCase)
                         val creditcontactinformation = ContactInfo(creditorinformationcreditorname, creditorinformationcreditorcontactphonenumber)
                         val creditAccountInfo = CreditAccountInfo(creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoraccountinformationcreditoraccountschemename, creditoragentinformationfinancialInstitutionIdentification, creditcontactinformation)
                         val purposeInfo = TransferPurposeInfo(purposeinformationpurposecode)
@@ -3139,7 +3215,7 @@ class CbsEngine @Inject()
                         val mySingleCreditTransferPaymentTableDetails = //SingleCreditTransferPaymentTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
                           SingleCreditTransferPaymentTableDetails(myBatchReference, 
                           debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, firstAgentIdentification, 
-                          messageidentification, paymentendtoendidentification, SchemeName.ACC.toString.toUpperCase, 
+                          messageidentification, paymentendtoendidentification, SchemeName.ACCOUNT.toString.toUpperCase, 
                           amount, debtorinformationdebtorname, debtorinformationdebtorcontactphonenumber, 
                           creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoragentinformationfinancialInstitutionIdentification, creditoraccountinformationcreditoraccountschemename, 
                           remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber, purposeinformationpurposecode, 
@@ -3159,7 +3235,8 @@ class CbsEngine @Inject()
 
                           val f = Future {
                             //println("singleCreditTransferPaymentInfo - " + singleCreditTransferPaymentInfo)
-                            val myRespData: String = getSingleCreditTransferDetails(singleCreditTransferPaymentInfo, isAccSchemeName)
+                            //val myRespData: String = getSingleCreditTransferDetails(singleCreditTransferPaymentInfo, isAccSchemeName)
+                            val myRespData: String = getSingleCreditTransferDetails(singleCreditTransferPaymentInfo)
                             sendSingleCreditTransferRequestsIpsl(myID, myRespData, strOutgoingSingleCreditTransferUrlIpsl)
                           }
                         }
@@ -3380,7 +3457,7 @@ class CbsEngine @Inject()
           val mySingleCreditTransferPaymentTableDetails = //SingleCreditTransferPaymentTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
             SingleCreditTransferPaymentTableDetails(myBatchReference, 
             debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, firstAgentIdentification, 
-            messageidentification, paymentendtoendidentification, SchemeName.ACC.toString.toUpperCase, 
+            messageidentification, paymentendtoendidentification, SchemeName.ACCOUNT.toString.toUpperCase, 
             amount, debtorinformationdebtorname, debtorinformationdebtorcontactphonenumber, 
             creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoragentinformationfinancialInstitutionIdentification, creditoraccountinformationcreditoraccountschemename, 
             remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber, purposeinformationpurposecode, 
@@ -3764,8 +3841,9 @@ class CbsEngine @Inject()
                     var isAccSchemeName: Boolean = false
                     //val acceptancedatetime: String = new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
 
-                    val accSchemeName: String = SchemeName.ACC.toString.toUpperCase
-                    val phneSchemeName: String = SchemeName.PHNE.toString.toUpperCase
+                    val accSchemeName: String = SchemeName.ACCOUNT.toString.toUpperCase
+                    val phneSchemeName: String = SchemeName.PHONE.toString.toUpperCase
+                    val walletSchemeName: String = SchemeName.WALLET.toString.toUpperCase
 
                     if (strRequest != null && strRequest != None){
                       strRequest = strRequest.trim
@@ -4376,13 +4454,19 @@ class CbsEngine @Inject()
                       */
                       isValidSchemeName = {
                         var isValid: Boolean = false
-                        if (creditoraccountinformationcreditoraccountschemename.length == 0 || accSchemeName.length == 0){
+                        if (creditoraccountinformationcreditoraccountschemename.length == 0 || accSchemeName.length == 0 || phneSchemeName.length == 0 || walletSchemeName.length == 0){
                           isValid = false
                         }
                         else if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(accSchemeName)){
                           isValid = true
                         }
                         else if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(phneSchemeName)){
+                          isValid = true
+                          //Lets assign these values
+                          creditorinformationcreditorname = creditoraccountinformationcreditoraccountidentification
+                          creditorinformationcreditorcontactphonenumber = creditoraccountinformationcreditoraccountname
+                        }
+                        else if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(walletSchemeName)){
                           isValid = true
                         }
                         else {
@@ -4574,6 +4658,7 @@ class CbsEngine @Inject()
                         */
                         if (isValidInputData){
                           //var isAccSchemeName: Boolean = false
+                          /*
                           val schemeName: String = {
                             var scheme: String = ""
                             if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(accSchemeName)){
@@ -4589,10 +4674,10 @@ class CbsEngine @Inject()
                           }
 
                           creditoraccountinformationcreditoraccountschemename = schemeName
-
+                          */
                           //val transferDefaultInfo = TransferDefaultInfo(firstAgentIdentification, assigneeAgentIdentification, chargeBearer, settlementMethod, clearingSystem, serviceLevel, localInstrumentCode, categoryPurpose)
                           val debitcontactinformation = ContactInfo(debtorinformationdebtorname, debtorinformationdebtorcontactphonenumber)
-                          val debitAccountInfo = DebitAccountInfo(debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, debitcontactinformation, SchemeName.ACC.toString.toUpperCase)
+                          val debitAccountInfo = DebitAccountInfo(debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, debitcontactinformation, SchemeName.ACCOUNT.toString.toUpperCase)
                           val creditcontactinformation = ContactInfo(creditorinformationcreditorname, creditorinformationcreditorcontactphonenumber)
                           val creditAccountInfo = CreditAccountInfo(creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoraccountinformationcreditoraccountschemename, creditoragentinformationfinancialInstitutionIdentification, creditcontactinformation)
                           val purposeInfo = TransferPurposeInfo(purposeinformationpurposecode)
@@ -4617,7 +4702,7 @@ class CbsEngine @Inject()
                           val mySingleCreditTransferPaymentTableDetails = //SingleCreditTransferPaymentTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
                             SingleCreditTransferPaymentTableDetails(myBatchReference, 
                             debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, firstAgentIdentification, 
-                            messageidentification, paymentendtoendidentification, SchemeName.ACC.toString.toUpperCase, 
+                            messageidentification, paymentendtoendidentification, SchemeName.ACCOUNT.toString.toUpperCase, 
                             amount, debtorinformationdebtorname, debtorinformationdebtorcontactphonenumber, 
                             creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoragentinformationfinancialInstitutionIdentification, creditoraccountinformationcreditoraccountschemename, 
                             remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber, purposeinformationpurposecode, 
@@ -4658,15 +4743,17 @@ class CbsEngine @Inject()
                       if (isValidInputData){
                         val transferDefaultInfo = TransferDefaultInfo(firstAgentIdentification, assigneeAgentIdentification, chargeBearer, settlementMethod, clearingSystem, serviceLevel, localInstrumentCode, categoryPurpose)
                         val bulkCreditTransferPaymentInfo = BulkCreditTransferPaymentInfo(messageidentification, creationDateTime, numberoftransactions, totalinterbanksettlementamount, transferDefaultInfo, paymentdata)
-
+                        //TESTS ONLY
+                        responseCode = 0  
                         if (responseCode == 0){
                           myHttpStatusCode = HttpStatusCode.Accepted
                           responseMessage = "Message accepted for processing."
 
                           val f = Future {
-                            //println("singleCreditTransferPaymentInfo - " + singleCreditTransferPaymentInfo)
-                            val myRespData: String = getBulkCreditTransferDetails(bulkCreditTransferPaymentInfo, isAccSchemeName)
-                            sendSingleCreditTransferRequestsIpsl(myID, myRespData, strOutgoingSingleCreditTransferUrlIpsl)
+                            //println("bulkCreditTransferPaymentInfo - " + bulkCreditTransferPaymentInfo)
+                            val myRespData: String = getBulkCreditTransferDetails(bulkCreditTransferPaymentInfo)
+                            //println("myRespData - " + myRespData)
+                            sendBulkCreditTransferRequestsIpsl(myID, myRespData, strOutgoingBulkCreditTransferUrlIpsl)
                           }
                         }
                       }
@@ -4840,7 +4927,7 @@ class CbsEngine @Inject()
           val mySingleCreditTransferPaymentTableDetails = //SingleCreditTransferPaymentTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
             SingleCreditTransferPaymentTableDetails(myBatchReference, 
             debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, firstAgentIdentification, 
-            messageidentification, paymentendtoendidentification, SchemeName.ACC.toString.toUpperCase, 
+            messageidentification, paymentendtoendidentification, SchemeName.ACCOUNT.toString.toUpperCase, 
             amount, debtorinformationdebtorname, debtorinformationdebtorcontactphonenumber, 
             creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoragentinformationfinancialInstitutionIdentification, creditoraccountinformationcreditoraccountschemename, 
             remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber, purposeinformationpurposecode, 
@@ -5812,8 +5899,8 @@ class CbsEngine @Inject()
       var isValidSchemeName: Boolean = false
       var isValidAccountNumber: Boolean = false
       var isValidBankCode: Boolean = false
-	    val accSchemeName: String = SchemeName.ACC.toString.toUpperCase
-      val phneSchemeName: String = SchemeName.PHNE.toString.toUpperCase
+	    val accSchemeName: String = SchemeName.ACCOUNT.toString.toUpperCase
+      val phneSchemeName: String = SchemeName.PHONE.toString.toUpperCase
       var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
       var strClientIP: String = ""
       var strChannelType: String = ""
@@ -6864,8 +6951,8 @@ class CbsEngine @Inject()
                     val numberoftransactions: Int = 1
                     //val acceptancedatetime: String = new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
 
-                    val accSchemeName: String = SchemeName.ACC.toString.toUpperCase
-                    val phneSchemeName: String = SchemeName.PHNE.toString.toUpperCase
+                    val accSchemeName: String = SchemeName.ACCOUNT.toString.toUpperCase
+                    val phneSchemeName: String = SchemeName.PHONE.toString.toUpperCase
 
                     if (strRequest != null && strRequest != None){
                       strRequest = strRequest.trim
@@ -7726,7 +7813,7 @@ class CbsEngine @Inject()
 
                         val transferDefaultInfo = TransferDefaultInfo(firstAgentIdentification, assigneeAgentIdentification, chargeBearer, settlementMethod, clearingSystem, serviceLevel, localInstrumentCode, categoryPurpose)
                         val debitcontactinformation = ContactInfo(debtorinformationdebtorname, debtorinformationdebtorcontactphonenumber)
-                        val debitAccountInfo = DebitAccountInfo(debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, debitcontactinformation, SchemeName.ACC.toString.toUpperCase)
+                        val debitAccountInfo = DebitAccountInfo(debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, debitcontactinformation, SchemeName.ACCOUNT.toString.toUpperCase)
                         val creditcontactinformation = ContactInfo(creditorinformationcreditorname, creditorinformationcreditorcontactphonenumber)
                         val creditAccountInfo = CreditAccountInfo(creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoraccountinformationcreditoraccountschemename, creditoragentinformationfinancialInstitutionIdentification, creditcontactinformation)
                         val purposeInfo = TransferPurposeInfo(purposeinformationpurposecode)
@@ -7750,7 +7837,7 @@ class CbsEngine @Inject()
                         val mySingleCreditTransferPaymentTableDetails = //SingleCreditTransferPaymentTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
                           SingleCreditTransferPaymentTableDetails(myBatchReference, 
                           debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, firstAgentIdentification, 
-                          messageidentification, paymentendtoendidentification, SchemeName.ACC.toString.toUpperCase, 
+                          messageidentification, paymentendtoendidentification, SchemeName.ACCOUNT.toString.toUpperCase, 
                           amount, debtorinformationdebtorname, debtorinformationdebtorcontactphonenumber, 
                           creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoragentinformationfinancialInstitutionIdentification, creditoraccountinformationcreditoraccountschemename, 
                           remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber, purposeinformationpurposecode, 
@@ -7994,7 +8081,7 @@ class CbsEngine @Inject()
           val mySingleCreditTransferPaymentTableDetails = //SingleCreditTransferPaymentTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
             SingleCreditTransferPaymentTableDetails(myBatchReference, 
             debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, firstAgentIdentification, 
-            messageidentification, paymentendtoendidentification, SchemeName.ACC.toString.toUpperCase, 
+            messageidentification, paymentendtoendidentification, SchemeName.ACCOUNT.toString.toUpperCase, 
             amount, debtorinformationdebtorname, debtorinformationdebtorcontactphonenumber, 
             creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoragentinformationfinancialInstitutionIdentification, creditoraccountinformationcreditoraccountschemename, 
             remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber, purposeinformationpurposecode, 
@@ -10394,7 +10481,7 @@ class CbsEngine @Inject()
     }
 
   }
-  def sendBulkCreditTransferRequestsIpsl(myRequestData: String): Unit = {
+  def sendBulkCreditTransferRequestsIpsl_old(myRequestData: String): Unit = {
     val strApifunction : String = "sendBulkCreditTransferRequestsIpsl"
     var strProjectionType  : String = "RetirementsReduced"
     var strApiURL  : String = "http://localhost:9001/getbulkcredittransferresponsedetails"
@@ -11909,6 +11996,208 @@ class CbsEngine @Inject()
         log_errors(strApifunction + " : " + t.getMessage + "t exception error occured.")
     }
   }
+  def sendBulkCreditTransferRequestsIpsl(myID: java.math.BigDecimal, myRequestData: String, strApiURL: String): Unit = {
+    val strApifunction: String = "sendBulkCreditTransferRequestsIpsl"
+    //var strApiURL: String = "http://localhost:9001/iso20022/v1/credit-transfer"
+    
+    val myuri : Uri = strApiURL
+
+    var isValidData : Boolean = false
+    var isSuccessful : Boolean = false
+    var myXmlData : String = ""
+    //var strDeveloperId: String = ""//strDeveloperId_Verification
+
+    try {
+      isValidData = true//TESTS ONLY
+      if (isValidData) {
+
+        //val myDataManagement = new DataManagement
+        //val accessToken: String = GetCbsApiAuthorizationHeader(strDeveloperId)
+
+        //var strUserName: String = "testUid"
+        //var strPassWord: String = "testPwd"
+        /*
+        try {
+          strUserName = getCbsApiUserName
+          var strPwd: String = getCbsApiPassword //n6,e$=p8QK\+c^h~
+          var myByteAuthToken = Base64.getDecoder.decode(strPwd)
+          var myPwd : String = new String(myByteAuthToken, StandardCharsets.UTF_8)
+          strPassWord = myPwd
+        }
+        catch
+        {
+          case ex: Exception =>
+            isSuccessful = false//strname = "no data"//println("Got some other kind of exception")
+          case t: Throwable =>
+            isSuccessful = false//strname = "no data"//println("Got some other kind of exception")
+        }
+        */
+        /*
+        if (strUserName == null){
+          strUserName = ""
+        }
+
+        if (strPassWord == null){
+          strPassWord = ""
+        }
+
+        if (strUserName.trim.length == 0){
+          log_errors(strApifunction + " : Failure in fetching  Api UserName - " + strUserName + " , application error occured.")
+          return
+        }
+
+        if (strPassWord.trim.length == 0){
+          log_errors(strApifunction + " : Failure in fetching  Api UserName - " + strPassWord + " , application error occured.")
+          return
+        }
+        */
+        try{
+          val dateToIpslApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+          var strRequestData: String = ""
+          /*
+          var strRequestData: String = myRequestData
+          strRequestData = strRequestData.replace("'","")//Remove apostrophe
+          strRequestData = strRequestData.replace(" ","")//Remove spaces
+          strRequestData = strRequestData.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+          strRequestData = strRequestData.trim
+          */
+          val strSQL: String = "update [dbo].[OutgoingSingleCreditTransferPaymentDetails] set [Posted_to_IpslApi] = 1, [Post_picked_IpslApi] = 1, [RequestMessage_IpslApi] = '" + strRequestData + "', [Date_to_IpslApi] = '" + dateToIpslApi + "' where [ID] = " + myID + ";"
+          insertUpdateRecord(strSQL)
+
+          log_data(strApifunction + " : " + " channeltype - IPSL"  + " , >> outgoing request >> - " + myRequestData + " , ID - " + myID)
+        }
+        catch{
+          case ex: Exception =>
+            log_errors(strApifunction + " : " + ex.getMessage())
+          case io: IOException =>
+            log_errors(strApifunction + " : " + io.getMessage())
+          case tr: Throwable =>
+            log_errors(strApifunction + " : " + tr.getMessage())
+        }
+
+        val strCertPath: String = "certsconf/bank0074_transport.p12"
+        val strCaChainCertPath: String = "certsconf/ca_chain.crt.pem"
+        val clientContext = {
+          val certStore = KeyStore.getInstance("PKCS12")
+          val myKeyStore: InputStream = getResourceStream(strCertPath)
+          val password: String = "K+S2>v/dmUE%XBc+9^"
+          val myPassword = password.toCharArray()
+          certStore.load(myKeyStore, myPassword)
+          // only do this if you want to accept a custom root CA. Understand what you are doing!
+          certStore.setCertificateEntry("ca", loadX509Certificate(strCaChainCertPath))
+
+          val certManagerFactory = TrustManagerFactory.getInstance("SunX509")
+          certManagerFactory.init(certStore)
+
+          val keyManagerFactory = KeyManagerFactory.getInstance("SunX509")
+          keyManagerFactory.init(certStore, myPassword)
+
+          val context = SSLContext.getInstance("TLS")//TLSv1.2, TLSv1.3
+          context.init(keyManagerFactory.getKeyManagers, certManagerFactory.getTrustManagers, new SecureRandom)
+          ConnectionContext.httpsClient(context)
+        }
+        //val data = HttpEntity(ContentType(MediaTypes.`application/json`), myjsonData)
+        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization", "bearer " + accessToken)))
+        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("username", strUserName),RawHeader("password", strPassWord)))
+        //***working*** val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(GET, uri = myuri).withHeaders(RawHeader("username", strUserName),RawHeader("password", strPassWord)))
+        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(GET, uri = myuri).withHeaders(RawHeader("username", "FundMasterApi"),RawHeader("password", "n6,e$=p8QK\\+c^h~")))
+        /* TESTS ONLY */
+        //val accessToken: String = "sassasasss"
+        myXmlData = myRequestData
+        val data = HttpEntity(ContentType.WithCharset(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`), myXmlData)
+        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization", "bearer " + accessToken)))
+        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data))
+        //val conctx = Http().createClientHttpsContext(Http().sslConfig)
+        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data), connectionContext = conctx)
+        val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data), connectionContext = clientContext)
+        val myEntryID: Future[java.math.BigDecimal] = Future(myID)
+        //var start_time_DB: String = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+        //val myStart_time: Future[String] = Future(start_time_DB)
+        //TESTS ONLY
+        //println("start 1: " + start_time_DB)
+
+        responseFuture
+          .onComplete {
+            case Success(res) =>
+              //println("start 2: " + res.status.intValue())
+              val dateFromIpslApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+              var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
+              var myHttpStatusCode: Int = 0
+              var mystatuscode: Int = 1
+              var strStatusMessage: String = "Failed processing"
+              var strResponseData: String = ""
+              if (res.status != None) {
+                if (res.status.intValue() == 202) {
+                  val myData = res.entity
+                  if (myData != null){
+                    val x = myData.asInstanceOf[HttpEntity.Strict].getData().decodeString(StandardCharsets.UTF_8)
+                    strResponseData = x.toString
+                    //println("res.entity x - " + x.toString)
+                    //println("mySingleCreditTransfer - " + x.toString)
+                  }
+                  mystatuscode = 0
+                  strStatusMessage = "successful"
+                }
+                else {
+                  //Lets log the status code returned by CBS webservice
+                  strStatusMessage = "Failed"
+                }
+
+                myHttpStatusCode = res.status.intValue()
+
+                if (myEntryID.value.isEmpty != true) {
+                  if (myEntryID.value.get != None) {
+                    val myVal = myEntryID.value.get
+                    if (myVal.get != None) {
+                      myID = myVal.get
+                    }
+                  }
+                }
+
+                val strSQL: String = "update [dbo].[OutgoingSingleCreditTransferPaymentDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
+                ", [StatusCode_IpslApi] = " + mystatuscode + ", [StatusMessage_IpslApi] = '" + strStatusMessage +
+                "', [ResponseMessage_IpslApi] = '" + strResponseData + 
+                "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
+                insertUpdateRecord(strSQL)
+
+                log_data(strApifunction + " : " + " channeltype - IPSL"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode)
+              }
+            case Failure(f) =>
+              val dateFromIpslApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+              var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
+              val myHttpStatusCode: Int = 500
+              val strHttpErrorMessage: String = f.getMessage
+              val strStatusMessage: String = "Failure occured when sending the request to API. " + strHttpErrorMessage
+              val strResponseData: String = ""
+
+              if (myEntryID.value.isEmpty != true) {
+                if (myEntryID.value.get != None) {
+                  val myVal = myEntryID.value.get
+                  if (myVal.get != None) {
+                    myID = myVal.get
+                  }
+                }
+              }
+
+              val strSQL: String = "update [dbo].[OutgoingSingleCreditTransferPaymentDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
+              ", [StatusCode_IpslApi] = 1, [StatusMessage_IpslApi] = '" + strStatusMessage +
+              "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
+              insertUpdateRecord(strSQL)
+
+              log_data(strApifunction + " : " + " channeltype - IPSL"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode + " , httperrormessage - " + strHttpErrorMessage)
+          }
+      }
+    }
+    catch
+    {
+      case ex: Exception =>
+        isSuccessful = false
+        log_errors(strApifunction + " : " + ex.getMessage + "exception error occured.")
+      case t: Throwable =>
+        isSuccessful = false
+        log_errors(strApifunction + " : " + t.getMessage + "t exception error occured.")
+    }
+  }
   def sendPaymentCancellationRequestsIpsl(myID: java.math.BigDecimal, myRequestData: String, strApiURL: String): Unit = {
     val strApifunction: String = "sendPaymentCancellationRequestsIpsl"
     //var strApiURL: String = "http://localhost:9001/iso20022/v1/payment-cancellation-request"
@@ -12561,8 +12850,8 @@ class CbsEngine @Inject()
 
     strOutput
   }
-  def getSingleCreditTransferDetails(creditTransferPaymentInfo: SingleCreditTransferPaymentInfo, isAccSchemeName: Boolean) : String = {
-
+  def getSingleCreditTransferDetails(creditTransferPaymentInfo: SingleCreditTransferPaymentInfo) : String = {
+    //, isAccSchemeName: Boolean
     var strOutput: String = ""
     try {
       val messageidentification: String = creditTransferPaymentInfo.messagereference//"001"
@@ -12651,7 +12940,8 @@ class CbsEngine @Inject()
         ultimatecreditorinformation, purposeinformation, remittanceinformation
       )
 
-      val singleCreditTransfer = new SingleCreditTransfer(groupHeaderInformation, creditTransferTransactionInformation, isAccSchemeName)
+      //val singleCreditTransfer = new SingleCreditTransfer(groupHeaderInformation, creditTransferTransactionInformation, isAccSchemeName)
+      val singleCreditTransfer = new SingleCreditTransfer(groupHeaderInformation, creditTransferTransactionInformation)
 
       val myData = singleCreditTransfer.toXml
       strOutput = myData.toString()
@@ -12664,7 +12954,7 @@ class CbsEngine @Inject()
 
     strOutput
   }
-  def getBulkCreditTransferDetails(creditTransferPaymentInfo: BulkCreditTransferPaymentInfo, isAccSchemeName: Boolean) : String = {
+  def getBulkCreditTransferDetails(creditTransferPaymentInfo: BulkCreditTransferPaymentInfo) : String = {
 
     var strOutput: String = ""
     try {
@@ -12692,8 +12982,8 @@ class CbsEngine @Inject()
       )
       
       val creditTransfertransactioninformationbatch = getBulkPaymentInfo(creditTransferPaymentInfo.paymentdata, transferdefaultinformation, creationdatetime)
-      val bulkCreditTransfer = new BulkCreditTransfer(groupHeaderInformation, creditTransfertransactioninformationbatch, isAccSchemeName)
-
+      val bulkCreditTransfer = new BulkCreditTransfer(groupHeaderInformation, creditTransfertransactioninformationbatch)
+      //println("bulkCreditTransfer - " + bulkCreditTransfer)
       val myData = bulkCreditTransfer.toXml
       strOutput = myData.toString()
     }catch {
@@ -12899,7 +13189,7 @@ class CbsEngine @Inject()
       //Add second txn
       creditTransfertransactioninformationbatch = creditTransfertransactioninformationbatch :+ creditTransferTransactionInformation2
 
-      val bulkCreditTransfer = new BulkCreditTransfer(groupHeaderInformation, creditTransfertransactioninformationbatch, false)
+      val bulkCreditTransfer = new BulkCreditTransfer(groupHeaderInformation, creditTransfertransactioninformationbatch)
 
       val myData = bulkCreditTransfer.toXml
       //println("getBulkCreditTransferDetails:myData - " + System.lineSeparator() + myData.toString())
