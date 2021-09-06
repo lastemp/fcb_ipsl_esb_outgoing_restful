@@ -1195,7 +1195,7 @@ class CbsEngine @Inject()
           <MsgId>{groupHeaderInformation.messageidentification}</MsgId>
           <CreDtTm>{groupHeaderInformation.creationdatetime}</CreDtTm>
           <NbOfTxs>{groupHeaderInformation.numberoftransactions}</NbOfTxs>
-          <TtlIntrBkSttlmAmt>{groupHeaderInformation.totalinterbanksettlementamount}</TtlIntrBkSttlmAmt>
+          <TtlIntrBkSttlmAmt Ccy="KES">{groupHeaderInformation.totalinterbanksettlementamount}</TtlIntrBkSttlmAmt>
           <SttlmInf>
             <SttlmMtd>{groupHeaderInformation.settlementinformation.settlementmethod}</SttlmMtd>
             <ClrSys>
