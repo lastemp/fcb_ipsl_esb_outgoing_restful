@@ -235,7 +235,9 @@ class CbsEngine @Inject()
   case class SingleCreditTransferPaymentDetails_Request(messagereference: Option[JsValue], paymentdata: Option[CreditTransferPaymentInformation])
   case class SingleCreditTransferPaymentDetailsResponse(statuscode: Int, statusdescription: String)
   case class BulkCreditTransferPaymentDetails_Request(messagereference: Option[JsValue], paymentdata: Seq[CreditTransferPaymentInformation])
-  case class BulkCreditTransferPaymentDetailsResponse(statuscode: Int, statusdescription: String)
+  //case class BulkCreditTransferPaymentDetailsResponse(statuscode: Int, statusdescription: String)
+  case class BulkCreditTransferPaymentDetailsResponse_Batch(creditoraccountNumber: String, creditorbankcode: String, transactionreference: String, statuscode: Int, statusdescription: String)
+  case class BulkCreditTransferPaymentDetailsResponse_BatchData(messagereference: String, statuscode: Int, statusdescription: String, paymentdata: Seq[BulkCreditTransferPaymentDetailsResponse_Batch])
   case class OriginalGroupInformation(originalmessageidentification: Option[JsValue], originalmessagenameidentification: Option[JsValue],  originalcreationdatetime: Option[JsValue], originalendtoendidentification: Option[JsValue])
   case class PaymentCancellationInformation(transactionreference: Option[JsValue], amount: Option[JsValue], debitaccountinformation: Option[DebitAccountInformation], creditaccountinformation: Option[CreditAccountInformation], mandateinformation: Option[TransferMandateInformation], remittanceinformation: Option[TransferRemittanceInformation], purposeinformation: Option[TransferPurposeInformation],
                                             originalgroupinformation: Option[OriginalGroupInformation])
@@ -3499,7 +3501,7 @@ class CbsEngine @Inject()
       var entryID: Int = 0
       var responseCode: Int = 1
       var responseMessage: String = "Error occured during processing, please try again."
-      //var myS2B_PaymentDetailsResponse_BatchData: Seq[S2B_PaymentDetailsResponse_Batch] = Seq.empty[S2B_PaymentDetailsResponse_Batch]
+      var myBulkCreditTransferPaymentDetailsResponse_BatchData: Seq[BulkCreditTransferPaymentDetailsResponse_Batch] = Seq.empty[BulkCreditTransferPaymentDetailsResponse_Batch]
       val strApifunction: String = "addbulkcredittransferpaymentdetails"
       var myHttpStatusCode = HttpStatusCode.BadRequest
       var isValidMessageReference: Boolean = false
@@ -3769,58 +3771,17 @@ class CbsEngine @Inject()
                 var strBatchReference: String = ""
                 var strRequestData: String = ""
                 var paymentdata = Seq[BulkPaymentInfo]()
+                var myFailedEntries: Integer = 0
 
                 try
                 {
                   entryID = 0
                   myBatchSize = myPaymentDetails_BatchRequest.paymentdata.length
-                  strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
-                  //val myBatchReference : java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
+                  //strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
+                  strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
+                  val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
 
                   try{
-                    /*
-                    var myAmount: BigDecimal = 0
-                    var strAmount: String = ""
-
-                    var messageidentification: String = ""
-
-                    var paymentendtoendidentification: String = ""
-                    var interbanksettlementamount: BigDecimal = 0
-                    var totalinterbanksettlementamount: BigDecimal = 0
-                    var mandateidentification: String = ""
-                    //debtor
-                    var debtorinformationdebtorname: String = ""
-                    //val debtorinformationdebtororganisationidentification: String = firstAgentIdentification
-                    var debtorinformationdebtorcontactphonenumber: String = ""
-                    var debtoraccountinformationdebtoraccountidentification: String = ""
-                    //val debtoraccountinformationdebtoraccountschemename: String = SchemeName.ACC.toString.toUpperCase
-                    var debtoraccountinformationdebtoraccountname: String = ""
-                    //val debtoragentinformationfinancialInstitutionIdentification: String = firstAgentIdentification
-                    //creditor
-                    var creditoragentinformationfinancialInstitutionIdentification: String = ""
-                    var creditorinformationcreditorname: String = ""
-                    var creditorinformationcreditororganisationidentification: String = ""
-                    var creditorinformationcreditorcontactphonenumber: String = ""
-                    var creditoraccountinformationcreditoraccountidentification: String = ""
-                    var creditoraccountinformationcreditoraccountschemename: String = ""
-                    var creditoraccountinformationcreditoraccountname: String = ""
-                    //other details
-                    var purposeinformationpurposecode: String = ""
-                    var remittanceinformationunstructured: String = ""
-                    var remittanceinformationtaxremittancereferencenumber: String = ""
-                    */
-                    //default values
-                    //val instructingagentinformationfinancialInstitutionIdentification: String = firstAgentIdentification
-                    //val instructedagentinformationfinancialInstitutionIdentification: String = assigneeAgentIdentification //i.e IPSL
-                    //val initiatingpartyinformationorganisationidentification: String = firstAgentIdentification
-                    //val chargebearer: String = chargeBearer
-                    //val settlementmethod: String = settlementMethod
-                    //val clearingsystem: String = clearingSystem
-                    //val servicelevel: String = serviceLevel
-                    //val localinstrumentcode: String = localInstrumentCode
-                    //val categorypurpose: String = categoryPurpose
-
-                    //val creationDateTime: String = new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
                     val t1: String =  new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
                     val t2: String =  new SimpleDateFormat("HH:mm:ss.SSS").format(new java.util.Date)
                     val creationDateTime: String = t1 + "T" + t2+ "Z"
@@ -3882,9 +3843,43 @@ class CbsEngine @Inject()
                       isValid
                     }
 
+                    val sourceDataTable = new SQLServerDataTable
+                    sourceDataTable.addColumnMetadata("BatchReference", java.sql.Types.NUMERIC)
+                    sourceDataTable.addColumnMetadata("DebtorAccountNumber", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("DebtorAccountName", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("DebtorBankCode", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("MessageReference", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("TransactionReference", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("DebtorSchemeName", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("Amount", java.sql.Types.NUMERIC)
+                    sourceDataTable.addColumnMetadata("DebtorFullNames", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("DebtorPhoneNumber", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("CreditorAccountNumber", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("CreditorAccountName", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("CreditorBankCode", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("CreditorSchemeName", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("RemittanceInfoUnstructured", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("TaxRemittanceReferenceNo", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("PurposeCode", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("ChargeBearer", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("MandateIdentification", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("InstructingAgentBankCode", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("InstructedAgentBankCode", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("BatchSize", java.sql.Types.INTEGER)
+                    sourceDataTable.addColumnMetadata("RequestMessage_CbsApi_In", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("Date_from_CbsApi_In", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("RemoteAddress_CbsApi_In", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("ChannelType", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("ChannelCallBackUrl", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("ValidationResponseCode", java.sql.Types.INTEGER)
+                    sourceDataTable.addColumnMetadata("ValidationResponseMessage", java.sql.Types.VARCHAR)
+
                     myPaymentDetails_BatchRequest.paymentdata.foreach(myPaymentDetails => {
 
                       numberoftransactions = numberoftransactions + 1
+
+                      responseCode = 1
+                      responseMessage  = "Error occured during processing, please try again."
 
                       myAmount = 0
                       strAmount = ""
@@ -4439,19 +4434,6 @@ class CbsEngine @Inject()
                           log_errors(strApifunction + " : " + ex.getMessage())
                       }
 
-                      /* Lets set var isValidInputData to true if valid data is received from e-Channels/ESB-CBS System */
-                      /*
-                      val isValidSchemeName: Boolean = {
-                        creditoraccountinformationcreditoraccountschemename match {
-                          case accSchemeName =>
-                            true
-                          case phneSchemeName =>
-                            true
-                          case _ =>
-                            false
-                        }
-                      }
-                      */
                       isValidSchemeName = {
                         var isValid: Boolean = false
                         if (creditoraccountinformationcreditoraccountschemename.length == 0 || accSchemeName.length == 0 || phneSchemeName.length == 0 || walletSchemeName.length == 0){
@@ -4631,133 +4613,12 @@ class CbsEngine @Inject()
                       }
 
                       if (isValidMessageReference && isValidTransactionReference && !isMatchingReference && isValidSchemeName && isValidAmount && isValidDebitAccount && isValidDebitAccountName && isValidDebitPhoneNumber && isValidCreditAccount && isValidCreditAccountName && isValidCreditBankCode && isValidDebtorName && isValidRemittanceinfoUnstructured && isValidPurposeCode){
-                        isValidInputData = true
-                        /*
-                        myHttpStatusCode = HttpStatusCode.Accepted //TESTS ONLY
                         responseCode = 0
-                        responseMessage = "Message accepted for processing."
-                        println("messageidentification - " + messageidentification + ", paymentendtoendidentification - " + paymentendtoendidentification + ", totalinterbanksettlementamount - " + totalinterbanksettlementamount +
-                          ", debtoraccountinformationdebtoraccountidentification - " + debtoraccountinformationdebtoraccountidentification + ", creditoraccountinformationcreditoraccountidentification - " + creditoraccountinformationcreditoraccountidentification)
-                        */  
-                      }
-
-                      try{
-                        //sourceDataTable.addRow(myBatchReference, strDebitAccountNumber, strAccountNumber, strAccountName, strCustomerReference, strBankCode, strLocalBankCode, strBranchCode, myAmount, strPaymentType, strPurposeofPayment, strDescription, strEmailAddress, myBatchSize)
-                        //validate creditoraccountinformationcreditoraccountschemename to ensure it has the right input value
-                        /*
-                        val schemeName: String = {
-                          creditoraccountinformationcreditoraccountschemename match {
-                            case accSchemeName =>
-                              SchemeName.ACC.toString.toUpperCase
-                            case phneSchemeName =>
-                              SchemeName.PHNE.toString.toUpperCase
-                            case _ =>
-                              SchemeName.ACC.toString.toUpperCase
-                          }
-                        }
-                        */
-                        if (isValidInputData){
-                          //var isAccSchemeName: Boolean = false
-                          /*
-                          val schemeName: String = {
-                            var scheme: String = ""
-                            if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(accSchemeName)){
-                              scheme = accSchemeName
-                              isAccSchemeName = true
-                            }
-                            else if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(phneSchemeName)){
-                              scheme = phneSchemeName
-                            }
-
-                            scheme
-
-                          }
-
-                          creditoraccountinformationcreditoraccountschemename = schemeName
-                          */
-                          //val transferDefaultInfo = TransferDefaultInfo(firstAgentIdentification, assigneeAgentIdentification, chargeBearer, settlementMethod, clearingSystem, serviceLevel, localInstrumentCode, categoryPurpose)
-                          val debitcontactinformation = ContactInfo(debtorinformationdebtorname, debtorinformationdebtorcontactphonenumber)
-                          val debitAccountInfo = DebitAccountInfo(debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, debitcontactinformation, SchemeName.ACCOUNT.toString.toUpperCase)
-                          val creditcontactinformation = ContactInfo(creditorinformationcreditorname, creditorinformationcreditorcontactphonenumber)
-                          val creditAccountInfo = CreditAccountInfo(creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoraccountinformationcreditoraccountschemename, creditoragentinformationfinancialInstitutionIdentification, creditcontactinformation)
-                          val purposeInfo = TransferPurposeInfo(purposeinformationpurposecode)
-                          val remittanceInfo = TransferRemittanceInfo(remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber)
-                          val mandateInfo = TransferMandateInfo(mandateidentification)
-                          //val paymentdata = BulkPaymentInfo(paymentendtoendidentification, interbanksettlementamount, debitAccountInfo, creditAccountInfo, mandateInfo, remittanceInfo, purposeInfo)
-                          val bulkPaymentInfo = BulkPaymentInfo(paymentendtoendidentification, interbanksettlementamount, debitAccountInfo, creditAccountInfo, mandateInfo, remittanceInfo, purposeInfo)
-                          //var paymentdata = Seq[BulkPaymentInfo]()
-                          paymentdata = paymentdata :+ bulkPaymentInfo 
-                          //val bulkCreditTransferPaymentInfo = BulkCreditTransferPaymentInfo(messageidentification, creationDateTime, numberoftransactions, totalinterbanksettlementamount, transferDefaultInfo, paymentdata)
-                          /*  
-                          val f = Future {
-                            //println("singleCreditTransferPaymentInfo - " + singleCreditTransferPaymentInfo)
-                            val myRespData: String = getSingleCreditTransferDetails(singleCreditTransferPaymentInfo, isAccSchemeName)
-                            sendSingleCreditTransferRequestsIpsl(myID, myRespData)
-                          }  
-                          */
-                          //val myBatchSize: Integer = 1
-                          //val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
-                          val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
-                          val amount: java.math.BigDecimal =  new java.math.BigDecimal(myAmount.toString())
-                          val mySingleCreditTransferPaymentTableDetails = //SingleCreditTransferPaymentTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
-                            SingleCreditTransferPaymentTableDetails(myBatchReference, 
-                            debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, firstAgentIdentification, 
-                            messageidentification, paymentendtoendidentification, SchemeName.ACCOUNT.toString.toUpperCase, 
-                            amount, debtorinformationdebtorname, debtorinformationdebtorcontactphonenumber, 
-                            creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoragentinformationfinancialInstitutionIdentification, creditoraccountinformationcreditoraccountschemename, 
-                            remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber, purposeinformationpurposecode, 
-                            chargeBearer, mandateidentification, assignerAgentIdentification, assigneeAgentIdentification, 
-                            myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
-                          /*
-                          val myTableResponseDetails = addOutgoingSingleCreditTransferPaymentDetails(mySingleCreditTransferPaymentTableDetails, strChannelType, strChannelCallBackUrl)
-                          myID = myTableResponseDetails.id
-                          responseCode = myTableResponseDetails.responsecode
-                          responseMessage = myTableResponseDetails.responsemessage
-                          */
-                          //println("myID - " + myID)
-                          //println("responseCode - " + responseCode)
-                          //println("responseMessage - " + responseMessage)
-                          /*
-                          if (responseCode == 0){
-                            myHttpStatusCode = HttpStatusCode.Accepted
-                            responseMessage = "Message accepted for processing."
-
-                            val f = Future {
-                              //println("singleCreditTransferPaymentInfo - " + singleCreditTransferPaymentInfo)
-                              val myRespData: String = getBulkCreditTransferDetails(bulkCreditTransferPaymentInfo, isAccSchemeName)
-                              sendSingleCreditTransferRequestsIpsl(myID, myRespData, strOutgoingSingleCreditTransferUrlIpsl)
-                            }
-                          }
-                          */
-                        }
-                      }
-                      catch {
-                        case io: Throwable =>
-                          log_errors(strApifunction + " : " + io.getMessage())
-                        case ex: Exception =>
-                          log_errors(strApifunction + " : " + ex.getMessage())
-                      }
-                    })
-
-                    try{
-                      if (isValidInputData){
-                        val transferDefaultInfo = TransferDefaultInfo(firstAgentIdentification, assigneeAgentIdentification, chargeBearer, settlementMethod, clearingSystem, serviceLevel, localInstrumentCode, categoryPurpose)
-                        val bulkCreditTransferPaymentInfo = BulkCreditTransferPaymentInfo(messageidentification, creationDateTime, numberoftransactions, totalinterbanksettlementamount, transferDefaultInfo, paymentdata)
-                        //TESTS ONLY
-                        responseCode = 0  
-                        if (responseCode == 0){
-                          myHttpStatusCode = HttpStatusCode.Accepted
-                          responseMessage = "Message accepted for processing."
-
-                          val f = Future {
-                            //println("bulkCreditTransferPaymentInfo - " + bulkCreditTransferPaymentInfo)
-                            val myRespData: String = getBulkCreditTransferDetails(bulkCreditTransferPaymentInfo)
-                            //println("myRespData - " + myRespData)
-                            sendBulkCreditTransferRequestsIpsl(myID, myRespData, strOutgoingBulkCreditTransferUrlIpsl)
-                          }
-                        }
+                        responseMessage = "Successful"
                       }
                       else{
+                        myFailedEntries = myFailedEntries + 1
+
                         responseMessage = "Invalid Input Data length"
                         if (!isValidMessageReference){
                           responseMessage = "Invalid Input Data. messagereference"
@@ -4806,6 +4667,154 @@ class CbsEngine @Inject()
                           responseMessage = "Invalid Input Data. credit phonenumber"
                         }
                         */
+                      }
+
+                      try{
+                          val debitcontactinformation = ContactInfo(debtorinformationdebtorname, debtorinformationdebtorcontactphonenumber)
+                          val debitAccountInfo = DebitAccountInfo(debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, debitcontactinformation, SchemeName.ACCOUNT.toString.toUpperCase)
+                          val creditcontactinformation = ContactInfo(creditorinformationcreditorname, creditorinformationcreditorcontactphonenumber)
+                          val creditAccountInfo = CreditAccountInfo(creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoraccountinformationcreditoraccountschemename, creditoragentinformationfinancialInstitutionIdentification, creditcontactinformation)
+                          val purposeInfo = TransferPurposeInfo(purposeinformationpurposecode)
+                          val remittanceInfo = TransferRemittanceInfo(remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber)
+                          val mandateInfo = TransferMandateInfo(mandateidentification)
+                          val bulkPaymentInfo = BulkPaymentInfo(paymentendtoendidentification, interbanksettlementamount, debitAccountInfo, creditAccountInfo, mandateInfo, remittanceInfo, purposeInfo)
+                          paymentdata = paymentdata :+ bulkPaymentInfo 
+
+                          val amount: java.math.BigDecimal =  new java.math.BigDecimal(myAmount.toString())
+                          /*
+                          val mySingleCreditTransferPaymentTableDetails = //SingleCreditTransferPaymentTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+                            SingleCreditTransferPaymentTableDetails(myBatchReference, 
+                            debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, firstAgentIdentification, 
+                            messageidentification, paymentendtoendidentification, SchemeName.ACCOUNT.toString.toUpperCase, 
+                            amount, debtorinformationdebtorname, debtorinformationdebtorcontactphonenumber, 
+                            creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoragentinformationfinancialInstitutionIdentification, creditoraccountinformationcreditoraccountschemename, 
+                            remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber, purposeinformationpurposecode, 
+                            chargeBearer, mandateidentification, assignerAgentIdentification, assigneeAgentIdentification, 
+                            myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+                          */  
+
+                          try{
+                            sourceDataTable.addRow(myBatchReference, debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, firstAgentIdentification, 
+                              messageidentification, paymentendtoendidentification, SchemeName.ACCOUNT.toString.toUpperCase, 
+                              amount, debtorinformationdebtorname, debtorinformationdebtorcontactphonenumber, 
+                              creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoragentinformationfinancialInstitutionIdentification, creditoraccountinformationcreditoraccountschemename, 
+                              remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber, purposeinformationpurposecode, 
+                              chargeBearer, mandateidentification, assignerAgentIdentification, assigneeAgentIdentification, 
+                              myBatchSize, strRequestData, dateFromCbsApi, strClientIP,
+                              strChannelType, strChannelCallBackUrl, 
+                              responseCode, responseMessage)
+                          }
+                          catch {
+                            case io: Throwable =>
+                              log_errors(strApifunction + " : " + io.getMessage())
+                            case ex: Exception =>
+                              log_errors(strApifunction + " : " + ex.getMessage())
+                          }  
+                          /*
+                          val myTableResponseDetails = addOutgoingSingleCreditTransferPaymentDetails(mySingleCreditTransferPaymentTableDetails, strChannelType, strChannelCallBackUrl)
+                          myID = myTableResponseDetails.id
+                          responseCode = myTableResponseDetails.responsecode
+                          responseMessage = myTableResponseDetails.responsemessage
+                          */
+                          //println("myID - " + myID)
+                          //println("responseCode - " + responseCode)
+                          //println("responseMessage - " + responseMessage)
+                          /*
+                          if (responseCode == 0){
+                            myHttpStatusCode = HttpStatusCode.Accepted
+                            responseMessage = "Message accepted for processing."
+
+                            val f = Future {
+                              //println("singleCreditTransferPaymentInfo - " + singleCreditTransferPaymentInfo)
+                              val myRespData: String = getBulkCreditTransferDetails(bulkCreditTransferPaymentInfo, isAccSchemeName)
+                              sendSingleCreditTransferRequestsIpsl(myID, myRespData, strOutgoingSingleCreditTransferUrlIpsl)
+                            }
+                          }
+                          */
+                        //}
+                      }
+                      catch {
+                        case io: Throwable =>
+                          log_errors(strApifunction + " : " + io.getMessage())
+                        case ex: Exception =>
+                          log_errors(strApifunction + " : " + ex.getMessage())
+                      }
+                    })
+
+                    try{
+                      var myValidInputDataStatus: Integer = 0
+
+                      responseCode = 1
+                      responseMessage  = "Invalid Input Data"
+                      isValidInputData = false
+
+                      if (myFailedEntries == 0){
+                        isValidInputData = true
+                        myValidInputDataStatus = 1 
+                      }
+
+                      myFailedEntries = 0
+
+                      try{
+                        myDB.withConnection { implicit  myconn =>
+
+                          val strSQL = "{ call dbo.insertOutgoingBulkCreditTransferPaymentDetailsBatch(?,?,?) }"
+                          val mystmt = myconn.prepareCall(strSQL)
+                          mystmt.setInt(1, myValidInputDataStatus)
+                          mystmt.setInt(2, myBatchSize)
+                          mystmt.setObject(3, sourceDataTable)
+                          val resultSet = mystmt.executeQuery()
+                          if (resultSet != null){
+                            while ( resultSet.next()){
+                              try{
+                                val mycreditoraccountNumber = resultSet.getString("creditorAccountNumber")
+                                val mycreditorbankcode = resultSet.getString("creditorBankCode")
+                                //val mymessagereference = resultSet.getString("messageReference")
+                                val mytransactionreference = resultSet.getString("transactionReference")
+                                val myresponseCode = resultSet.getInt("responseCode")
+                                val myresponseMessage = resultSet.getString("responseMessage")
+                                val myBulkCreditTransferPaymentDetailsResponse_Batch = BulkCreditTransferPaymentDetailsResponse_Batch(mycreditoraccountNumber, mycreditorbankcode, mytransactionreference, myresponseCode, myresponseMessage)
+                                myBulkCreditTransferPaymentDetailsResponse_BatchData  = myBulkCreditTransferPaymentDetailsResponse_BatchData :+ myBulkCreditTransferPaymentDetailsResponse_Batch
+                                if (myresponseCode != 0){
+                                  myFailedEntries = myFailedEntries + 1  
+                                }
+                              }
+                              catch{
+                              case io: Throwable =>
+                                log_errors(strApifunction + " : resultSet.next - " + io.getMessage())
+                              case ex: Exception =>
+                                log_errors(strApifunction + " : resultSet.next - " + ex.getMessage())
+                              }
+                            }
+                          }
+                        }  
+                      }
+                      catch{
+                        case io: IOException =>
+                          responseMessage = "Error occured during processing, please try again."
+                          log_errors(strApifunction + " : " + io.getMessage())
+                        case ex: Exception =>
+                          responseMessage = "Error occured during processing, please try again."
+                          log_errors(strApifunction + " : " + ex.getMessage())
+                      }
+
+                      if (myFailedEntries == 0){
+                        responseCode = 0 
+                      }
+
+                      if (responseCode == 0){
+                        myHttpStatusCode = HttpStatusCode.Accepted
+                        responseMessage = "Message accepted for processing."
+
+                        val transferDefaultInfo = TransferDefaultInfo(firstAgentIdentification, assigneeAgentIdentification, chargeBearer, settlementMethod, clearingSystem, serviceLevel, localInstrumentCode, categoryPurpose)
+                        val bulkCreditTransferPaymentInfo = BulkCreditTransferPaymentInfo(messageidentification, creationDateTime, numberoftransactions, totalinterbanksettlementamount, transferDefaultInfo, paymentdata)
+
+                        val f = Future {
+                          //println("bulkCreditTransferPaymentInfo - " + bulkCreditTransferPaymentInfo)
+                          val myRespData: String = getBulkCreditTransferDetails(bulkCreditTransferPaymentInfo)
+                          //println("myRespData - " + myRespData)
+                          sendBulkCreditTransferRequestsIpsl(myID, myRespData, strOutgoingBulkCreditTransferUrlIpsl)
+                        }
                       }
                     }
                     catch {
@@ -4882,9 +4891,15 @@ class CbsEngine @Inject()
           log_errors(strApifunction + " : " + tr.getMessage())
       }
       
-      implicit val  BulkCreditTransferPaymentDetailsResponse_Writes = Json.writes[BulkCreditTransferPaymentDetailsResponse]
+      implicit val BulkCreditTransferPaymentDetailsResponse_BatchWrites = Json.writes[BulkCreditTransferPaymentDetailsResponse_Batch]
+      implicit val BulkCreditTransferPaymentDetailsResponse_BatchDataWrites = Json.writes[BulkCreditTransferPaymentDetailsResponse_BatchData]
 
-      val myBulkCreditTransferPaymentResponse =  BulkCreditTransferPaymentDetailsResponse(responseCode, responseMessage)
+      if (myBulkCreditTransferPaymentDetailsResponse_BatchData.isEmpty || myBulkCreditTransferPaymentDetailsResponse_BatchData == true){
+        val myBulkCreditTransferPaymentDetailsResponse_Batch = BulkCreditTransferPaymentDetailsResponse_Batch("", "", "", 1, "Error occured during processing, please try again.")
+        myBulkCreditTransferPaymentDetailsResponse_BatchData = myBulkCreditTransferPaymentDetailsResponse_BatchData :+ myBulkCreditTransferPaymentDetailsResponse_Batch
+      }
+
+      val myBulkCreditTransferPaymentResponse = BulkCreditTransferPaymentDetailsResponse_BatchData(messageidentification, responseCode, responseMessage, myBulkCreditTransferPaymentDetailsResponse_BatchData)
       val jsonResponse = Json.toJson(myBulkCreditTransferPaymentResponse)
 
       try{
@@ -4910,7 +4925,7 @@ class CbsEngine @Inject()
         }
         else{
           val myBatchSize: Integer = 1
-          val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
+          val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
           val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
           val amount: java.math.BigDecimal =  new java.math.BigDecimal(myAmount.toString())
 
