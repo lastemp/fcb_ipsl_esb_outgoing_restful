@@ -2329,7 +2329,7 @@ class CbsEngine @Inject()
                 {
                   entryID = 0
                   //myBatchSize = myS2B_PaymentDetails_BatchRequest.paymentdata.length
-                  strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
+                  strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
                   //val myBatchReference : java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
 
                   try{
@@ -3211,7 +3211,7 @@ class CbsEngine @Inject()
                         }  
                         */
                         val myBatchSize: Integer = 1
-                        val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
+                        val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
                         val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
                         val amount: java.math.BigDecimal =  new java.math.BigDecimal(myAmount.toString())
                         val mySingleCreditTransferPaymentTableDetails = //SingleCreditTransferPaymentTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
@@ -3240,7 +3240,7 @@ class CbsEngine @Inject()
                             //val myRespData: String = getSingleCreditTransferDetails(singleCreditTransferPaymentInfo, isAccSchemeName)
                             val myRespData: String = getSingleCreditTransferDetails(singleCreditTransferPaymentInfo)
                             sendSingleCreditTransferRequestsIpsl(myID, myRespData, strOutgoingSingleCreditTransferUrlIpsl)
-                          }
+                          }(myExecutionContext)
                         }
                       }
                     }
@@ -3442,7 +3442,7 @@ class CbsEngine @Inject()
         }
         else{
           val myBatchSize: Integer = 1
-          val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
+          val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
           val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
           val amount: java.math.BigDecimal =  new java.math.BigDecimal(myAmount.toString())
 
@@ -4758,11 +4758,12 @@ class CbsEngine @Inject()
                       try{
                         myDB.withConnection { implicit  myconn =>
 
-                          val strSQL = "{ call dbo.insertOutgoingBulkCreditTransferPaymentDetailsBatch(?,?,?) }"
+                          val strSQL = "{ call dbo.insertOutgoingBulkCreditTransferPaymentDetailsBatch(?,?,?,?) }"
                           val mystmt = myconn.prepareCall(strSQL)
-                          mystmt.setInt(1, myValidInputDataStatus)
-                          mystmt.setInt(2, myBatchSize)
-                          mystmt.setObject(3, sourceDataTable)
+                          mystmt.setString(1, messageidentification)
+                          mystmt.setInt(2, myValidInputDataStatus)
+                          mystmt.setInt(3, myBatchSize)
+                          mystmt.setObject(4, sourceDataTable)
                           val resultSet = mystmt.executeQuery()
                           if (resultSet != null){
                             while ( resultSet.next()){
@@ -4813,8 +4814,8 @@ class CbsEngine @Inject()
                           //println("bulkCreditTransferPaymentInfo - " + bulkCreditTransferPaymentInfo)
                           val myRespData: String = getBulkCreditTransferDetails(bulkCreditTransferPaymentInfo)
                           //println("myRespData - " + myRespData)
-                          sendBulkCreditTransferRequestsIpsl(myID, myRespData, strOutgoingBulkCreditTransferUrlIpsl)
-                        }
+                          sendBulkCreditTransferRequestsIpsl(myBatchReference, myRespData, strOutgoingBulkCreditTransferUrlIpsl)
+                        }(myExecutionContext)
                       }
                     }
                     catch {
@@ -4901,7 +4902,7 @@ class CbsEngine @Inject()
 
       val myBulkCreditTransferPaymentResponse = BulkCreditTransferPaymentDetailsResponse_BatchData(messageidentification, responseCode, responseMessage, myBulkCreditTransferPaymentDetailsResponse_BatchData)
       val jsonResponse = Json.toJson(myBulkCreditTransferPaymentResponse)
-
+      /*
       try{
         val dateToCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
         var isSuccessful: Boolean = false
@@ -4960,7 +4961,7 @@ class CbsEngine @Inject()
         case tr: Throwable =>
           log_errors(strApifunction + " : " + tr.getMessage())
       }
-
+      */
       val r: Result = {
         myHttpStatusCode match {
           case HttpStatusCode.Accepted =>
@@ -5190,7 +5191,7 @@ class CbsEngine @Inject()
                 {
                   entryID = 0
                   myBatchSize = myS2B_ForexPaymentDetails_BatchRequest.paymentdata.length
-                  strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
+                  strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
                   val myBatchReference : java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
 
                   try{
@@ -6354,7 +6355,8 @@ class CbsEngine @Inject()
                     try{
                       if (isValidInputData){
                         val myBatchSize: Integer = 1
-                        val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
+                        //val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
+                        val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
                         val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
                         val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
                         
@@ -6505,7 +6507,7 @@ class CbsEngine @Inject()
         val f = Future {
           val myRespData: String = getAccountVerificationDetails(accountVerificationDetails, isAccSchemeName)
           sendAccountVerificationRequestsIpsl(myID, myRespData, strOutgoingAccountVerificationUrlIpsl, strChannelType, strChannelCallBackUrl)
-        }
+        }(myExecutionContext)
 
         val dateToCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
         val myCode: Int = {
@@ -6527,7 +6529,7 @@ class CbsEngine @Inject()
       else{
         try{
           val myBatchSize: Integer = 1
-          val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
+          val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
           val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
           var strRequestData: String = ""
 
@@ -6901,7 +6903,7 @@ class CbsEngine @Inject()
                 {
                   entryID = 0
                   //myBatchSize = myS2B_PaymentDetails_BatchRequest.paymentdata.length
-                  strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
+                  strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
                   //val myBatchReference : java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
 
                   try{
@@ -7846,7 +7848,7 @@ class CbsEngine @Inject()
                         }  
                         */
                         val myBatchSize: Integer = 1
-                        val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
+                        val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
                         val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
                         val amount: java.math.BigDecimal =  new java.math.BigDecimal(myAmount.toString())
                         val mySingleCreditTransferPaymentTableDetails = //SingleCreditTransferPaymentTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
@@ -7877,7 +7879,7 @@ class CbsEngine @Inject()
                             //println("singlePaymentCancellationInfo - " + singlePaymentCancellationInfo)
                             val myRespData: String = getPaymentCancellationDetails(singlePaymentCancellationInfo)
                             sendPaymentCancellationRequestsIpsl(myID, myRespData, strOutgoingPaymentCancellationUrlIpsl)
-                          }
+                          }(myExecutionContext)
                         }
                       }
                     }
@@ -8079,7 +8081,7 @@ class CbsEngine @Inject()
         }
         else{
           val myBatchSize: Integer = 1
-          val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
+          val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
           val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
           val amount: java.math.BigDecimal =  new java.math.BigDecimal(myAmount.toString())
 
@@ -8336,7 +8338,7 @@ class CbsEngine @Inject()
                 {
                   entryID = 0
                   myBatchSize = myCoop_InternalTransfer_PaymentDetails_BatchRequest.paymentdata.length
-                  strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
+                  strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
                   val myBatchReference : java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
                   myBatchNo =  BigDecimal(strBatchReference)
 
@@ -9022,7 +9024,7 @@ class CbsEngine @Inject()
                 {
                   entryID = 0
                   myBatchSize = myCoop_AcctoPesalink_PaymentDetails_BatchRequest.paymentdata.length
-                  strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
+                  strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
                   val myBatchReference : java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
                   myBatchNo =  BigDecimal(strBatchReference)
 
@@ -9718,7 +9720,7 @@ class CbsEngine @Inject()
                 {
                   entryID = 0
                   myBatchSize = myCoop_AcctoMpesa_PaymentDetails_BatchRequest.paymentdata.length
-                  strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
+                  strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
                   val myBatchReference : java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
                   myBatchNo =  BigDecimal(strBatchReference)
 
@@ -12015,7 +12017,7 @@ class CbsEngine @Inject()
     val strApifunction: String = "sendBulkCreditTransferRequestsIpsl"
     //var strApiURL: String = "http://localhost:9001/iso20022/v1/credit-transfer"
     
-    val myuri : Uri = strApiURL
+    val myuri: Uri = strApiURL
 
     var isValidData : Boolean = false
     var isSuccessful : Boolean = false
@@ -12076,7 +12078,7 @@ class CbsEngine @Inject()
           strRequestData = strRequestData.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
           strRequestData = strRequestData.trim
           */
-          val strSQL: String = "update [dbo].[OutgoingSingleCreditTransferPaymentDetails] set [Posted_to_IpslApi] = 1, [Post_picked_IpslApi] = 1, [RequestMessage_IpslApi] = '" + strRequestData + "', [Date_to_IpslApi] = '" + dateToIpslApi + "' where [ID] = " + myID + ";"
+          val strSQL: String = "update [dbo].[OutgoingBulkCreditTransferPaymentDetails] set [Posted_to_IpslApi] = 1, [Post_picked_IpslApi] = 1, [RequestMessage_IpslApi] = '" + strRequestData + "', [Date_to_IpslApi] = '" + dateToIpslApi + "' where [BatchReference] = " + myID + ";"
           insertUpdateRecord(strSQL)
 
           log_data(strApifunction + " : " + " channeltype - IPSL"  + " , >> outgoing request >> - " + myRequestData + " , ID - " + myID)
@@ -12169,10 +12171,10 @@ class CbsEngine @Inject()
                   }
                 }
 
-                val strSQL: String = "update [dbo].[OutgoingSingleCreditTransferPaymentDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
+                val strSQL: String = "update [dbo].[OutgoingBulkCreditTransferPaymentDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
                 ", [StatusCode_IpslApi] = " + mystatuscode + ", [StatusMessage_IpslApi] = '" + strStatusMessage +
                 "', [ResponseMessage_IpslApi] = '" + strResponseData + 
-                "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
+                "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [BatchReference] = " + myID + ";"
                 insertUpdateRecord(strSQL)
 
                 log_data(strApifunction + " : " + " channeltype - IPSL"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode)
@@ -12194,9 +12196,9 @@ class CbsEngine @Inject()
                 }
               }
 
-              val strSQL: String = "update [dbo].[OutgoingSingleCreditTransferPaymentDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
+              val strSQL: String = "update [dbo].[OutgoingBulkCreditTransferPaymentDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
               ", [StatusCode_IpslApi] = 1, [StatusMessage_IpslApi] = '" + strStatusMessage +
-              "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
+              "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [BatchReference] = " + myID + ";"
               insertUpdateRecord(strSQL)
 
               log_data(strApifunction + " : " + " channeltype - IPSL"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode + " , httperrormessage - " + strHttpErrorMessage)
