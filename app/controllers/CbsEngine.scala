@@ -335,7 +335,15 @@ class CbsEngine @Inject()
                                           creditorAgentInformation: CreditorAgentInformation, creditorInformation: CreditorInformation,
                                           creditorAccountInformation: CreditorAccountInformation, ultimateCreditorInformation: UltimateCreditorInformation,
                                           purposeInformation: PurposeInformation)
-  //
+                                            //
+  /* PaymentStatus response */
+  case class ResponseGroupHeaderInformation(messageidentification: String, creationdatetime: String,
+                                            instructingagentinformation: InstructingAgentInformation, instructedagentinformation: InstructedAgentInformation)
+  case class  StatusReasonInformation(originatorname: String, reasoncode: String)
+  case class TransactionInformationAndStatus(statusidentification: String, originalendtoendidentification: String, transactionstatus: String,
+                                             statusReasonInformation: StatusReasonInformation, acceptancedatetime: String,
+                                             originalTransactionReference: OriginalTransactionReference
+                                            )                                          
   case class response_processUssdActions(text: String)
   case class textResponseData(text: String)
   class Stock(var symbol: String, var businessName: String, var price: Double) {
@@ -1973,6 +1981,442 @@ class CbsEngine @Inject()
       val cancellationDetails = CancellationDetails(cancellationTransactionInformationAndStatus)
 
       new PaymentCancellation(cancellationAssignmentInformation, cancellationDetails)
+    }
+  }
+
+  //PaymentStatus
+  class PaymentStatus(val responseGroupHeaderInformation: ResponseGroupHeaderInformation, val originalGroupInformationAndStatus: OriginalGroupInformationAndStatus, val transactionInformationAndStatus: TransactionInformationAndStatus) {
+
+    // (a) convert SingleCreditTransfer fields to XML
+    def toXml = {
+      val prettyPrinter = new scala.xml.PrettyPrinter(80, 4)//value 80 represents max length of "<Document>" header
+      val a = toXmlGroupHeaderInformation
+      val groupHeaderInfo: String = a.toString
+      val b = toXmlOriginalGroupInformationAndStatus
+      val originalGroupHeaderInfo: String = b.toString
+      val c = toXmlTransactionInformationAndStatus
+      val creditTransferTransactionInfo = c.toString
+
+      val d = {
+        "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.028.001.04\"><FIToFIPmtStsReq>" +
+          groupHeaderInfo +
+          originalGroupHeaderInfo +
+          creditTransferTransactionInfo +
+          "</FIToFIPmtStsReq></Document>"
+      }
+
+      val xmlData1: scala.xml.Node = scala.xml.XML.loadString(d)
+      val requestData: String = prettyPrinter.format(xmlData1)
+      
+      val paymentStatus = getSignedXml(requestData)
+      paymentStatus
+    }
+    def toXmlGroupHeaderInformation = {
+        <GrpHdr>
+          <MsgId>{responseGroupHeaderInformation.messageidentification}</MsgId>
+          <CreDtTm>{responseGroupHeaderInformation.creationdatetime}</CreDtTm>
+          <InstgAgt>
+            <FinInstnId>
+              <Othr>
+                <Id>{responseGroupHeaderInformation.instructingagentinformation.financialInstitutionIdentification}</Id>
+              </Othr>
+            </FinInstnId>
+          </InstgAgt>
+          <InstdAgt>
+            <FinInstnId>
+              <Othr>
+                <Id>{responseGroupHeaderInformation.instructedagentinformation.financialInstitutionIdentification}</Id>
+              </Othr>
+            </FinInstnId>
+          </InstdAgt>
+        </GrpHdr>
+    }
+    def toXmlOriginalGroupInformationAndStatus = {
+        <OrgnlGrpInf>
+          <OrgnlMsgId>{originalGroupInformationAndStatus.originalmessageidentification}</OrgnlMsgId>
+          <OrgnlMsgNmId>{originalGroupInformationAndStatus.originalmessagenameidentification}</OrgnlMsgNmId>
+          <OrgnlCreDtTm>{originalGroupInformationAndStatus.originalcreationdatetime}</OrgnlCreDtTm>
+        </OrgnlGrpInf>
+    }
+    def toXmlTransactionInformationAndStatus = {
+        <TxInf>
+          <StsReqId>{transactionInformationAndStatus.statusidentification}</StsReqId>
+          <OrgnlEndToEndId>{transactionInformationAndStatus.originalendtoendidentification}</OrgnlEndToEndId>
+          <AccptncDtTm>{transactionInformationAndStatus.acceptancedatetime}</AccptncDtTm>
+          <OrgnlTxRef>
+            <IntrBkSttlmAmt Ccy="KES">{transactionInformationAndStatus.originalTransactionReference.interbanksettlementamount}</IntrBkSttlmAmt>
+            {getExecutionDateTimeInformation(false)}
+            {getSettlementInformation(false)}
+            {getPaymentTypeInformation(false)}
+            {getMandateRelatedInformation(false)}
+            {getRemittanceInformation(false)}
+            {getUltimateDebtorInformation(false)}
+            <Dbtr>
+              <Pty>
+                <Nm>{transactionInformationAndStatus.originalTransactionReference.debtorInformation.debtorname}</Nm>
+                {getDebtorOrganisationIdentificationInformation(transactionInformationAndStatus.originalTransactionReference.debtorInformation.debtororganisationidentification)}
+                <CtctDtls>
+                  <PhneNb>{transactionInformationAndStatus.originalTransactionReference.debtorInformation.debtorcontactphonenumber}</PhneNb>
+                </CtctDtls>
+              </Pty>
+            </Dbtr>
+            <DbtrAcct>
+              <Id>
+                <Othr>
+                  <Id>{transactionInformationAndStatus.originalTransactionReference.debtorAccountInformation.debtoraccountidentification}</Id>
+                </Othr>
+              </Id>
+              <Nm>{transactionInformationAndStatus.originalTransactionReference.debtorAccountInformation.debtoraccountname}</Nm>
+            </DbtrAcct>
+            <DbtrAgt>
+              <FinInstnId>
+                <Othr>
+                  <Id>{transactionInformationAndStatus.originalTransactionReference.debtorAgentInformation.financialInstitutionIdentification}</Id>
+                </Othr>
+              </FinInstnId>
+            </DbtrAgt>
+            <CdtrAgt>
+              <FinInstnId>
+                <Othr>
+                  <Id>{transactionInformationAndStatus.originalTransactionReference.creditorAgentInformation.financialInstitutionIdentification}</Id>
+                </Othr>
+              </FinInstnId>
+            </CdtrAgt>
+            {getCreditorInformation(transactionInformationAndStatus.originalTransactionReference.creditorInformation.creditorname, transactionInformationAndStatus.originalTransactionReference.creditorInformation.creditororganisationidentification, transactionInformationAndStatus.originalTransactionReference.creditorInformation.creditorcontactphonenumber)}
+            <CdtrAcct>
+              <Id>
+                <Othr>
+                  <Id>{transactionInformationAndStatus.originalTransactionReference.creditorAccountInformation.creditoraccountidentification}</Id>
+                </Othr>
+              </Id>
+              <Nm>{transactionInformationAndStatus.originalTransactionReference.creditorAccountInformation.creditoraccountname}</Nm>
+            </CdtrAcct>
+            {getUltimateCreditorInformation(false)}
+            {getPurposeInformation(false)}
+          </OrgnlTxRef>
+        </TxInf>
+    }
+    private def getExecutionDateTimeInformation(isExecutionDateTimeInfoEnabled: Boolean) = {
+      val executionDateTimeInformation = 
+      {
+        if (isExecutionDateTimeInfoEnabled){
+          <ReqdExctnDt>
+            <DtTm>{transactionInformationAndStatus.originalTransactionReference.requestExecutionDateTime.requestdatetime}</DtTm>
+          </ReqdExctnDt>
+        }
+      }
+      executionDateTimeInformation
+    }
+    private def getSettlementInformation(isSettlementInfoEnabled: Boolean) = {
+      val settlementInformation = 
+      {
+        if (isSettlementInfoEnabled){
+          <SttlmInf>
+            <SttlmMtd>{transactionInformationAndStatus.originalTransactionReference.settlementInformation.settlementmethod}</SttlmMtd>
+            <ClrSys>
+              <Prtry>{transactionInformationAndStatus.originalTransactionReference.settlementInformation.clearingSystem}</Prtry>
+            </ClrSys>
+          </SttlmInf>
+        }
+      }
+      settlementInformation
+    }
+    private def getPaymentTypeInformation(isPaymentTypeInfoEnabled: Boolean) = {
+      val paymentTypeInformation = 
+      {
+        if (isPaymentTypeInfoEnabled){
+          <PmtTpInf>
+            <SvcLvl>
+              <Prtry>{transactionInformationAndStatus.originalTransactionReference.paymentTypeInformation.servicelevel}</Prtry>
+            </SvcLvl>
+            <LclInstrm>
+              <Cd>{transactionInformationAndStatus.originalTransactionReference.paymentTypeInformation.localinstrumentcode}</Cd>
+            </LclInstrm>
+            <CtgyPurp>
+              <Prtry>{transactionInformationAndStatus.originalTransactionReference.paymentTypeInformation.categorypurpose}</Prtry>
+            </CtgyPurp>
+          </PmtTpInf>
+        }
+      }
+      paymentTypeInformation
+    }
+    private def getMandateRelatedInformation(isMandateRelatedInfoEnabled: Boolean) = {
+      val mandateRelatedInformation = 
+      {
+        if (isMandateRelatedInfoEnabled){
+          <MndtRltdInf>
+            <CdtTrfMndt>
+              <MndtId>{transactionInformationAndStatus.originalTransactionReference.mandateRelatedInformation.mandateidentification}</MndtId>
+            </CdtTrfMndt>
+          </MndtRltdInf>
+        }
+      }
+      mandateRelatedInformation
+    }
+    private def getRemittanceInformation(isRemittanceInfoEnabled: Boolean) = {
+      val remittanceInformation = 
+      {
+        if (isRemittanceInfoEnabled){
+          <RmtInf>
+            <Ustrd>{transactionInformationAndStatus.originalTransactionReference.remittanceInformation.unstructured}</Ustrd>
+            {getTaxRemittanceReferenceNumber(false)}
+          </RmtInf>
+        }
+      }
+      remittanceInformation
+    }
+    private def getTaxRemittanceReferenceNumber(isTaxRemittanceRefNoEnabled: Boolean) = {
+      val taxRemittanceReferenceNumber = 
+      {
+        if (isTaxRemittanceRefNoEnabled){
+          <Strd>
+            <TaxRmt>
+              <RefNb>{transactionInformationAndStatus.originalTransactionReference.remittanceInformation.taxremittancereferencenumber}</RefNb>
+            </TaxRmt>
+          </Strd>
+        }
+      }
+      taxRemittanceReferenceNumber
+    }
+    private def getUltimateDebtorInformation(IsUltimateDebtorInfoEnabled: Boolean) = {
+      val ultimateDebtorInformation = 
+      {
+        if (IsUltimateDebtorInfoEnabled){
+          <UltmtDbtr>
+            <Pty>
+              <Nm>{transactionInformationAndStatus.originalTransactionReference.ultimateDebtorInformation.debtorname}</Nm>
+              <Id>
+                <OrgId>
+                  <Othr>
+                    <Id>{transactionInformationAndStatus.originalTransactionReference.ultimateDebtorInformation.debtororganisationidentification}</Id>
+                  </Othr>
+                </OrgId>
+              </Id>
+              <CtctDtls>
+                <PhneNb>{transactionInformationAndStatus.originalTransactionReference.ultimateDebtorInformation.debtorcontactphonenumber}</PhneNb>
+              </CtctDtls>
+            </Pty>
+          </UltmtDbtr>
+        }
+      }
+      ultimateDebtorInformation
+    }
+    private def getDebtorOrganisationIdentificationInformation(organisationIdentification: String) = {
+      val debtorOrganisationIdentificationInformation = 
+      {
+        if (organisationIdentification.length > 0){
+          <Id>
+            <OrgId>
+              <Othr>
+                <Id>{transactionInformationAndStatus.originalTransactionReference.debtorInformation.debtororganisationidentification}</Id>
+              </Othr>
+            </OrgId>
+          </Id>
+        }
+      }
+      debtorOrganisationIdentificationInformation
+    }
+    private def getCreditorInformation(creditorName: String, organisationIdentification: String, contactPhonenumber: String) = {
+      val creditorInformation = 
+      {
+        if (creditorName.length == 0 && organisationIdentification.length == 0 && contactPhonenumber.length == 0){
+          <Cdtr/>
+        }
+        else {
+          <Cdtr>
+            <Pty>
+              {getCreditorNameInformation(creditorName)}
+              {getCreditorOrganisationIdentificationInformation(organisationIdentification)}
+              {getCreditorContactPhonenumberInformation(contactPhonenumber)}
+            </Pty>
+          </Cdtr>
+        }
+      }
+      creditorInformation
+    }
+    private def getCreditorNameInformation(creditorName: String) = {
+      val creditorNameInformation = 
+      {
+        if (creditorName.length > 0){
+          <Nm>{transactionInformationAndStatus.originalTransactionReference.creditorInformation.creditorname}</Nm>
+        }
+      }
+      creditorNameInformation
+    }
+    private def getCreditorOrganisationIdentificationInformation(organisationIdentification: String) = {
+      val creditorOrganisationIdentificationInformation = 
+      {
+        if (organisationIdentification.length > 0){
+          <Id>
+            <OrgId>
+              <Othr>
+                <Id>{transactionInformationAndStatus.originalTransactionReference.creditorInformation.creditororganisationidentification}</Id>
+              </Othr>
+            </OrgId>
+          </Id>
+        }
+      }
+      creditorOrganisationIdentificationInformation
+    }
+    private def getCreditorContactPhonenumberInformation(contactPhoneNumber: String) = {
+      val creditorContactPhoneNumberInformation = 
+      {
+        if (contactPhoneNumber.length > 0){
+          <CtctDtls>
+            <PhneNb>{transactionInformationAndStatus.originalTransactionReference.creditorInformation.creditorcontactphonenumber}</PhneNb>
+          </CtctDtls>
+        }
+      }
+      creditorContactPhoneNumberInformation
+    }
+    private def getUltimateCreditorInformation(IsUltimateCreditorInfoEnabled: Boolean) = {
+      val ultimateCreditorInformation = 
+      {
+        if (IsUltimateCreditorInfoEnabled){
+          <UltmtCdtr>
+            <Pty>
+              <Nm>{transactionInformationAndStatus.originalTransactionReference.ultimateCreditorInformation.creditorname}</Nm>
+              <Id>
+                <OrgId>
+                  <Othr>
+                    <Id>{transactionInformationAndStatus.originalTransactionReference.ultimateCreditorInformation.creditororganisationidentification}</Id>
+                  </Othr>
+                </OrgId>
+              </Id>
+              <CtctDtls>
+                <PhneNb>{transactionInformationAndStatus.originalTransactionReference.ultimateCreditorInformation.creditorcontactphonenumber}</PhneNb>
+              </CtctDtls>
+            </Pty>
+          </UltmtCdtr>
+        }
+      }
+      ultimateCreditorInformation
+    }
+    private def getPurposeInformation(isPurposeInfoEnabled: Boolean) = {
+      val purposeInformation = 
+      {
+        if (isPurposeInfoEnabled){
+          <Purp>
+            <Prtry>{transactionInformationAndStatus.originalTransactionReference.purposeInformation.purposecode}</Prtry>
+          </Purp>
+        }
+      }
+      purposeInformation
+    }
+    /*
+    private def getStatusReasonInformation(reasonCode: String) = {
+      val statusReasonInformation = 
+      {
+        if (reasonCode.length > 0){
+          <StsRsnInf>
+            <Orgtr>
+              <Nm>{transactionInformationAndStatus.statusReasonInformation.originatorname}</Nm>
+            </Orgtr>
+            <Rsn>
+              <Cd>{transactionInformationAndStatus.statusReasonInformation.reasoncode}</Cd>
+            </Rsn>
+          </StsRsnInf>
+        }
+      }
+      statusReasonInformation
+    }
+    */
+    override def toString =
+      s"responseGroupHeaderInformation: $responseGroupHeaderInformation, originalGroupInformationAndStatus: $originalGroupInformationAndStatus, transactionInformationAndStatus: $transactionInformationAndStatus"
+  }
+
+  object PaymentStatus {
+
+    // (b) convert XML to a PaymentStatus
+    def fromXml(node: scala.xml.Node):PaymentStatus = {
+      //Response GroupHeader Information
+      val messageidentification: String = (node \ "FIToFIPmtStsReq" \ "GrpHdr" \ "MsgId").text
+      val creationdatetime: String = (node \ "FIToFIPmtStsReq" \ "GrpHdr" \ "CreDtTm").text
+      //val strnumberoftransactions: String = (node \ "FIToFIPmtStsReq" \ "GrpHdr" \ "NbOfTxs").text
+      //val numberoftransactions: Int = strnumberoftransactions.toInt //validate int
+      //val strtotalinterbanksettlementamount: String = (node \ "FIToFIPmtStsReq" \ "GrpHdr" \ "MsgId").text
+      //val totalinterbanksettlementamount: BigDecimal = BigDecimal(strtotalinterbanksettlementamount)//validate decimal
+      val instructingagentinformationfinancialInstitutionIdentification: String = (node \ "FIToFIPmtStsReq" \ "GrpHdr" \ "InstgAgt" \ "FinInstnId" \ "Othr" \ "Id").text
+      val instructedagentinformationfinancialInstitutionIdentification: String = (node \ "FIToFIPmtStsReq" \ "GrpHdr" \ "InstdAgt" \ "FinInstnId" \ "Othr" \ "Id").text
+      val instructingagentinformation: InstructingAgentInformation = InstructingAgentInformation(instructingagentinformationfinancialInstitutionIdentification)
+      val instructedagentinformation: InstructedAgentInformation = InstructedAgentInformation(instructedagentinformationfinancialInstitutionIdentification)
+      val responseGroupHeaderInformation = ResponseGroupHeaderInformation(messageidentification, creationdatetime, instructingagentinformation, instructedagentinformation)
+      //Original Group Information And Status
+      val originalmessageidentification: String =  (node \ "FIToFIPmtStsReq" \ "OrgnlGrpInf" \ "OrgnlMsgId").text
+      val originalmessagenameidentification: String = (node \ "FIToFIPmtStsReq" \ "OrgnlGrpInf" \ "OrgnlMsgNmId").text
+      val originalcreationdatetime: String = (node \ "FIToFIPmtStsReq" \ "OrgnlGrpInf" \ "OrgnlCreDtTm").text
+      val originalGroupInformationAndStatus = OriginalGroupInformationAndStatus(originalmessageidentification, originalmessagenameidentification,  originalcreationdatetime)
+      //Transaction Information And Status
+      val interbanksettlementamount: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "IntrBkSttlmAmt").text
+      val requestdatetime: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "ReqdExctnDt" \ "DtTm").text
+      val settlementmethod: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "SttlmInf" \ "SttlmMtd").text
+      val clearingsystem: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "SttlmInf" \ "ClrSys" \ "Prtry").text
+      val servicelevel: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "PmtTpInf" \ "SvcLvl" \ "Prtry").text
+      val localinstrumentcode: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "PmtTpInf" \ "LclInstrm" \ "Cd").text
+      val categorypurpose: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "PmtTpInf" \ "CtgyPurp" \ "Prtry").text
+      var mandateidentification: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "MndtRltdInf" \ "CdtTrfMndt" \ "MndtId").text
+      var remittanceinformationunstructured: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "RmtInf" \ "Ustrd").text
+      var remittanceinformationtaxremittancereferencenumber: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "RmtInf" \ "Strd" \ "TaxRmt" \ "RefNb").text
+      //ultimatedebtor
+      var ultimatedebtorinformationdebtorname: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "UltmtDbtr" \ "Pty" \ "Nm").text
+      val ultimatedebtorinformationdebtororganisationidentification: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "UltmtDbtr" \ "Pty" \ "Id" \ "OrgId" \ "Othr" \ "Id").text
+      var ultimatedebtorinformationdebtorcontactphonenumber: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "UltmtDbtr" \ "Pty" \ "CtctDtls" \ "PhneNb").text
+      //debtor
+      var debtorinformationdebtorname: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "Dbtr" \ "Pty" \ "Nm").text
+      val debtorinformationdebtororganisationidentification: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "Dbtr" \ "Pty" \ "Id" \ "OrgId" \ "Othr" \ "Id").text
+      var debtorinformationdebtorcontactphonenumber: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "Dbtr" \ "Pty" \ "CtctDtls" \ "PhneNb").text
+      var debtoraccountinformationdebtoraccountidentification: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "DbtrAcct" \ "Id" \ "Othr" \ "Id").text
+      val debtoraccountinformationdebtoraccountschemename: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "DbtrAcct" \ "Id" \ "Othr" \ "SchmeNm" \ "Prtry").text
+      var debtoraccountinformationdebtoraccountname: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "DbtrAcct" \ "Nm").text
+      val debtoragentinformationfinancialInstitutionIdentification: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "DbtrAgt" \ "FinInstnId" \ "Othr" \ "Id").text
+      //ultimatecreditor
+      var ultimatecreditorinformationcreditorname: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "UltmtCdtr" \ "Pty" \ "Nm").text
+      var ultimatecreditorinformationcreditororganisationidentification: String = (node \ "FIToFIPmtStsRpt" \ "TxInf" \ "OrgnlTxRef" \ "UltmtCdtr" \ "Pty" \ "Id" \ "OrgId" \ "Othr" \ "Id").text
+      var ultimatecreditorinformationcreditorcontactphonenumber: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "UltmtCdtr" \ "Pty" \ "CtctDtls" \ "PhneNb").text
+      //creditor
+      var creditoragentinformationfinancialInstitutionIdentification: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "CdtrAgt" \ "FinInstnId" \ "Othr" \ "Id").text
+      var creditorinformationcreditorname: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "Cdtr" \ "Pty" \ "Nm").text
+      var creditorinformationcreditororganisationidentification: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "Cdtr" \ "Pty" \ "Id" \ "OrgId" \ "Othr" \ "Id").text
+      var creditorinformationcreditorcontactphonenumber: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "Cdtr" \ "Pty" \ "CtctDtls" \ "PhneNb").text
+      var creditoraccountinformationcreditoraccountidentification: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "CdtrAcct" \ "Id" \ "Othr" \ "Id").text
+      var creditoraccountinformationcreditoraccountschemename: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "CdtrAcct" \ "Id" \ "Othr" \ "SchmeNm" \ "Prtry").text
+      var creditoraccountinformationcreditoraccountname: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "CdtrAcct" \ "Nm").text
+      var purposeinformationpurposecode: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlTxRef" \ "Purp" \ "Prtry").text
+      //
+      val statusidentification: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "StsReqId").text
+      val originalendtoendidentification: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "OrgnlEndToEndId").text
+      val transactionstatus: String = ""
+      val originatorname: String = ""
+      val reasoncode: String = ""
+      val acceptancedatetime: String = (node \ "FIToFIPmtStsReq" \ "TxInf" \ "AccptncDtTm").text
+
+      val requestExecutionDateTime: RequestExecutionDateTime = RequestExecutionDateTime(requestdatetime)
+      val settlementInformation: SettlementInformation = SettlementInformation(settlementmethod, clearingsystem)
+      val paymentTypeInformation: PaymentTypeInformation = PaymentTypeInformation(servicelevel, localinstrumentcode, categorypurpose)
+      val mandateRelatedInformation: MandateRelatedInformation = MandateRelatedInformation(mandateidentification)
+      val remittanceInformation: RemittanceInformation = RemittanceInformation(remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber)
+      val ultimateDebtorInformation: UltimateDebtorInformation = UltimateDebtorInformation(ultimatedebtorinformationdebtorname, ultimatedebtorinformationdebtororganisationidentification, ultimatedebtorinformationdebtorcontactphonenumber)
+      val debtorInformation: DebtorInformation = DebtorInformation(debtorinformationdebtorname, debtorinformationdebtororganisationidentification, debtorinformationdebtorcontactphonenumber)
+      val debtorAccountInformation: DebtorAccountInformation = DebtorAccountInformation(debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountschemename, debtoraccountinformationdebtoraccountname)
+      val debtorAgentInformation: DebtorAgentInformation = DebtorAgentInformation(debtoragentinformationfinancialInstitutionIdentification)
+      val creditorAgentInformation: CreditorAgentInformation = CreditorAgentInformation(creditoragentinformationfinancialInstitutionIdentification)
+      val creditorInformation: CreditorInformation = CreditorInformation(creditorinformationcreditorname, creditorinformationcreditororganisationidentification, creditorinformationcreditorcontactphonenumber)
+      val creditorAccountInformation: CreditorAccountInformation = CreditorAccountInformation(creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountschemename, creditoraccountinformationcreditoraccountname)
+      val ultimateCreditorInformation: UltimateCreditorInformation = UltimateCreditorInformation(ultimatecreditorinformationcreditorname, ultimatecreditorinformationcreditororganisationidentification, ultimatecreditorinformationcreditorcontactphonenumber)
+      val purposeInformation: PurposeInformation = PurposeInformation(purposeinformationpurposecode)
+      val statusReasonInformation: StatusReasonInformation = StatusReasonInformation(originatorname, reasoncode)
+      val originalTransactionReference: OriginalTransactionReference = OriginalTransactionReference(interbanksettlementamount, requestExecutionDateTime,
+        settlementInformation, paymentTypeInformation,
+        mandateRelatedInformation, remittanceInformation,
+        ultimateDebtorInformation, debtorInformation,
+        debtorAccountInformation, debtorAgentInformation,
+        creditorAgentInformation, creditorInformation,
+        creditorAccountInformation, ultimateCreditorInformation,
+        purposeInformation)
+      val transactionInformationAndStatus: TransactionInformationAndStatus = TransactionInformationAndStatus(statusidentification, originalendtoendidentification, transactionstatus,
+        statusReasonInformation, acceptancedatetime, originalTransactionReference)
+
+      new PaymentStatus(responseGroupHeaderInformation, originalGroupInformationAndStatus, transactionInformationAndStatus)
     }
   }
 
