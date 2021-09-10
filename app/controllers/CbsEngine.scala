@@ -939,7 +939,7 @@ class CbsEngine @Inject()
             <Prtry>{creditTransferTransactionInformation.purposeinformation.purposecode}</Prtry>
           </Purp>
           <RmtInf>
-            <Ustrd>{creditTransferTransactionInformation.remittanceinformation.unstructured}</Ustrd>
+            {getRemittanceUnstructuredInformation(creditTransferTransactionInformation.remittanceinformation.unstructured)}
             {getTaxRemittanceReferenceNumber(creditTransferTransactionInformation.remittanceinformation.taxremittancereferencenumber)}
           </RmtInf>
         </CdtTrfTxInf>
@@ -1104,6 +1104,15 @@ class CbsEngine @Inject()
       accountIdentification
     }
     */
+    private def getRemittanceUnstructuredInformation(unstructuredInfo: String) = {
+      val unstructuredInformation = 
+      {
+        if (unstructuredInfo.length > 0){
+          <Ustrd>{creditTransferTransactionInformation.remittanceinformation.unstructured}</Ustrd>
+        }
+      }
+      unstructuredInformation
+    }
     private def getTaxRemittanceReferenceNumber(TaxRemittanceRef: String) = {
       val taxRemittanceReferenceNumber = 
       {
@@ -2971,9 +2980,13 @@ class CbsEngine @Inject()
                                 //val isNumeric : Boolean = strAmount.toString.matches("[0-9]+") //validate numbers only
                                 val isNumeric : Boolean = strAmount.matches("^[1-9]\\d*(\\.\\d+)?$") //validate number and decimals
                                 if (isNumeric){
-                                  myAmount = BigDecimal(strAmount)
+                                  //myAmount = BigDecimal(strAmount)
+                                  //Lets round-off to 2 decimal places
+                                  myAmount = BigDecimal(strAmount).setScale(2, BigDecimal.RoundingMode.HALF_UP)
                                   interbanksettlementamount = myAmount
                                   totalinterbanksettlementamount = myAmount
+                                  //println("myAmount" + myAmount)
+                                  //println("interbanksettlementamount" + interbanksettlementamount)
                                 }
                               }
                             }
@@ -4447,7 +4460,9 @@ class CbsEngine @Inject()
                                   //val isNumeric : Boolean = strAmount.toString.matches("[0-9]+") //validate numbers only
                                   val isNumeric : Boolean = strAmount.matches("^[1-9]\\d*(\\.\\d+)?$") //validate number and decimals
                                   if (isNumeric){
-                                    myAmount = BigDecimal(strAmount)
+                                    //myAmount = BigDecimal(strAmount)
+                                    //Lets round-off to 2 decimal places
+                                    myAmount = BigDecimal(strAmount).setScale(2, BigDecimal.RoundingMode.HALF_UP)
                                     interbanksettlementamount = myAmount
                                     totalinterbanksettlementamount = totalinterbanksettlementamount + myAmount
                                   }
