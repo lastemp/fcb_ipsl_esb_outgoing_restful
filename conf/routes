@@ -7,13 +7,15 @@ POST        /iso20022/v1/verification-request              controllers.IpslEngin
 POST        /iso20022/v1/credit-transfer              controllers.IpslEngine.getSingleCreditTransferResponseDetails
 POST        /getbulkcredittransferresponsedetails              controllers.IpslEngine.getBulkCreditTransferResponseDetails
 POST        /iso20022/v1/payment-cancellation-request              controllers.IpslEngine.getPaymentCancellationResponseDetails
+POST        /iso20022/v1/payment-status-request              controllers.IpslEngine.getPaymentStatusResponseDetails
 # BANK APIs: e-Channels/ESB-CBS systems will invoke these APIs by posting requests.
 # The requests will be forwarded to IPLS for processing.
 # Account Verification Request will get immediate response from IPSL, others will require callback.
 POST        /v1/addaccountverificationdetails              controllers.CbsEngine.addAccountVerificationDetails
-POST        /v1/addsinglecredittransferpaymentdetails              controllers.CbsEngine.addSingleCreditTransferPaymentDetails
-POST        /v1/addbulkcredittransferpaymentdetails              controllers.CbsEngine.addBulkCreditTransferPaymentDetails
+POST        /v1/addsinglecredittransferpaymentdetails      controllers.CbsEngine.addSingleCreditTransferPaymentDetails
+POST        /v1/addbulkcredittransferpaymentdetails        controllers.CbsEngine.addBulkCreditTransferPaymentDetails
 POST        /v1/addpaymentcancellationdetails              controllers.CbsEngine.addPaymentCancellationDetails
+POST        /v1/addpaymentstatusdetails                    controllers.CbsEngine.addPaymentStatusDetails
 # Test ESB-CBS APIs. Responses for IPSL are are posted to esb-cbs.
 POST        /addaccountverificationreesponsebcbs              controllers.IpslEngine.addAccountVerificationResponseEsbCbs
 # ESB-CBS APIs. Was meant for callback processing for esb-cbs.
