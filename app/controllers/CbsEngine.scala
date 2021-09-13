@@ -955,10 +955,7 @@ class CbsEngine @Inject()
           <Purp>
             <Prtry>{creditTransferTransactionInformation.purposeinformation.purposecode}</Prtry>
           </Purp>
-          <RmtInf>
-            {getRemittanceUnstructuredInformation(creditTransferTransactionInformation.remittanceinformation.unstructured)}
-            {getTaxRemittanceReferenceNumber(creditTransferTransactionInformation.remittanceinformation.taxremittancereferencenumber)}
-          </RmtInf>
+          {getRemittanceInformation(creditTransferTransactionInformation.remittanceinformation.unstructured, creditTransferTransactionInformation.remittanceinformation.taxremittancereferencenumber)}
         </CdtTrfTxInf>
     }
     private def getMandateRelatedInformation(mandateRelatedInfo: String) = {
@@ -1121,6 +1118,31 @@ class CbsEngine @Inject()
       accountIdentification
     }
     */
+    private def getRemittanceInformation(unstructuredInfo: String, taxRemittanceRef: String) = {
+      val unstructuredInformation = 
+      {
+        if (unstructuredInfo.length > 0 && taxRemittanceRef.length > 0){
+          <RmtInf>
+          {getRemittanceUnstructuredInformation(creditTransferTransactionInformation.remittanceinformation.unstructured)}
+          {getTaxRemittanceReferenceNumber(creditTransferTransactionInformation.remittanceinformation.taxremittancereferencenumber)}
+          </RmtInf>
+        }
+        else if (unstructuredInfo.length > 0){
+          <RmtInf>
+          {getRemittanceUnstructuredInformation(creditTransferTransactionInformation.remittanceinformation.unstructured)}
+          </RmtInf>
+        }
+        else if (taxRemittanceRef.length > 0){
+          <RmtInf>
+          {getTaxRemittanceReferenceNumber(creditTransferTransactionInformation.remittanceinformation.taxremittancereferencenumber)}
+          </RmtInf>  
+        }
+        else{
+          <RmtInf></RmtInf>
+        }
+      }
+      unstructuredInformation
+    }
     private def getRemittanceUnstructuredInformation(unstructuredInfo: String) = {
       val unstructuredInformation = 
       {
@@ -2476,7 +2498,7 @@ class CbsEngine @Inject()
   creditoraccountnumber: String, creditoraccountname: String, creditorbankcode: String, creditorschemename: String, 
   remittanceinfounstructured: String, taxremittancereferenceno: String, purposecode: String, 
   chargebearer: String, mandateidentification: String, instructingagentbankcode: String, instructedagentbankcode: String, 
-  batchsize: Integer, requestmessagecbsapi: String, datefromcbsapi: String, remoteaddresscbsapi: String)
+  batchsize: Integer, requestmessagecbsapi: String, datefromcbsapi: String, remoteaddresscbsapi: String, creationdatetime: String)
 
   case class PaymentStatusTableDetails(batchreference: java.math.BigDecimal, 
   messagereference: String, transactionreference: String, originalrequesttype: String, 
@@ -3646,8 +3668,9 @@ class CbsEngine @Inject()
                       }
                       isValid
                     }
-
-                    if (isValidMessageReference && isValidTransactionReference && !isMatchingReference && isValidSchemeName && isValidAmount && isValidDebitAccount && isValidDebitAccountName && isValidDebitPhoneNumber && isValidCreditAccount && isValidCreditAccountName && isValidCreditBankCode && isValidDebtorName && isValidRemittanceinfoUnstructured && isValidPurposeCode){
+                    //if (isValidMessageReference && isValidTransactionReference && !isMatchingReference && isValidSchemeName && isValidAmount && isValidDebitAccount && isValidDebitAccountName && isValidDebitPhoneNumber && isValidCreditAccount && isValidCreditAccountName && isValidCreditBankCode && isValidDebtorName && isValidRemittanceinfoUnstructured && isValidPurposeCode){
+                    //removed && isValidRemittanceinfoUnstructured since its optional
+                    if (isValidMessageReference && isValidTransactionReference && !isMatchingReference && isValidSchemeName && isValidAmount && isValidDebitAccount && isValidDebitAccountName && isValidDebitPhoneNumber && isValidCreditAccount && isValidCreditAccountName && isValidCreditBankCode && isValidDebtorName && isValidPurposeCode){
                       isValidInputData = true
                       /*
                       myHttpStatusCode = HttpStatusCode.Accepted //TESTS ONLY
@@ -3712,6 +3735,7 @@ class CbsEngine @Inject()
                         val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
                         val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
                         val amount: java.math.BigDecimal =  new java.math.BigDecimal(myAmount.toString())
+                        
                         val mySingleCreditTransferPaymentTableDetails = //SingleCreditTransferPaymentTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
                           SingleCreditTransferPaymentTableDetails(myBatchReference, 
                           debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, firstAgentIdentification, 
@@ -3720,7 +3744,7 @@ class CbsEngine @Inject()
                           creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoragentinformationfinancialInstitutionIdentification, creditoraccountinformationcreditoraccountschemename, 
                           remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber, purposeinformationpurposecode, 
                           chargeBearer, mandateidentification, assignerAgentIdentification, assigneeAgentIdentification, 
-                          myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+                          myBatchSize, strRequestData, dateFromCbsApi, strClientIP, creationDateTime)
 
                         val myTableResponseDetails = addOutgoingSingleCreditTransferPaymentDetails(mySingleCreditTransferPaymentTableDetails, strChannelType, strChannelCallBackUrl)
                         myID = myTableResponseDetails.id
@@ -3943,6 +3967,9 @@ class CbsEngine @Inject()
           val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
           val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
           val amount: java.math.BigDecimal =  new java.math.BigDecimal(myAmount.toString())
+          val t1: String =  new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
+          val t2: String =  new SimpleDateFormat("HH:mm:ss.SSS").format(new java.util.Date)
+          val creationDateTime: String = t1 + "T" + t2+ "Z"
 
           var strRequestData: String = ""
 
@@ -3962,7 +3989,7 @@ class CbsEngine @Inject()
             creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoragentinformationfinancialInstitutionIdentification, creditoraccountinformationcreditoraccountschemename, 
             remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber, purposeinformationpurposecode, 
             chargeBearer, mandateidentification, assignerAgentIdentification, assigneeAgentIdentification, 
-            myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+            myBatchSize, strRequestData, dateFromCbsApi, strClientIP, creationDateTime)
           //println("jsonResponse + " + jsonResponse.toString())
           addOutgoingSingleCreditTransferPaymentDetailsArchive(responseCode, responseMessage, jsonResponse.toString(), mySingleCreditTransferPaymentTableDetails, strChannelType, strChannelCallBackUrl)
         }
@@ -8359,7 +8386,7 @@ class CbsEngine @Inject()
                           creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoragentinformationfinancialInstitutionIdentification, creditoraccountinformationcreditoraccountschemename, 
                           remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber, purposeinformationpurposecode, 
                           chargeBearer, mandateidentification, assignerAgentIdentification, assigneeAgentIdentification, 
-                          myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+                          myBatchSize, strRequestData, dateFromCbsApi, strClientIP, creationDateTime)
                         /*
                         val myTableResponseDetails = addOutgoingSingleCreditTransferPaymentDetails(mySingleCreditTransferPaymentTableDetails, strChannelType, strChannelCallBackUrl)
                         myID = myTableResponseDetails.id
@@ -8584,6 +8611,9 @@ class CbsEngine @Inject()
           val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
           val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
           val amount: java.math.BigDecimal =  new java.math.BigDecimal(myAmount.toString())
+          val t1: String =  new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
+          val t2: String =  new SimpleDateFormat("HH:mm:ss.SSS").format(new java.util.Date)
+          val creationDateTime: String = t1 + "T" + t2+ "Z"
 
           var strRequestData: String = ""
 
@@ -8603,7 +8633,7 @@ class CbsEngine @Inject()
             creditoraccountinformationcreditoraccountidentification, creditoraccountinformationcreditoraccountname, creditoragentinformationfinancialInstitutionIdentification, creditoraccountinformationcreditoraccountschemename, 
             remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber, purposeinformationpurposecode, 
             chargeBearer, mandateidentification, assignerAgentIdentification, assigneeAgentIdentification, 
-            myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+            myBatchSize, strRequestData, dateFromCbsApi, strClientIP, creationDateTime)
           //println("jsonResponse + " + jsonResponse.toString())
           addOutgoingSingleCreditTransferPaymentDetailsArchive(responseCode, responseMessage, jsonResponse.toString(), mySingleCreditTransferPaymentTableDetails, strChannelType, strChannelCallBackUrl)
         }
@@ -15395,7 +15425,7 @@ class CbsEngine @Inject()
     var responseCode: Int = 1
     var responseMessage: String = ""
 
-    val strSQL : String = "{ call dbo.Add_OutgoingSingleCreditTransferPaymentDetails(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) }"
+    val strSQL : String = "{ call dbo.Add_OutgoingSingleCreditTransferPaymentDetails(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) }"
     try {
       myDB.withConnection { implicit myconn =>
         try{
@@ -15430,6 +15460,7 @@ class CbsEngine @Inject()
           mystmt.setString(25,mySingleCreditTransferPaymentTableDetails.remoteaddresscbsapi)
           mystmt.setString(26,strChannelType)
           mystmt.setString(27,strChannelCallBackUrl)
+          mystmt.setString(28,mySingleCreditTransferPaymentTableDetails.creationdatetime)
           mystmt.execute()
           myID = mystmt.getBigDecimal("myID")
           responseCode = mystmt.getInt("responseCode")
@@ -15495,7 +15526,7 @@ class CbsEngine @Inject()
   def addOutgoingSingleCreditTransferPaymentDetailsArchive(responseCode: Int, responseMessage: String, responsemessagecbsapi: String, mySingleCreditTransferPaymentTableDetails: SingleCreditTransferPaymentTableDetails, strChannelType: String, strChannelCallBackUrl: String): Unit = {
     Future {
       val strApifunction: String = "addOutgoingSingleCreditTransferPaymentDetailsArchive"
-      val strSQL : String = "{ call dbo.Add_OutgoingSingleCreditTransferPaymentDetails_Archive(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) }"
+      val strSQL : String = "{ call dbo.Add_OutgoingSingleCreditTransferPaymentDetails_Archive(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) }"
       try {
         myDB.withConnection { implicit myconn =>
           try{
@@ -15530,6 +15561,7 @@ class CbsEngine @Inject()
             mystmt.setString(28,responsemessagecbsapi)
             mystmt.setString(29,strChannelType)
             mystmt.setString(30,strChannelCallBackUrl)
+            mystmt.setString(31,mySingleCreditTransferPaymentTableDetails.creationdatetime)
             mystmt.execute()
           }
           catch{
