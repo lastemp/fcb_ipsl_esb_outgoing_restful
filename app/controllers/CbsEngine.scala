@@ -239,7 +239,8 @@ class CbsEngine @Inject()
   case class CreditTransferPaymentInformation(transactionreference: Option[JsValue], amount: Option[JsValue], debitaccountinformation: Option[DebitAccountInformation], creditaccountinformation: Option[CreditAccountInformation], mandateinformation: Option[TransferMandateInformation], remittanceinformation: Option[TransferRemittanceInformation], purposeinformation: Option[TransferPurposeInformation])
   case class SingleCreditTransferPaymentDetails_Request(messagereference: Option[JsValue], paymentdata: Option[CreditTransferPaymentInformation])
   case class SingleCreditTransferPaymentDetailsResponse(statuscode: Int, statusdescription: String)
-  case class BulkCreditTransferPaymentDetails_Request(messagereference: Option[JsValue], paymentdata: Seq[CreditTransferPaymentInformation])
+  case class BulkCreditTransferPaymentInformation(transactionreference: Option[JsValue], amount: Option[JsValue], creditaccountinformation: Option[CreditAccountInformation], mandateinformation: Option[TransferMandateInformation], remittanceinformation: Option[TransferRemittanceInformation], purposeinformation: Option[TransferPurposeInformation])
+  case class BulkCreditTransferPaymentDetails_Request(messagereference: Option[JsValue], debitaccountinformation: Option[DebitAccountInformation], paymentdata: Seq[BulkCreditTransferPaymentInformation])
   //case class BulkCreditTransferPaymentDetailsResponse(statuscode: Int, statusdescription: String)
   case class BulkCreditTransferPaymentDetailsResponse_Batch(creditoraccountNumber: String, creditorbankcode: String, transactionreference: String, statuscode: Int, statusdescription: String)
   case class BulkCreditTransferPaymentDetailsResponse_BatchData(messagereference: String, statuscode: Int, statusdescription: String, paymentdata: Seq[BulkCreditTransferPaymentDetailsResponse_Batch])
@@ -251,7 +252,7 @@ class CbsEngine @Inject()
   //PaymentStatus Details i.e PaymentStatus request to IPSL through ESB
   //The request is initiated from ESB-CBS/Other CHannels
   case class PaymentStatusDetails_Request(transactionreference: Option[JsValue], originalrequesttype: Option[JsValue])
-  case class PaymentStatusDetails_BatchRequest(messagereference: Option[JsValue], accountdata: PaymentStatusDetails_Request)
+  case class PaymentStatusDetails_BatchRequest(messagereference: Option[JsValue], paymentdata: PaymentStatusDetails_Request)
   case class PaymentStatusDetailsResponse(statuscode: Int, statusdescription: String)
   case class PaymentStatusDetailsIpsl(messagereference: String, creationdatetime: String, instructingagentidentification: String, instructedagentidentification: String,
                                     transactionreference: String, acceptancedatetime: String,
@@ -4322,20 +4323,19 @@ class CbsEngine @Inject()
                 (JsPath \ "mandatedescription").readNullable[JsValue]
               )(TransferMandateInformation.apply _)
 
-            implicit val CreditTransferPaymentInformation_Reads: Reads[CreditTransferPaymentInformation] = (
+            implicit val BulkCreditTransferPaymentInformation_Reads: Reads[BulkCreditTransferPaymentInformation] = (
               (JsPath \ "transactionreference").readNullable[JsValue] and
                 (JsPath \ "amount").readNullable[JsValue] and
-                (JsPath \ "debitaccountinformation").readNullable[DebitAccountInformation] and
                 (JsPath \ "creditaccountinformation").readNullable[CreditAccountInformation] and
                 (JsPath \ "mandateinformation").readNullable[TransferMandateInformation] and
                 (JsPath \ "remittanceinformation").readNullable[TransferRemittanceInformation] and
                 (JsPath \ "purposeinformation").readNullable[TransferPurposeInformation]
-              )(CreditTransferPaymentInformation.apply _)
+              )(BulkCreditTransferPaymentInformation.apply _)
 
             implicit val BulkCreditTransferPaymentDetails_Request_Reads: Reads[BulkCreditTransferPaymentDetails_Request] = (
               (JsPath \ "messagereference").readNullable[JsValue] and
-                (JsPath \ "paymentdata").read[Seq[CreditTransferPaymentInformation]]
-                //(JsPath \ "paymentdata").readNullable[Seq[CreditTransferPaymentInformation]]
+                (JsPath \ "debitaccountinformation").readNullable[DebitAccountInformation] and
+                (JsPath \ "paymentdata").read[Seq[BulkCreditTransferPaymentInformation]]
               )(BulkCreditTransferPaymentDetails_Request.apply _)
 
             myjson.validate[BulkCreditTransferPaymentDetails_Request] match {
@@ -4393,6 +4393,17 @@ class CbsEngine @Inject()
                     totalinterbanksettlementamount = 0
                     isValidMessageReference = false
 
+                    //debtor
+                    debtorinformationdebtorname = ""
+                    debtorinformationdebtorcontactphonenumber = ""
+                    debtoraccountinformationdebtoraccountidentification = ""
+                    debtoraccountinformationdebtoraccountname = ""
+
+                    isValidDebitAccount = false
+                    isValidDebitAccountName = false
+                    isValidDebtorName = false
+                    isValidDebitPhoneNumber = false
+
                     //messageidentification
                     if (myPaymentDetails_BatchRequest.messagereference != None) {
                       if (myPaymentDetails_BatchRequest.messagereference.get != None) {
@@ -4405,6 +4416,118 @@ class CbsEngine @Inject()
                             messageidentification = messageidentification.replace(" ","")//Remove spaces
                             messageidentification = messageidentification.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                             messageidentification = messageidentification.trim
+                          }
+                        }
+                      }
+                    }
+
+                    //debtorinformationdebtorname
+                    if (1 == 1){
+                      var isValid: Boolean = false
+                      val isValid1 = {
+                        if (myPaymentDetails_BatchRequest.debitaccountinformation != None){
+                          if (myPaymentDetails_BatchRequest.debitaccountinformation.get != None){true}  
+                          else {false} 
+                        }  
+                        else {false}
+                      }
+                      if (isValid1){
+                        val myVar1 = myPaymentDetails_BatchRequest.debitaccountinformation.get
+                        if (myVar1.debitcontactinformation != None){
+                          if (myVar1.debitcontactinformation.get != None){isValid = true}
+                        }  
+                      }
+                      if (isValid){
+                        val myData2 = myPaymentDetails_BatchRequest.debitaccountinformation.get
+                        val myData3 = myData2.debitcontactinformation.get
+                        debtorinformationdebtorname = myData3.fullnames.getOrElse("").toString()
+                        if (debtorinformationdebtorname != null && debtorinformationdebtorname != None){
+                          debtorinformationdebtorname = debtorinformationdebtorname.trim
+                          if (debtorinformationdebtorname.length > 0){
+                            debtorinformationdebtorname = debtorinformationdebtorname.replace("'","")//Remove apostrophe
+                            debtorinformationdebtorname = debtorinformationdebtorname.replace("  "," ")//Remove double spaces
+                            debtorinformationdebtorname = debtorinformationdebtorname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                            debtorinformationdebtorname = debtorinformationdebtorname.trim
+                          }
+                        }
+                      }
+                    }
+
+                    //debtorinformationdebtorcontactphonenumber
+                    if (1 == 1){
+                      var isValid: Boolean = false
+                      val isValid1 = {
+                        if (myPaymentDetails_BatchRequest.debitaccountinformation != None){
+                          if (myPaymentDetails_BatchRequest.debitaccountinformation.get != None){true}  
+                          else {false} 
+                        }  
+                        else {false}
+                      }
+                      if (isValid1){
+                        val myVar1 = myPaymentDetails_BatchRequest.debitaccountinformation.get
+                        if (myVar1.debitcontactinformation != None){
+                          if (myVar1.debitcontactinformation.get != None){isValid = true}
+                        }  
+                      }
+                      if (isValid){
+                        val myData2 = myPaymentDetails_BatchRequest.debitaccountinformation.get
+                        val myData3 = myData2.debitcontactinformation.get
+                        debtorinformationdebtorcontactphonenumber = myData3.phonenumber.getOrElse("").toString()
+                        if (debtorinformationdebtorcontactphonenumber != null && debtorinformationdebtorcontactphonenumber != None){
+                          debtorinformationdebtorcontactphonenumber = debtorinformationdebtorcontactphonenumber.trim
+                          if (debtorinformationdebtorcontactphonenumber.length > 0){
+                            debtorinformationdebtorcontactphonenumber = debtorinformationdebtorcontactphonenumber.replace("'","")//Remove apostrophe
+                            debtorinformationdebtorcontactphonenumber = debtorinformationdebtorcontactphonenumber.replace(" ","")//Remove spaces
+                            debtorinformationdebtorcontactphonenumber = debtorinformationdebtorcontactphonenumber.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                            debtorinformationdebtorcontactphonenumber = debtorinformationdebtorcontactphonenumber.trim
+                          }
+                        }
+                      }
+                    }
+
+                    //debtoraccountinformationdebtoraccountidentification
+                    if (1 == 1){
+                      val isValid = {
+                        if (myPaymentDetails_BatchRequest.debitaccountinformation != None){
+                          if (myPaymentDetails_BatchRequest.debitaccountinformation.get != None){true}
+                          else {false}
+                        }  
+                        else {false}
+                      }
+                      if (isValid){
+                        val myData2 = myPaymentDetails_BatchRequest.debitaccountinformation.get
+                        debtoraccountinformationdebtoraccountidentification = myData2.debitaccountnumber.getOrElse("").toString()
+                        if (debtoraccountinformationdebtoraccountidentification != null && debtoraccountinformationdebtoraccountidentification != None){
+                          debtoraccountinformationdebtoraccountidentification = debtoraccountinformationdebtoraccountidentification.trim
+                          if (debtoraccountinformationdebtoraccountidentification.length > 0){
+                            debtoraccountinformationdebtoraccountidentification = debtoraccountinformationdebtoraccountidentification.replace("'","")//Remove apostrophe
+                            debtoraccountinformationdebtoraccountidentification = debtoraccountinformationdebtoraccountidentification.replace(" ","")//Remove spaces
+                            debtoraccountinformationdebtoraccountidentification = debtoraccountinformationdebtoraccountidentification.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                            debtoraccountinformationdebtoraccountidentification = debtoraccountinformationdebtoraccountidentification.trim
+                          }
+                        }
+                      }
+                    }
+
+                    //debtoraccountinformationdebtoraccountname
+                    if (1 == 1){
+                      val isValid = {
+                        if (myPaymentDetails_BatchRequest.debitaccountinformation != None){
+                          if (myPaymentDetails_BatchRequest.debitaccountinformation.get != None){true}
+                          else {false}
+                        }  
+                        else {false}
+                      }
+                      if (isValid){
+                        val myData2 = myPaymentDetails_BatchRequest.debitaccountinformation.get
+                        debtoraccountinformationdebtoraccountname = myData2.debitaccountname.getOrElse("").toString()
+                        if (debtoraccountinformationdebtoraccountname != null && debtoraccountinformationdebtoraccountname != None){
+                          debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.trim
+                          if (debtoraccountinformationdebtoraccountname.length > 0){
+                            debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("'","")//Remove apostrophe
+                            debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("  "," ")//Remove double spaces
+                            debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                            debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.trim
                           }
                         }
                       }
@@ -4465,10 +4588,12 @@ class CbsEngine @Inject()
                       //totalinterbanksettlementamount = 0
                       mandateidentification = ""
                       //debtor
+                      /*
                       debtorinformationdebtorname = ""
                       debtorinformationdebtorcontactphonenumber = ""
                       debtoraccountinformationdebtoraccountidentification = ""
                       debtoraccountinformationdebtoraccountname = ""
+                      */
                       //creditor
                       creditoragentinformationfinancialInstitutionIdentification = ""
                       creditorinformationcreditorname = ""
@@ -4487,10 +4612,12 @@ class CbsEngine @Inject()
                       isMatchingReference = false
                       isValidSchemeName = false
                       isValidAmount = false
+                      /*
                       isValidDebitAccount = false
                       isValidDebitAccountName = false
                       isValidDebtorName = false
                       isValidDebitPhoneNumber = false
+                      */
                       isValidCreditAccount = false
                       isValidCreditAccountName = false
                       isValidCreditBankCode = false
@@ -4615,6 +4742,7 @@ class CbsEngine @Inject()
                           }
                         }
 
+                        /*
                         //debtorinformationdebtorname
                         if (isValidPaymentdata){
                           //val myData1 = myPaymentDetails.paymentdata.get
@@ -4730,6 +4858,7 @@ class CbsEngine @Inject()
                             }
                           }
                         }
+                        */
 
                         //creditorinformationcreditorname
                         /*
@@ -5386,12 +5515,35 @@ class CbsEngine @Inject()
 
                         val transferDefaultInfo = TransferDefaultInfo(firstAgentIdentification, assigneeAgentIdentification, chargeBearer, settlementMethod, clearingSystem, serviceLevel, localInstrumentCode, categoryPurpose)
                         val bulkCreditTransferPaymentInfo = BulkCreditTransferPaymentInfo(messageidentification, creationDateTime, numberoftransactions, totalinterbanksettlementamount, transferDefaultInfo, paymentdata)
-
+                        //TESTS ONLY
+                        val transactiontype: String = "A2A"//account-to-account
+                        val fromaccountnumber: String = debtoraccountinformationdebtoraccountidentification
+                        val toaccountnumber: String = ""//creditoraccountinformationcreditoraccountidentification
+                        val transactionAmt: BigDecimal = totalinterbanksettlementamount
+                        val trace_num: String = myBatchReference.toString()
+                        val currency: String = "404"//default KES
+                        val externalRefNo: String = messageidentification
+                        val clientMobileNumber: String = ""//debtorinformationdebtorcontactphonenumber
+                        val clientName: String = ""//debtoraccountinformationdebtoraccountname
+                        val naration: String = "Bulk Payment"//remittanceinformationunstructured
+                        val myDebitTransactionRequest = DebitTransactionRequest_EsbCbs(transactiontype, fromaccountnumber, toaccountnumber, transactionAmt, trace_num, currency, externalRefNo, clientMobileNumber, clientName, naration)
+                        /*
                         val f = Future {
                           //println("bulkCreditTransferPaymentInfo - " + bulkCreditTransferPaymentInfo)
                           val myRespData: String = getBulkCreditTransferDetails(bulkCreditTransferPaymentInfo)
                           //println("myRespData - " + myRespData)
                           sendBulkCreditTransferRequestsIpsl(myBatchReference, myRespData, strOutgoingBulkCreditTransferUrlIpsl)
+                        }(myExecutionContext)
+                        */
+                        val f = Future {
+                          val strApiURL: String = "https://mbank-uat.fcb.co.ke:8091/login?Username=esbuser&Password=tempP%40ss123&IpAddress=192.168.0.56&Rememberpassword=false"
+                          val strApiURL2: String = "https://mbank-uat.fcb.co.ke:8091/api/TransactionProcessing/PostDebitTransactionToImal"
+                          val strApiURL3: String = strOutgoingBulkCreditTransferUrlIpsl
+                          val strAccountNumber: String = debtoraccountinformationdebtoraccountidentification
+                          val requestType: Int = 2//Bulk CreditTransaction
+                          val myRequestData: String = getBulkCreditTransferDetails(bulkCreditTransferPaymentInfo)
+
+                          sendLoginRequestEsbCbs(myID, requestType, strAccountNumber, myDebitTransactionRequest, myRequestData, strApiURL, strApiURL2, strApiURL3)
                         }(myExecutionContext)
                       }
                     }
@@ -8912,7 +9064,7 @@ class CbsEngine @Inject()
 
             implicit val PaymentStatusDetails_BatchRequest_Reads: Reads[PaymentStatusDetails_BatchRequest] = (
               (JsPath \ "messagereference").readNullable[JsValue] and
-                (JsPath \ "accountdata").read[PaymentStatusDetails_Request]
+                (JsPath \ "paymentdata").read[PaymentStatusDetails_Request]
               )(PaymentStatusDetails_BatchRequest.apply _)
 
             myjson.validate[PaymentStatusDetails_BatchRequest] match {
@@ -8996,9 +9148,9 @@ class CbsEngine @Inject()
                       }
 
                       //strTransactionReference
-                      if (myPaymentDetails.accountdata.transactionreference != None) {
-                        if (myPaymentDetails.accountdata.transactionreference.get != None) {
-                          val myData = myPaymentDetails.accountdata.transactionreference.get
+                      if (myPaymentDetails.paymentdata.transactionreference != None) {
+                        if (myPaymentDetails.paymentdata.transactionreference.get != None) {
+                          val myData = myPaymentDetails.paymentdata.transactionreference.get
                           strTransactionReference = myData.toString()
                           if (strTransactionReference != null && strTransactionReference != None){
                             strTransactionReference = strTransactionReference.trim
@@ -9013,9 +9165,9 @@ class CbsEngine @Inject()
                       }
 
                       //strOriginalRequestType
-                      if (myPaymentDetails.accountdata.originalrequesttype != None) {
-                        if (myPaymentDetails.accountdata.originalrequesttype.get != None) {
-                          val myData = myPaymentDetails.accountdata.originalrequesttype.get
+                      if (myPaymentDetails.paymentdata.originalrequesttype != None) {
+                        if (myPaymentDetails.paymentdata.originalrequesttype.get != None) {
+                          val myData = myPaymentDetails.paymentdata.originalrequesttype.get
                           strOriginalRequestType = myData.toString()
                           if (strOriginalRequestType != null && strOriginalRequestType != None){
                             strOriginalRequestType = strOriginalRequestType.trim
@@ -11653,6 +11805,9 @@ class CbsEngine @Inject()
                     //sendOutgoingCreditTransferRequestEsbCbs(myID, strToken, myCreditTransactionRequest, strApiURL2)
                     sendOutgoingCreditTransferRequestEsbCbs(myID, strToken, myDebitTransactionRequest, myRequestData, strApiURL2, strApiURL3)
                   }
+                  else if (requestType == 2){//Bulk CreditTransaction
+                    sendOutgoingBulkCreditTransferRequestEsbCbs(myID, strToken, myDebitTransactionRequest, myRequestData, strApiURL2, strApiURL3)
+                  }
                 }
               }
             }
@@ -11745,8 +11900,8 @@ class CbsEngine @Inject()
         if (isValidData){
           val dateToCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
         
-          val strSQL: String = "update [dbo].[IncomingSingleCreditTransferPaymentDetailsReport] set [Posted_to_CbsApi_Out] = 1, [Post_picked_CbsApi_Out] = 1, [ResponseforPreviousOutgoingRequest] = 0, [RequestMessage_CbsApi_Out] = '" + myjsonData + "', [Date_to_CbsApi_Out] = '" + dateToCbsApi + "' where [ID] = " + myID + ";"
-          //insertUpdateRecord(strSQL)
+          val strSQL: String = "update [dbo].[OutgoingSingleCreditTransferPaymentDetails] set [Posted_to_CbsApi_Out] = 1, [Post_picked_CbsApi_Out] = 1, [Response_Received_CbsApi_Out] = '" + myjsonData + "', [Date_to_CbsApi_Out] = '" + dateToCbsApi + "' where [ID] = " + myID + ";"
+          insertUpdateRecord(strSQL)
         }
         else{
           log_errors(strApifunction + " : Failure in fetching  data - invalid data , application error occured.")
@@ -12049,14 +12204,16 @@ class CbsEngine @Inject()
             }
           }
 
-          val strSQL: String = "update [dbo].[IncomingSingleCreditTransferPaymentDetailsReport] set [Response_Received_CbsApi_Out] = 1, [HttpStatusCode_CbsApi_Out] = " + myHttpStatusCode + 
+          val strSQL: String = "update [dbo].[OutgoingSingleCreditTransferPaymentDetails] set [Response_Received_CbsApi_Out] = 1, [HttpStatusCode_CbsApi_Out] = " + myHttpStatusCode + 
               ", [StatusCode_CbsApi_Out] = " + mystatuscode + ", [StatusMessage_CbsApi_Out] = '" + strstatusdescription +
               "', [ResponseMessage_CbsApi_Out] = '" + strResponseData + 
               "', [Date_from_CbsApi_Out] = '" + dateFromCbsApi + "' where [ID] = " + myID + ";"
-              //insertUpdateRecord(strSQL)
+              insertUpdateRecord(strSQL)
+
+          log_data(strApifunction + " : " + " channeltype - ESBCBS"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode)
         case Failure(f) =>
           //println("failure")
-          log_errors(strApifunction + " : " + "error failure - " + f.getMessage)
+          //log_errors(strApifunction + " : " + "error failure - " + f.getMessage)
           try {
 
             //log_errors(strApifunction + " : Failure - " + f.getMessage + " - ex exception error occured.")
@@ -12064,7 +12221,9 @@ class CbsEngine @Inject()
             val dateFromCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
             var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
             val myHttpStatusCode: Int = 500
-            val strstatusdescription: String = "Failure occured when sending the request to API. " + f.getMessage
+            val strHttpErrorMessage: String = f.getMessage
+            val strStatusMessage: String = "Failure occured when sending the request to API. " + strHttpErrorMessage
+            val strResponseData: String = ""
 
             if (myEntryID.value.isEmpty != true) {
               if (myEntryID.value.get != None) {
@@ -12075,10 +12234,435 @@ class CbsEngine @Inject()
               }
             }
 
-            val strSQL: String = "update [dbo].[IncomingSingleCreditTransferPaymentDetailsReport] set [Response_Received_CbsApi_Out] = 1, [HttpStatusCode_CbsApi_Out] = " + myHttpStatusCode + 
-              ", [StatusCode_CbsApi_Out] = 1, [StatusMessage_CbsApi_Out] = '" + strstatusdescription +
+            val strSQL: String = "update [dbo].[OutgoingSingleCreditTransferPaymentDetails] set [Response_Received_CbsApi_Out] = 1, [HttpStatusCode_CbsApi_Out] = " + myHttpStatusCode + 
+              ", [StatusCode_CbsApi_Out] = 1, [StatusMessage_CbsApi_Out] = '" + strStatusMessage +
               "', [Date_from_CbsApi_Out] = '" + dateFromCbsApi + "' where [ID] = " + myID + ";"
-            //insertUpdateRecord(strSQL)
+              insertUpdateRecord(strSQL)
+
+            log_data(strApifunction + " : " + " channeltype - ESBCBS"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode + " , httperrormessage - " + strHttpErrorMessage)
+            
+          }
+          catch
+            {
+              case ex: Exception =>
+                log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured.")
+              case t: Throwable =>
+                log_errors(strApifunction + " : " + t.getMessage + " - t exception error occured.")
+            }
+      }
+    }
+    catch
+    {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured.")
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " - t exception error occured.")
+    }
+  }
+  def sendOutgoingBulkCreditTransferRequestEsbCbs(myID: java.math.BigDecimal, strToken: String, singleDebitTransferPaymentInformation: DebitTransactionRequest_EsbCbs, myRequestData: String, strApiURL: String, strApiURL2: String): Unit = {
+    val strApifunction: String = "sendOutgoingBulkCreditTransferRequestEsbCbs"
+    val strChannelType: String = "ESBCBS"
+    var strMsg: String = ""
+    var strCode: String = ""
+    var isValidAccount: Boolean = false
+    var isValidData: Boolean = false
+    var myjsonData: String = ""
+
+    try{
+      if (singleDebitTransferPaymentInformation != null){
+        isValidData = true
+      }
+      else{
+        log_errors(strApifunction + " : Failure in fetching  singleDebitTransferPaymentInformation - null " + " , application error occured.")
+        return
+      }
+
+      if (strApiURL.trim.length == 0){
+        log_errors(strApifunction + " : Failure in fetching  Api URL - " + strApiURL + " , application error occured.")
+        return
+      }
+    }
+    catch{
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured.")
+    }
+
+    try
+    {
+      if (isValidData){
+
+        implicit val DebitTransactionRequest_EsbCbs_Writes = Json.writes[DebitTransactionRequest_EsbCbs]
+        
+        val jsonRequest = Json.toJson(singleDebitTransferPaymentInformation)
+
+        myjsonData = jsonRequest.toString()
+
+        //println("sendOutgoingBulkCreditTransferRequestEsbCbs: myjsonData - " + myjsonData)
+        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , request - " + myjsonData  + " , apiurl - " + strApiURL)
+      }
+    }
+    catch
+    {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured.")
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " - t exception error occured.")
+    }
+
+    try{
+      if (strToken.trim.length == 0){
+        log_errors(strApifunction + " : " + "strToken.trim.length == 0")
+        return
+      }
+      /*
+      else{
+        log_errors(strApifunction + " : " + "strToken.length - " + strToken.length + " , strToken - " + strToken)
+      }
+      */
+      try{
+        if (isValidData){
+          val dateToCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+        
+          val strSQL: String = "update [dbo].[OutgoingBulkCreditTransferPaymentDetails] set [Posted_to_CbsApi_Out] = 1, [Post_picked_CbsApi_Out] = 1, [Response_Received_CbsApi_Out] = '" + myjsonData + "', [Date_to_CbsApi_Out] = '" + dateToCbsApi + "' where [BatchReference] = " + myID + ";"
+          insertUpdateRecord(strSQL)
+        }
+        else{
+          log_errors(strApifunction + " : Failure in fetching  data - invalid data , application error occured.")
+          return
+        }
+      }
+      catch{
+        case ex: Exception =>
+          log_errors(strApifunction + " : " + ex.getMessage())
+        case io: IOException =>
+          log_errors(strApifunction + " : " + io.getMessage())
+        case tr: Throwable =>
+          log_errors(strApifunction + " : " + tr.getMessage())
+      }
+      
+      val myuri: Uri = strApiURL
+      val data = HttpEntity(ContentType(MediaTypes.`application/json`), myjsonData)
+      //val requestData: Future[String] = Future(myjsonData)
+      //var start_time_DB: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+      //val myStart_time: Future[String] = Future(start_time_DB)
+      val myEntryID: Future[java.math.BigDecimal] = Future(myID)
+      val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization","Bearer " + strToken)))
+    
+      val entityFut: Future[DebitTransactionResponse_EsbCbs] =
+          responseFuture.flatMap(resp => Unmarshal(resp.entity).to[DebitTransactionResponse_EsbCbs])
+
+      entityFut.onComplete {
+        case Success(myDataResponse) =>
+          //println(body)
+          //log_errors(strApifunction + " : " + "body - " + body.toString())
+          val dateFromCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+          var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
+          var strResponseData: String = ""
+          var strDrAccountNumber: String = ""
+          var strCrAccountNumber: String = ""
+          var strTransactionAmt: String = ""
+          var transactionAmt: BigDecimal = 0
+          var availableBal: BigDecimal = 0
+          var strAvailableBal: String = ""
+          var currentBal: BigDecimal = 0
+          var strCurrentBal: String = ""
+          var responseCode: String = ""
+          var responseRef: String = ""
+          var responseDesc: String = ""
+          var olTrxCode: String = ""
+          var postedToCbs: Boolean = false
+          var isPostedSuccessfully: Boolean = false
+          var strRequestData: String = ""
+          var myHttpStatusCode: Int = 200
+          var mystatuscode: Int = 1
+          var strstatusdescription: String = "Failed processing"
+          val decimalRegEx: String = "^[1-9]\\d*(\\.\\d+)?$"
+
+          if (myDataResponse != None){
+            if (1 == 1){//if (myData.getOrElse(None) != None){
+              //val myTransactionResponse =  myData.get
+              if (1 == 1){//if (myData.get != None){
+                strResponseData = myDataResponse.toString()
+
+                log_errors(strApifunction + " : " + "strResponseData - " + strResponseData)
+
+                //val myTransactionResponse = myData.get
+                if (myDataResponse != None){
+                  //strResponseData = myTransactionResponse.toString()
+
+                  //log_errors(strApifunction + " : " + "strResponseData - " + strResponseData)
+
+                  //strDrAccountNumber
+                  if (myDataResponse.fromaccountnumber != None) {
+                    val myData = myDataResponse.fromaccountnumber
+                    strDrAccountNumber = myData.getOrElse("").toString()
+                    if (strDrAccountNumber != null && strDrAccountNumber != None){
+                      strDrAccountNumber = strDrAccountNumber.trim
+                      if (strDrAccountNumber.length > 0){
+                        strDrAccountNumber = strDrAccountNumber.replace("'","")//Remove apostrophe
+                        strDrAccountNumber = strDrAccountNumber.replace(" ","")//Remove spaces
+                        strDrAccountNumber = strDrAccountNumber.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                        strDrAccountNumber = strDrAccountNumber.trim
+                      }
+                    }
+                  }
+
+                  //strCrAccountNumber
+                  if (myDataResponse.toaccountnumber != None) {
+                    val myData = myDataResponse.toaccountnumber
+                    strCrAccountNumber = myData.getOrElse("").toString()
+                    if (strCrAccountNumber != null && strCrAccountNumber != None){
+                      strCrAccountNumber = strCrAccountNumber.trim
+                      if (strCrAccountNumber.length > 0){
+                        strCrAccountNumber = strCrAccountNumber.replace("'","")//Remove apostrophe
+                        strCrAccountNumber = strCrAccountNumber.replace(" ","")//Remove spaces
+                        strCrAccountNumber = strCrAccountNumber.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                        strCrAccountNumber = strCrAccountNumber.trim
+                      }
+                    }
+                  }
+
+                  //strTransactionAmt
+                  if (myDataResponse.transactionAmt != None) {
+                    val myData = myDataResponse.transactionAmt
+                    strTransactionAmt = myData.getOrElse("").toString()
+                    if (strTransactionAmt != null && strTransactionAmt != None){
+                      strTransactionAmt = strTransactionAmt.trim
+                      if (strTransactionAmt.length > 0){
+                        strTransactionAmt = strTransactionAmt.replace("'","")//Remove apostrophe
+                        strTransactionAmt = strTransactionAmt.replace(" ","")//Remove spaces
+                        strTransactionAmt = strTransactionAmt.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                        strTransactionAmt = strTransactionAmt.trim
+                        if (strTransactionAmt.length > 0){
+                          val isNumeric: Boolean = strTransactionAmt.matches(decimalRegEx) //validate number and decimals
+                          if (isNumeric){
+                            transactionAmt = BigDecimal(strTransactionAmt)
+                          }
+                        }
+                      }
+                    }
+                  }
+
+                  //strAvailableBal
+                  if (myDataResponse.availableBal != None) {
+                    val myData = myDataResponse.availableBal
+                    strAvailableBal = myData.getOrElse("").toString()
+                    if (strAvailableBal != null && strAvailableBal != None){
+                      strAvailableBal = strAvailableBal.trim
+                      if (strAvailableBal.length > 0){
+                        strAvailableBal = strAvailableBal.replace("'","")//Remove apostrophe
+                        strAvailableBal = strAvailableBal.replace(" ","")//Remove spaces
+                        strAvailableBal = strAvailableBal.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                        strAvailableBal = strAvailableBal.trim
+                        if (strAvailableBal.length > 0){
+                          val isNumeric: Boolean = strAvailableBal.matches(decimalRegEx) //validate number and decimals
+                          if (isNumeric){
+                            availableBal = BigDecimal(strAvailableBal)
+                          }
+                        }
+                      }
+                    }
+                  }
+
+                  //strCurrentBal
+                  if (myDataResponse.currentBal != None) {
+                    val myData = myDataResponse.currentBal
+                    strCurrentBal = myData.getOrElse("").toString()
+                    if (strCurrentBal != null && strCurrentBal != None){
+                      strCurrentBal = strCurrentBal.trim
+                      if (strCurrentBal.length > 0){
+                        strCurrentBal = strCurrentBal.replace("'","")//Remove apostrophe
+                        strCurrentBal = strCurrentBal.replace(" ","")//Remove spaces
+                        strCurrentBal = strCurrentBal.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                        strCurrentBal = strCurrentBal.trim
+                        if (strCurrentBal.length > 0){
+                          val isNumeric: Boolean = strCurrentBal.matches(decimalRegEx) //validate number and decimals
+                          if (isNumeric){
+                            currentBal = BigDecimal(strCurrentBal)
+                          }
+                        }
+                      }
+                    }
+                  }
+
+                  //responseCode
+                  if (myDataResponse.responsecode != None) {
+                    val myData = myDataResponse.responsecode
+                    responseCode = myData.getOrElse("").toString()
+                    if (responseCode != null && responseCode != None){
+                      responseCode = responseCode.trim
+                      if (responseCode.length > 0){
+                        responseCode = responseCode.replace("'","")//Remove apostrophe
+                        responseCode = responseCode.replace(" ","")//Remove spaces
+                        responseCode = responseCode.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                        responseCode = responseCode.trim
+                      }
+                    }
+                  }
+
+                  //responseRef
+                  if (myDataResponse.responseRef != None) {
+                    val myData = myDataResponse.responseRef
+                    responseRef = myData.getOrElse("").toString()
+                    if (responseRef != null && responseRef != None){
+                      responseRef = responseRef.trim
+                      if (responseRef.length > 0){
+                        responseRef = responseRef.replace("'","")//Remove apostrophe
+                        responseRef = responseRef.replace("  "," ")//Remove double spaces
+                        responseRef = responseRef.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                        responseRef = responseRef.trim
+                      }
+                    }
+                  }
+
+                  //responseDesc
+                  if (myDataResponse.responsedesc != None) {
+                    val myData = myDataResponse.responsedesc
+                    responseDesc = myData.getOrElse("").toString()
+                    if (responseDesc != null && responseDesc != None){
+                      responseDesc = responseDesc.trim
+                      if (responseDesc.length > 0){
+                        responseDesc = responseDesc.replace("'","")//Remove apostrophe
+                        responseDesc = responseDesc.replace("  "," ")//Remove spaces
+                        responseDesc = responseDesc.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                        responseDesc = responseDesc.trim
+                      }
+                    }
+                  }
+
+                  //olTrxCode
+                  if (myDataResponse.olTrxCode != None) {
+                    val myData = myDataResponse.olTrxCode
+                    olTrxCode = myData.getOrElse("").toString()
+                    if (olTrxCode != null && olTrxCode != None){
+                      olTrxCode = olTrxCode.trim
+                      if (olTrxCode.length > 0){
+                        olTrxCode = olTrxCode.replace("'","")//Remove apostrophe
+                        olTrxCode = olTrxCode.replace(" ","")//Remove spaces
+                        olTrxCode = olTrxCode.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                        olTrxCode = olTrxCode.trim
+                      }
+                    }
+                  }
+
+                  //postedToCbs
+                  if (myDataResponse.postedToImal != None) {
+                    val myData = myDataResponse.postedToImal
+                    var strPostedToCbs: String = myData.getOrElse("").toString()
+                    if (strPostedToCbs != null && strPostedToCbs != None){
+                      strPostedToCbs = strPostedToCbs.trim
+                      if (strPostedToCbs.length > 0){
+                        strPostedToCbs = strPostedToCbs.replace("'","")//Remove apostrophe
+                        strPostedToCbs = strPostedToCbs.replace(" ","")//Remove spaces
+                        strPostedToCbs = strPostedToCbs.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                        strPostedToCbs = strPostedToCbs.trim
+                        if (strPostedToCbs.equalsIgnoreCase("true")){postedToCbs = true}
+                      }
+                    }
+                  }
+
+                }
+                else{
+                  strCode = "myTransactionResponse.get != None"
+                }
+                /*
+                if (mystatuscode == 0){transactionStatus = "ACCP"}
+                else {transactionStatus = "RJCT"}
+                */
+                strMsg = "DrAccountNumber - " + strDrAccountNumber + " , CrAccountNumber - " + strCrAccountNumber + 
+                " , transactionAmt - " + transactionAmt.toString() + " , availableBal - " + availableBal.toString() +
+                " , currentBal - " + currentBal.toString() + " , responseCode - " + responseCode +
+                " , responseRef - " + responseRef + " , responseDesc - " + responseDesc +
+                " , olTrxCode - " + olTrxCode + " , postedToCbs - " + postedToCbs.toString()
+
+                log_errors(strApifunction + " : " + strMsg)
+                //if (postedToCbs && strAccountNumber.length > 0 && strAccountName.length > 0 && strError.length == 0){
+                if (postedToCbs && responseCode.length > 0){
+                  //Request account and Response account must be same
+                  /*
+                  if (inputAccountNumber.equalsIgnoreCase(strAccountNumber)){
+                    isValidated = true
+                    mystatuscode = 0
+                    strstatusdescription = "successful"
+                  }
+                  */
+                  if (responseCode.equalsIgnoreCase("00")){
+                    isPostedSuccessfully = true
+                    mystatuscode = 0
+                    strstatusdescription = "successful"
+                  }
+                }
+
+                if (isPostedSuccessfully){
+                  //send the outgoing request to IPSL
+                  val f = Future {
+                    sendBulkCreditTransferRequestsIpsl(myID, myRequestData, strApiURL2)
+                  }(myExecutionContext)
+                }
+                else{
+                  strstatusdescription = responseDesc
+                }
+
+              }
+            }
+            else {
+              //Lets log the status code returned by CBS webservice
+              val myStatusCode_Cbs : Int = 500//res.status.intValue()
+              val strStatusMessage_Cbs: String = "Failed"
+              val strMessage: String = "status - " + myStatusCode_Cbs + ", status message - " + strStatusMessage_Cbs
+              log_errors(strApifunction + " : " + strMessage + " - myData.value.getOrElse(None) != None error occured.")
+              //res.discardEntityBytes()
+            }
+          }
+          else{
+            //res.discardEntityBytes()
+          }
+
+          if (myEntryID.value.isEmpty != true) {
+            if (myEntryID.value.get != None) {
+              val myVal = myEntryID.value.get
+              if (myVal.get != None) {
+                myID = myVal.get
+              }
+            }
+          }
+
+          val strSQL: String = "update [dbo].[OutgoingBulkCreditTransferPaymentDetails] set [Response_Received_CbsApi_Out] = 1, [HttpStatusCode_CbsApi_Out] = " + myHttpStatusCode + 
+              ", [StatusCode_CbsApi_Out] = " + mystatuscode + ", [StatusMessage_CbsApi_Out] = '" + strstatusdescription +
+              "', [ResponseMessage_CbsApi_Out] = '" + strResponseData + 
+              "', [Date_from_CbsApi_Out] = '" + dateFromCbsApi + "' where [BatchReference] = " + myID + ";"
+              insertUpdateRecord(strSQL)
+
+          log_data(strApifunction + " : " + " channeltype - ESBCBS"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode)
+        case Failure(f) =>
+          //println("failure")
+          //log_errors(strApifunction + " : " + "error failure - " + f.getMessage)
+          try {
+
+            //log_errors(strApifunction + " : Failure - " + f.getMessage + " - ex exception error occured.")
+
+            val dateFromCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+            var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
+            val myHttpStatusCode: Int = 500
+            val strHttpErrorMessage: String = f.getMessage
+            val strStatusMessage: String = "Failure occured when sending the request to API. " + strHttpErrorMessage
+            val strResponseData: String = ""
+
+            if (myEntryID.value.isEmpty != true) {
+              if (myEntryID.value.get != None) {
+                val myVal = myEntryID.value.get
+                if (myVal.get != None) {
+                  myID = myVal.get
+                }
+              }
+            }
+
+            val strSQL: String = "update [dbo].[OutgoingBulkCreditTransferPaymentDetails] set [Response_Received_CbsApi_Out] = 1, [HttpStatusCode_CbsApi_Out] = " + myHttpStatusCode + 
+              ", [StatusCode_CbsApi_Out] = 1, [StatusMessage_CbsApi_Out] = '" + strStatusMessage +
+              "', [Date_from_CbsApi_Out] = '" + dateFromCbsApi + "' where [BatchReference] = " + myID + ";"
+              insertUpdateRecord(strSQL)
+
+            log_data(strApifunction + " : " + " channeltype - ESBCBS"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode + " , httperrormessage - " + strHttpErrorMessage)
             
           }
           catch
