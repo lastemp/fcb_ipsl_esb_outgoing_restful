@@ -222,8 +222,12 @@ class CbsEngine @Inject()
   //The request is initiated from ESB-CBS/Other CHannels
   case class AccountVerificationDetails_Request(transactionreference: Option[JsValue], accountnumber: Option[JsValue], schemename: Option[JsValue], bankcode: Option[JsValue])
   case class AccountVerificationDetails_BatchRequest(messagereference: Option[JsValue], accountdata: AccountVerificationDetails_Request)
+  /*
   case class AccountVerificationDetailsResponse_Batch(transactionreference: String, accountnumber: String, accountname: String, bankcode: String)
   case class AccountVerificationDetailsResponse_BatchData(messagereference: String, statuscode: Int, statusdescription: String, accountdata: AccountVerificationDetailsResponse_Batch)
+  */
+  case class AccountVerificationDetailsResponse_Batch(transactionreference: String, accountnumber: String, accountname: String, bankcode: String, statuscode: Int, statusdescription: String)
+  case class AccountVerificationDetailsResponse_BatchData(messagereference: String, accountdata: AccountVerificationDetailsResponse_Batch)
   case class AccountVerificationDetailsResponse(statuscode: Int, statusdescription: String)
   //AccountVerification Details i.e AccountVerification request from ESB
   case class AccountVerificationDetails(messagereference: String, creationdatetime: String, firstagentidentification: String, assigneragentidentification: String, assigneeagentidentification: String, transactionreference: String, accountnumber: String, schemename: String, bankcode: String)
@@ -3069,7 +3073,7 @@ class CbsEngine @Inject()
                                 if (isNumeric){
                                   //myAmount = BigDecimal(strAmount)
                                   //Lets round-off to 2 decimal places
-                                  myAmount = BigDecimal(strAmount).setScale(2, BigDecimal.RoundingMode.HALF_UP)
+                                  myAmount = BigDecimal(strAmount).setScale(2, BigDecimal.RoundingMode.HALF_EVEN)
                                   interbanksettlementamount = myAmount
                                   totalinterbanksettlementamount = myAmount
                                   //println("myAmount" + myAmount)
@@ -4707,7 +4711,7 @@ class CbsEngine @Inject()
                                   if (isNumeric){
                                     //myAmount = BigDecimal(strAmount)
                                     //Lets round-off to 2 decimal places
-                                    myAmount = BigDecimal(strAmount).setScale(2, BigDecimal.RoundingMode.HALF_UP)
+                                    myAmount = BigDecimal(strAmount).setScale(2, BigDecimal.RoundingMode.HALF_EVEN)
                                     interbanksettlementamount = myAmount
                                     totalinterbanksettlementamount = totalinterbanksettlementamount + myAmount
                                   }
@@ -9383,14 +9387,38 @@ class CbsEngine @Inject()
                         myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
                         
                         val myPaymentStatusTableResponseDetails = addOutgoingPaymentStatusDetails(myPaymentStatusTableDetails, strChannelType, strChannelCallBackUrl)
+                        /*
                         myID = myPaymentStatusTableResponseDetails.id
                         responseCode = myPaymentStatusTableResponseDetails.responsecode
                         responseMessage = myPaymentStatusTableResponseDetails.responsemessage
                         val myPaymentStatusDetails = myPaymentStatusTableResponseDetails.paymentstatusdetails
+                        */
+                        var isValidmyPaymentStatusDetails: Boolean = false
+
+                        if (myPaymentStatusTableResponseDetails != null){
+                          if (myPaymentStatusTableResponseDetails.id != null){
+                            myID = myPaymentStatusTableResponseDetails.id
+                          }
+
+                          if (myPaymentStatusTableResponseDetails.responsecode != null){
+                            responseCode = myPaymentStatusTableResponseDetails.responsecode
+                          }
+
+                          if (myPaymentStatusTableResponseDetails.responsemessage != null){
+                            responseMessage = myPaymentStatusTableResponseDetails.responsemessage
+                          }
+
+                          if (myPaymentStatusTableResponseDetails.paymentstatusdetails != null){
+                            isValidmyPaymentStatusDetails = true
+                          }
+                        }
                         
-                        //println("myID - " + myID)
-                        //println("responseCode - " + responseCode)
-                        //println("responseMessage - " + responseMessage)
+                        /*
+                        println("myID - " + myID)
+                        println("responseCode - " + responseCode)
+                        println("responseMessage - " + responseMessage)
+                        println("isValidmyPaymentStatusDetails - " + isValidmyPaymentStatusDetails.toString())
+                        */
                         //TESTS ONLY
                         /*
                         responseCode = 0
@@ -9399,13 +9427,14 @@ class CbsEngine @Inject()
                           responseMessage = "Message accepted for processing."
                         }
                         */
-                        if (responseCode == 0){
+                        if (responseCode == 0 && isValidmyPaymentStatusDetails){
                           myHttpStatusCode = HttpStatusCode.Accepted
                           responseMessage = "Message accepted for processing."
 
                           val f = Future {
                             //println("singleCreditTransferPaymentInfo - " + singleCreditTransferPaymentInfo)
                             //val myRespData: String = getSingleCreditTransferDetails(singleCreditTransferPaymentInfo, isAccSchemeName)
+                            val myPaymentStatusDetails = myPaymentStatusTableResponseDetails.paymentstatusdetails
                             val myRespData: String = getPaymentStatusDetailsIpsl(myPaymentStatusDetails)
                             sendPaymentStatusRequestsIpsl(myID, myRespData, strOutgoingPaymentStatusUrlIpsl)
                           }(myExecutionContext)
@@ -9568,7 +9597,7 @@ class CbsEngine @Inject()
             400
           }
         }
-        val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [HttpStatusCode_CbsApi_In] = " + myCode + ", [ResponseMessage_CbsApi_In] = '" + jsonResponse.toString() + "', [Date_to_CbsApi_In] = '" + dateToCbsApi + "' where [ID] = " + myID + ";"
+        val strSQL: String = "update [dbo].[OutgoingPaymentStatusDetails] set [HttpStatusCode_CbsApi_In] = " + myCode + ", [ResponseMessage_CbsApi_In] = '" + jsonResponse.toString() + "', [Date_to_CbsApi_In] = '" + dateToCbsApi + "' where [ID] = " + myID + ";"
         //insertUpdateRecord(strSQL)
       }
       else{
@@ -12892,11 +12921,48 @@ class CbsEngine @Inject()
                       var responseCode: Int = 1
                       var responseMessage: String = "Error occured during processing, please try again."
 
+                      if (strAccountNumber != null){
+                        if (strAccountNumber.length > 0){
+                          strAccountNumber = strAccountNumber.replace("'","")//Remove apostrophe
+                          strAccountNumber = strAccountNumber.replace(" ","")//Remove spaces
+                          strAccountNumber = strAccountNumber.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                          strAccountNumber = strAccountNumber.trim
+                        }
+                      }
+
+                      if (strBankCode != null){
+                        if (strBankCode.length > 0){
+                          strBankCode = strBankCode.replace("'","")//Remove apostrophe
+                          strBankCode = strBankCode.replace(" ","")//Remove spaces
+                          strBankCode = strBankCode.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                          strBankCode = strBankCode.trim
+                        }
+                      }
+
+                      if (strAccountname != null){
+                        if (strAccountname.length > 0){
+                          strAccountname = strAccountname.replace("'","")//Remove apostrophe
+                          strAccountname = strAccountname.replace("  "," ")//Remove double spaces
+                          strAccountname = strAccountname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                          strAccountname = strAccountname.trim
+                        }
+                      }
+
+                      if (verificationStatus != null){
+                        if (verificationStatus.length > 0){
+                          verificationStatus = verificationStatus.replace("'","")//Remove apostrophe
+                          verificationStatus = verificationStatus.replace(" ","")//Remove double spaces
+                          verificationStatus = verificationStatus.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                          verificationStatus = verificationStatus.trim
+                        }
+                      }
+
                       if (verificationStatus.length > 0){
                         if (verificationStatus.equalsIgnoreCase("true")){
                           isVerified = true
                         }
                       }
+
                       if (isVerified){
                         responseCode = 0
                         responseMessage = "successful"
@@ -12912,11 +12978,44 @@ class CbsEngine @Inject()
                         strAccountname = ""
                         strBankCode = ""
                         responseCode = 1
-                        responseMessage = verificationReasonCode
+
+                        if (verificationReasonCode != null){
+                          if (verificationReasonCode.length > 0){
+                            verificationReasonCode = verificationReasonCode.replace("'","")//Remove apostrophe
+                            verificationReasonCode = verificationReasonCode.replace("  "," ")//Remove double spaces
+                            verificationReasonCode = verificationReasonCode.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                            verificationReasonCode = verificationReasonCode.trim
+                          }
+                        }
+
+                        responseMessage = {
+                          var msg: String = "Error occured during processing, try again later"
+                          if (verificationReasonCode.length > 0){
+                            if (verificationReasonCode.equalsIgnoreCase("AB05")){
+                              msg = "Timeout at the Beneficary Bank"
+                            }
+                            else if (verificationReasonCode.equalsIgnoreCase("AB06")){
+                              msg = "Timeout at the Beneficary Bank"
+                            }
+                            else if (verificationReasonCode.equalsIgnoreCase("AC01")){
+                              msg = "Account number is invalid or does not exist"
+                            }
+                            else if (verificationReasonCode.equalsIgnoreCase("AC04")){
+                              msg = "Account number is closed account"
+                            }
+                            else if (verificationReasonCode.equalsIgnoreCase("AC06")){
+                              msg = "Account number is blocked"
+                            }
+                            else if (verificationReasonCode.equalsIgnoreCase("AG01")){
+                              msg = "Transaction forbidden on this type of account"
+                            }
+                          }
+                          msg
+                        }
                       }
 
-                      val myAccountVerificationDetailsResponse_Batch = AccountVerificationDetailsResponse_Batch(strTransactionReference, strAccountNumber, strAccountname, strBankCode)
-                      val myAccountVerificationResponse = AccountVerificationDetailsResponse_BatchData(strMessageReference, responseCode, responseMessage, myAccountVerificationDetailsResponse_Batch)
+                      val myAccountVerificationDetailsResponse_Batch = AccountVerificationDetailsResponse_Batch(strTransactionReference, strAccountNumber, strAccountname, strBankCode, responseCode, responseMessage)
+                      val myAccountVerificationResponse = AccountVerificationDetailsResponse_BatchData(strMessageReference, myAccountVerificationDetailsResponse_Batch)
                       /*
                       if (myEntryID.value.isEmpty != true) {
                         if (myEntryID.value.get != None) {
@@ -15165,7 +15264,7 @@ class CbsEngine @Inject()
         log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured.")
     }
 
-    val myuri : Uri = strApiURL //Maintain in DB
+    val myuri: Uri = strApiURL //Maintain in DB
 
     try
     {
@@ -15215,8 +15314,9 @@ class CbsEngine @Inject()
         //var start_time_DB : String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
         //val myStart_time : Future[String] = Future(start_time_DB)
         //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data))
-        val accessToken: String = "hsbjbahvs7ahvshvshv"
-        val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization","Bearer " + accessToken)))
+        //val accessToken: String = "hsbjbahvs7ahvshvshv"
+        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization","Bearer " + accessToken)))
+        val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data))
         val myChannelType: Future[String] = Future(strChannelType)
 
         //TESTS ONLY
@@ -15239,6 +15339,7 @@ class CbsEngine @Inject()
                   var strstatuscode: String = ""
                   var strstatusdescription: String = ""
                   var strRequestData: String = ""
+                  /*
                   val myData = Unmarshal(res.entity).to[TransactionResponse]
 
                   if (myData != None){
@@ -15307,7 +15408,8 @@ class CbsEngine @Inject()
 
                     }
                   }
-
+                  */
+                  mystatuscode = 0
                   myHttpStatusCode = res.status.intValue()
                   strStatusMessage = "Successful"
 
@@ -15316,6 +15418,7 @@ class CbsEngine @Inject()
                   myHttpStatusCode = res.status.intValue()
                   strStatusMessage = "Failed processing"
                 }
+                res.discardEntityBytes()
               }
 
               if (myEntryID.value.isEmpty != true){
@@ -16903,6 +17006,7 @@ class CbsEngine @Inject()
       case t: Throwable =>
         log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " transactionreference - " + myPaymentStatusTableDetails.transactionreference)
     }
+    /*
     val myAmount = BigDecimal(amount.toString()).setScale(2, BigDecimal.RoundingMode.HALF_UP)
     val myPaymentStatusDetails = PaymentStatusDetailsIpsl(newMessageReference, creationdatetime, myPaymentStatusTableDetails.instructingagentbankcode, myPaymentStatusTableDetails.instructedagentbankcode,
                                   newTransactionReference, acceptancedatetime,
@@ -16912,6 +17016,45 @@ class CbsEngine @Inject()
                                   creditorbankcode, creditorname, creditorphonenumber,
                                   creditoraccountnumber)
     val myPaymentStatusTableResponseDetails = PaymentStatusTableResponseDetails(myID, responseCode, responseMessage, myPaymentStatusDetails)
+    */
+    if (responseCode != 0){
+      try{
+        val myPaymentStatusDetails: PaymentStatusDetailsIpsl = null
+        val myPaymentStatusTableResponseDetails = PaymentStatusTableResponseDetails(myID, responseCode, responseMessage, myPaymentStatusDetails)
+        return myPaymentStatusTableResponseDetails
+        }
+        catch{
+        case ex : Exception =>
+          log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured." + " myID - " + myID.toString())
+        case t: Throwable =>
+          log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " myID - " + myID.toString())
+      }
+    }
+    
+    
+    try{
+      val myAmount = BigDecimal(amount.toString()).setScale(2, BigDecimal.RoundingMode.HALF_EVEN)
+      val myPaymentStatusDetails = PaymentStatusDetailsIpsl(newMessageReference, creationdatetime, myPaymentStatusTableDetails.instructingagentbankcode, myPaymentStatusTableDetails.instructedagentbankcode,
+                                    newTransactionReference, acceptancedatetime,
+                                    originalmessageidentification, originalmessagenameidentification, originalcreationdatetime, originalendtoendidentification,
+                                    myAmount, debtorname, debtorphonenumber,
+                                    debtoraccountnumber, debtorbankcode, 
+                                    creditorbankcode, creditorname, creditorphonenumber,
+                                    creditoraccountnumber)
+
+      val myPaymentStatusTableResponseDetails = PaymentStatusTableResponseDetails(myID, responseCode, responseMessage, myPaymentStatusDetails)                            
+      return myPaymentStatusTableResponseDetails
+    }  
+    catch{
+      case ex : Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured." + " myID - " + myID.toString())
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " myID - " + myID.toString())
+    }
+    
+    val myPaymentStatusDetails: PaymentStatusDetailsIpsl = null
+    val myPaymentStatusTableResponseDetails = PaymentStatusTableResponseDetails(myID, responseCode, responseMessage, null)                            
+
     myPaymentStatusTableResponseDetails
   }
   def insertApiValidationRequests(strChannelType: String, strUserName: String, strPassword: String, strClientIP: String, myApifunction: String, responseCode: Int, responseMessage: String): Unit = {
