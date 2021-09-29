@@ -3790,9 +3790,24 @@ class CbsEngine @Inject()
                           myBatchSize, strRequestData, dateFromCbsApi, strClientIP, creationDateTime)
 
                         val myTableResponseDetails = addOutgoingSingleCreditTransferPaymentDetails(mySingleCreditTransferPaymentTableDetails, strChannelType, strChannelCallBackUrl)
+                        /*
                         myID = myTableResponseDetails.id
                         responseCode = myTableResponseDetails.responsecode
                         responseMessage = myTableResponseDetails.responsemessage
+                        */
+                        if (myTableResponseDetails != null){
+                          if (myTableResponseDetails.id != null){
+                            myID = myTableResponseDetails.id
+                          }
+
+                          if (myTableResponseDetails.responsecode != null){
+                            responseCode = myTableResponseDetails.responsecode
+                          }
+
+                          if (myTableResponseDetails.responsemessage != null){
+                            responseMessage = myTableResponseDetails.responsemessage
+                          }
+                        }
                         //println("myID - " + myID)
                         //println("responseCode - " + responseCode)
                         //println("responseMessage - " + responseMessage)
@@ -7094,12 +7109,28 @@ class CbsEngine @Inject()
                         val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
                         
                         val myAccountVerificationTableResponseDetails = addOutgoingAccountVerificationDetails(myAccountVerificationTableDetails, strChannelType, strChannelCallBackUrl)
+                        /*
                         myID = myAccountVerificationTableResponseDetails.id
                         responseCode = myAccountVerificationTableResponseDetails.responsecode
                         responseMessage = myAccountVerificationTableResponseDetails.responsemessage
+                        */
                         //println("myID - " + myID)
                         //println("responseCode - " + responseCode)
                         //println("responseMessage - " + responseMessage)
+                        if (myAccountVerificationTableResponseDetails != null){
+                          if (myAccountVerificationTableResponseDetails.id != null){
+                            myID = myAccountVerificationTableResponseDetails.id
+                          }
+
+                          if (myAccountVerificationTableResponseDetails.responsecode != null){
+                            responseCode = myAccountVerificationTableResponseDetails.responsecode
+                          }
+
+                          if (myAccountVerificationTableResponseDetails.responsemessage != null){
+                            responseMessage = myAccountVerificationTableResponseDetails.responsemessage
+                          }
+                        }
+
                         if (responseCode == 0){
                           myHttpStatusCode = HttpStatusCode.Accepted
                           responseMessage = "Message accepted for processing."
@@ -11929,7 +11960,7 @@ class CbsEngine @Inject()
         if (isValidData){
           val dateToCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
         
-          val strSQL: String = "update [dbo].[OutgoingSingleCreditTransferPaymentDetails] set [Posted_to_CbsApi_Out] = 1, [Post_picked_CbsApi_Out] = 1, [Response_Received_CbsApi_Out] = '" + myjsonData + "', [Date_to_CbsApi_Out] = '" + dateToCbsApi + "' where [ID] = " + myID + ";"
+          val strSQL: String = "update [dbo].[OutgoingSingleCreditTransferPaymentDetails] set [Posted_to_CbsApi_Out] = 1, [Post_picked_CbsApi_Out] = 1, [RequestMessage_CbsApi_Out] = '" + myjsonData + "', [Date_to_CbsApi_Out] = '" + dateToCbsApi + "' where [ID] = " + myID + ";"
           insertUpdateRecord(strSQL)
         }
         else{
@@ -12352,7 +12383,7 @@ class CbsEngine @Inject()
         if (isValidData){
           val dateToCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
         
-          val strSQL: String = "update [dbo].[OutgoingBulkCreditTransferPaymentDetails] set [Posted_to_CbsApi_Out] = 1, [Post_picked_CbsApi_Out] = 1, [Response_Received_CbsApi_Out] = '" + myjsonData + "', [Date_to_CbsApi_Out] = '" + dateToCbsApi + "' where [BatchReference] = " + myID + ";"
+          val strSQL: String = "update [dbo].[OutgoingBulkCreditTransferPaymentDetails] set [Posted_to_CbsApi_Out] = 1, [Post_picked_CbsApi_Out] = 1, [RequestMessage_CbsApi_Out] = '" + myjsonData + "', [Date_to_CbsApi_Out] = '" + dateToCbsApi + "' where [BatchReference] = " + myID + ";"
           insertUpdateRecord(strSQL)
         }
         else{
@@ -15334,7 +15365,7 @@ class CbsEngine @Inject()
               var strResponseData: String = ""
               var strChannelType: String = ""
 
-              if (res.status != None){
+              if (res != None && res != null){
                 if (res.status.intValue() == 200){
                   var strstatuscode: String = ""
                   var strstatusdescription: String = ""
