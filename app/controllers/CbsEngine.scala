@@ -231,7 +231,8 @@ class CbsEngine @Inject()
   case class AccountVerificationDetailsResponse(statuscode: Int, statusdescription: String)
   //AccountVerification Details i.e AccountVerification request from ESB
   case class AccountVerificationDetails(messagereference: String, creationdatetime: String, firstagentidentification: String, assigneragentidentification: String, assigneeagentidentification: String, transactionreference: String, accountnumber: String, schemename: String, bankcode: String)
-
+  //AccessToken
+  case class AccessTokenDetailsResponse(access_token: String, expiry_in: String)
   //SingleCreditTransfer Details i.e SingleCreditTransfer request to IPSL through ESB
   //The request is initiated from ESB-CBS/Other Channels
   case class ContactInformation(fullnames: Option[JsValue], phonenumber: Option[JsValue], emailaddress: Option[JsValue])
@@ -2494,7 +2495,7 @@ class CbsEngine @Inject()
 
   case class AccountVerificationTableDetails(batchreference: java.math.BigDecimal, accountnumber: String, bankcode: String, messagereference: String, transactionreference: String, schemename: String, batchsize: Integer, requestmessagecbsapi: String, datefromcbsapi: String, remoteaddresscbsapi: String)
   case class AccountVerificationTableResponseDetails(id: java.math.BigDecimal, responsecode: Int, responsemessage: String)
-  case class ClientApiResponseDetails(responsecode: Int, responsemessage: String)
+  case class ClientApiResponseDetails(responsecode: Int, responsemessage: String, myid: Int)
 
   case class SingleCreditTransferPaymentTableDetails(batchreference: java.math.BigDecimal, 
   debtoraccountnumber: String, debtoraccountname: String, debtorbankcode: String, 
@@ -2732,10 +2733,10 @@ class CbsEngine @Inject()
         log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
 
         if (isDataFound && isAuthTokenFound){
-
+          var strAccessToken: String = ""
           try{
             var myByteAuthToken = Base64.getDecoder.decode(strAuthToken)
-            var myAuthToken : String = new String(myByteAuthToken, StandardCharsets.UTF_8)
+            var myAuthToken: String = new String(myByteAuthToken, StandardCharsets.UTF_8)
 
             //log_data(strApifunction + " : myAuthToken - " + "**********" + " , strAuthToken - " + strAuthToken)
 
@@ -2743,6 +2744,9 @@ class CbsEngine @Inject()
               myAuthToken = myAuthToken.trim
 
               if (myAuthToken.length > 0){
+                isCredentialsFound = true
+                strAccessToken = myAuthToken
+                /*
                 if (myAuthToken.contains(":")){
                   val myArray = myAuthToken.toString.split(":")
 
@@ -2767,6 +2771,7 @@ class CbsEngine @Inject()
                     }
                   }
                 }
+                */
               }
             }
           }
@@ -2780,8 +2785,8 @@ class CbsEngine @Inject()
 
           try{
             if (!isCredentialsFound){strPassword = ""}
-
-            val myOutput = validateClientApi(strChannelType, strUserName, strPassword, strClientIP, strApifunction)
+            //val myOutput = validateClientApi(strChannelType, strUserName, strPassword, strClientIP, strApifunction)
+            val myOutput = validateApiAccessToken(strAccessToken, strChannelType, strClientIP, strApifunction)
             if (myOutput.responsecode != null){
               responseCode = myOutput.responsecode
             }
@@ -4230,10 +4235,10 @@ class CbsEngine @Inject()
         log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
 
         if (isDataFound && isAuthTokenFound){
-
+          var strAccessToken: String = ""
           try{
             var myByteAuthToken = Base64.getDecoder.decode(strAuthToken)
-            var myAuthToken : String = new String(myByteAuthToken, StandardCharsets.UTF_8)
+            var myAuthToken: String = new String(myByteAuthToken, StandardCharsets.UTF_8)
 
             //log_data(strApifunction + " : myAuthToken - " + "**********" + " , strAuthToken - " + strAuthToken)
 
@@ -4241,6 +4246,9 @@ class CbsEngine @Inject()
               myAuthToken = myAuthToken.trim
 
               if (myAuthToken.length > 0){
+                isCredentialsFound = true
+                strAccessToken = myAuthToken
+                /*
                 if (myAuthToken.contains(":")){
                   val myArray = myAuthToken.toString.split(":")
 
@@ -4265,6 +4273,7 @@ class CbsEngine @Inject()
                     }
                   }
                 }
+                */
               }
             }
           }
@@ -4278,8 +4287,8 @@ class CbsEngine @Inject()
 
           try{
             if (!isCredentialsFound){strPassword = ""}
-
-            val myOutput = validateClientApi(strChannelType, strUserName, strPassword, strClientIP, strApifunction)
+            //val myOutput = validateClientApi(strChannelType, strUserName, strPassword, strClientIP, strApifunction)
+            val myOutput = validateApiAccessToken(strAccessToken, strChannelType, strClientIP, strApifunction)
             if (myOutput.responsecode != null){
               responseCode = myOutput.responsecode
             }
@@ -6642,6 +6651,228 @@ class CbsEngine @Inject()
       r
     }(myExecutionContext)
   }
+  def generateToken = Action.async { request =>
+    Future {
+      val startDate: String =  new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new java.util.Date)
+      var responseCode: Int = 1
+      var responseMessage: String = "Error occured during processing, please try again."
+      var access_token: String = ""
+      var expiry_in: String = ""
+      var myHttpStatusCode = HttpStatusCode.BadRequest
+      val strApifunction: String = "generatetoken"
+
+      var strClientIP: String = ""
+      var strChannelType: String = ""
+      var strRequest: String = ""
+
+      try
+      {
+        var strRequestHeader: String = ""
+        var strAuthToken: String = ""
+        val isDataFound: Boolean = true
+        var isAuthTokenFound: Boolean = false
+        var isCredentialsFound: Boolean = false
+        var strUserName: String = ""
+        var strPassword: String = ""
+
+        if (request.remoteAddress != null){
+          strClientIP = request.remoteAddress
+          strClientIP = strClientIP.trim
+        }
+        if (request.headers.get("Authorization") != None){
+          val myheader = request.headers.get("Authorization")
+          if (myheader.get != None){
+            strRequestHeader = myheader.get.toString
+            if (strRequestHeader != null){
+              strRequestHeader = strRequestHeader.trim
+              if (strRequestHeader.length > 0){
+                if (strRequestHeader.toLowerCase.contains("basic")){
+                  val myArray = strRequestHeader.split(" ")
+
+                  if (myArray.length == 2){
+                    strAuthToken = myArray{1}
+                    if (strAuthToken != null){
+                      strAuthToken = strAuthToken.trim
+                      if (strAuthToken.length > 0){
+                        isAuthTokenFound = true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        if (request.headers.get("ChannelType") != None){
+          val myheaderChannelType = request.headers.get("ChannelType")
+          if (myheaderChannelType.get != None){
+            strChannelType = myheaderChannelType.get.toString
+            if (strChannelType != null){
+              strChannelType = strChannelType.trim
+            }
+            else{
+              strChannelType = ""
+            }
+          }
+        }
+
+        //Log_data(strApifunction + " : " + strRequest + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
+        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
+
+        if (isDataFound && isAuthTokenFound){
+
+          try{
+            var myByteAuthToken = Base64.getDecoder.decode(strAuthToken)
+            var myAuthToken : String = new String(myByteAuthToken, StandardCharsets.UTF_8)
+
+            //log_data(strApifunction + " : myAuthToken - " + "**********" + " , strAuthToken - " + strAuthToken)
+
+            if (myAuthToken != null){
+              myAuthToken = myAuthToken.trim
+
+              if (myAuthToken.length > 0){
+                if (myAuthToken.contains(":")){
+                  val myArray = myAuthToken.toString.split(":")
+
+                  if (myArray.length == 2){
+                    strUserName = myArray{0}
+                    strPassword = myArray{1}
+                    if (strUserName != null && strPassword != null){
+                      strUserName = strUserName.trim
+                      strPassword = strPassword.trim
+                      if (strUserName.length > 0 && strPassword.length > 0){
+                        strUserName = strUserName.replace("'","")//Remove apostrophe
+                        strUserName = strUserName.replace(" ","")//Remove spaces
+
+                        strPassword = strPassword.replace("'","")//Remove apostrophe
+                        strPassword = strPassword.replace(" ","")//Remove spaces
+
+                        isCredentialsFound = true
+                        //Lets encrypt the password using base64
+                        val strEncryptedPassword: String = Base64.getEncoder.encodeToString(strPassword.getBytes)
+                        strPassword = strEncryptedPassword
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          catch
+          {
+            case ex: Exception =>
+              log_errors(strApifunction + " : " + ex.getMessage())
+            case tr: Throwable =>
+              log_errors(strApifunction + " : " + tr.getMessage())
+          }
+
+          var myID: Int = 0
+          try{
+            
+            if (!isCredentialsFound){strPassword = ""}
+
+            val myOutput = validateClientApi(strChannelType, strUserName, strPassword, strClientIP, strApifunction)
+
+            if (myOutput.myid != null){
+              myID = myOutput.myid
+            }
+
+            if (myOutput.responsecode != null){
+              responseCode = myOutput.responsecode
+            }
+
+            if (myOutput.responsemessage != null){
+              responseMessage = myOutput.responsemessage
+            }
+            else{
+              responseMessage = "Error occured during processing, please try again."
+            }
+          }
+          catch
+          {
+            case ex: Exception =>
+              log_errors(strApifunction + " : " + ex.getMessage())
+            case tr: Throwable =>
+              log_errors(strApifunction + " : " + tr.getMessage())
+          }
+
+          if (isCredentialsFound && myID > 0 && responseCode == 0){
+            val strRandomUUID: String = UUID.randomUUID.toString()
+            //insert the generated token
+            var myExpiresIn: Int = insertApiAccessToken(myID, strRandomUUID)
+            if (myExpiresIn > 0){
+              myHttpStatusCode = HttpStatusCode.Ok
+              //Lets encrypt the strRandomUUID using base64
+              val strEncryptedstrRandomUUID: String = Base64.getEncoder.encodeToString(strRandomUUID.getBytes)
+              access_token = strEncryptedstrRandomUUID
+              expiry_in = myExpiresIn.toString()
+            }
+            else{
+              myHttpStatusCode = HttpStatusCode.Unauthorized
+            }
+          }
+          else{
+            myHttpStatusCode = HttpStatusCode.Unauthorized
+          }
+        }
+        else {
+          if (!isDataFound) {
+            responseMessage = "Invalid Request Data"
+          }
+          else if (!isAuthTokenFound) {
+            responseMessage = "Invalid Access Token"
+          }
+          else {
+            responseMessage = "Invalid Request Data"
+          }
+          insertApiValidationRequests(strChannelType, strUserName, strPassword, strClientIP, strApifunction, responseCode, responseMessage)
+        }
+
+      }
+      catch
+	  {
+	    case ex: Exception =>
+        responseMessage = "Error occured during processing, please try again."
+        log_errors(strApifunction + " : " + ex.getMessage())
+	   case tr: Throwable =>
+        responseMessage = "Error occured during processing, please try again."
+        log_errors(strApifunction + " : " + tr.getMessage())
+	  }
+      
+    implicit val AccessTokenDetailsResponse_Writes = Json.writes[AccessTokenDetailsResponse]
+
+    val myAccessTokenDetailsResponse =  AccessTokenDetailsResponse(access_token, expiry_in)
+    val jsonResponse = Json.toJson(myAccessTokenDetailsResponse)
+
+    try{
+      log_data(strApifunction + " : " + "response - " + jsonResponse.toString() + " , remoteAddress - " + request.remoteAddress)
+    }
+    catch{
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage())
+      case io: IOException =>
+        log_errors(strApifunction + " : " + io.getMessage())
+      case tr: Throwable =>
+        log_errors(strApifunction + " : " + tr.getMessage())
+    }
+    
+    val r: Result = {
+      myHttpStatusCode match {
+        case HttpStatusCode.Ok =>
+          Ok(jsonResponse)
+        case HttpStatusCode.BadRequest =>
+          BadRequest(jsonResponse)
+        case HttpStatusCode.Unauthorized =>
+          Unauthorized(jsonResponse)
+        case _ =>
+          BadRequest(jsonResponse)
+      }
+    }
+
+    r
+    }(myExecutionContext)
+  }
   def addAccountVerificationDetails = Action.async { request =>
     Future {
       val dateFromCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
@@ -6751,10 +6982,10 @@ class CbsEngine @Inject()
         log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
 
         if (isDataFound && isAuthTokenFound){
-
+          var strAccessToken: String = ""
           try{
             var myByteAuthToken = Base64.getDecoder.decode(strAuthToken)
-            var myAuthToken : String = new String(myByteAuthToken, StandardCharsets.UTF_8)
+            var myAuthToken: String = new String(myByteAuthToken, StandardCharsets.UTF_8)
 
             //log_data(strApifunction + " : myAuthToken - " + "**********" + " , strAuthToken - " + strAuthToken)
 
@@ -6762,6 +6993,9 @@ class CbsEngine @Inject()
               myAuthToken = myAuthToken.trim
 
               if (myAuthToken.length > 0){
+                isCredentialsFound = true
+                strAccessToken = myAuthToken
+                /*
                 if (myAuthToken.contains(":")){
                   val myArray = myAuthToken.toString.split(":")
 
@@ -6786,6 +7020,7 @@ class CbsEngine @Inject()
                     }
                   }
                 }
+                */
               }
             }
           }
@@ -6799,8 +7034,8 @@ class CbsEngine @Inject()
 
           try{
             if (!isCredentialsFound){strPassword = ""}
-
-            val myOutput = validateClientApi(strChannelType, strUserName, strPassword, strClientIP, strApifunction)
+            //val myOutput = validateClientApi(strChannelType, strUserName, strPassword, strClientIP, strApifunction)
+            val myOutput = validateApiAccessToken(strAccessToken, strChannelType, strClientIP, strApifunction)
             if (myOutput.responsecode != null){
               responseCode = myOutput.responsecode
             }
@@ -7520,10 +7755,10 @@ class CbsEngine @Inject()
         log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
 
         if (isDataFound && isAuthTokenFound){
-
+          var strAccessToken: String = ""
           try{
             var myByteAuthToken = Base64.getDecoder.decode(strAuthToken)
-            var myAuthToken : String = new String(myByteAuthToken, StandardCharsets.UTF_8)
+            var myAuthToken: String = new String(myByteAuthToken, StandardCharsets.UTF_8)
 
             //log_data(strApifunction + " : myAuthToken - " + "**********" + " , strAuthToken - " + strAuthToken)
 
@@ -7531,6 +7766,9 @@ class CbsEngine @Inject()
               myAuthToken = myAuthToken.trim
 
               if (myAuthToken.length > 0){
+                isCredentialsFound = true
+                strAccessToken = myAuthToken
+                /*
                 if (myAuthToken.contains(":")){
                   val myArray = myAuthToken.toString.split(":")
 
@@ -7555,6 +7793,7 @@ class CbsEngine @Inject()
                     }
                   }
                 }
+                */
               }
             }
           }
@@ -7568,8 +7807,8 @@ class CbsEngine @Inject()
 
           try{
             if (!isCredentialsFound){strPassword = ""}
-
-            val myOutput = validateClientApi(strChannelType, strUserName, strPassword, strClientIP, strApifunction)
+            //val myOutput = validateClientApi(strChannelType, strUserName, strPassword, strClientIP, strApifunction)
+            val myOutput = validateApiAccessToken(strAccessToken, strChannelType, strClientIP, strApifunction)
             if (myOutput.responsecode != null){
               responseCode = myOutput.responsecode
             }
@@ -9015,10 +9254,10 @@ class CbsEngine @Inject()
         log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
 
         if (isDataFound && isAuthTokenFound){
-
+          var strAccessToken: String = ""
           try{
             var myByteAuthToken = Base64.getDecoder.decode(strAuthToken)
-            var myAuthToken : String = new String(myByteAuthToken, StandardCharsets.UTF_8)
+            var myAuthToken: String = new String(myByteAuthToken, StandardCharsets.UTF_8)
 
             //log_data(strApifunction + " : myAuthToken - " + "**********" + " , strAuthToken - " + strAuthToken)
 
@@ -9026,6 +9265,9 @@ class CbsEngine @Inject()
               myAuthToken = myAuthToken.trim
 
               if (myAuthToken.length > 0){
+                isCredentialsFound = true
+                strAccessToken = myAuthToken
+                /*
                 if (myAuthToken.contains(":")){
                   val myArray = myAuthToken.toString.split(":")
 
@@ -9050,6 +9292,7 @@ class CbsEngine @Inject()
                     }
                   }
                 }
+                */
               }
             }
           }
@@ -9063,8 +9306,8 @@ class CbsEngine @Inject()
 
           try{
             if (!isCredentialsFound){strPassword = ""}
-
-            val myOutput = validateClientApi(strChannelType, strUserName, strPassword, strClientIP, strApifunction)
+            //val myOutput = validateClientApi(strChannelType, strUserName, strPassword, strClientIP, strApifunction)
+            val myOutput = validateApiAccessToken(strAccessToken, strChannelType, strClientIP, strApifunction)
             if (myOutput.responsecode != null){
               responseCode = myOutput.responsecode
             }
@@ -17157,10 +17400,11 @@ class CbsEngine @Inject()
   }
   def validateClientApi(strChannelType: String, strUserName: String, strPassword: String, strClientIP: String, myApifunction: String): ClientApiResponseDetails = {
     val strApifunction: String = "validateClientApi"
+    var myID: Int = 0
     var responseCode: Int = 1
     var responseMessage: String = "Error occured during processing, please try again."
 
-    val strSQL: String = "{ call dbo.ValidateClientAPI(?,?,?,?,?,?,?) }"
+    val strSQL: String = "{ call dbo.ValidateClientAPI(?,?,?,?,?,?,?,?) }"
     try {
       myDB.withConnection { implicit myconn =>
         try{
@@ -17170,6 +17414,109 @@ class CbsEngine @Inject()
           mystmt.setString(3,strPassword)
           mystmt.setString(4,strClientIP)
           mystmt.setString(5,myApifunction)
+
+          mystmt.registerOutParameter("myID", java.sql.Types.INTEGER)
+          mystmt.registerOutParameter("responseCode", java.sql.Types.INTEGER)
+          mystmt.registerOutParameter("responseMessage", java.sql.Types.VARCHAR)
+          mystmt.execute()
+          val EntryId = mystmt.getInt("myID")
+          val respCode = mystmt.getInt("responseCode")
+          responseMessage = mystmt.getString("responseMessage")
+
+          if (EntryId != null){
+            myID = EntryId
+          }
+
+          if (respCode != null){
+            responseCode = respCode
+          }
+
+          if (responseMessage == null){
+            responseMessage = "Error occured during processing, please try again."
+          }
+        }
+        catch{
+          case ex : Exception =>
+            log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured." + " clientip - " + strClientIP)
+          case t: Throwable =>
+            log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " clientip - " + strClientIP)
+        }
+      }
+    }catch {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured." + " clientip - " + strClientIP)
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " clientip - " + strClientIP)
+    }
+
+    val myClientApiResponseDetails = ClientApiResponseDetails(responseCode, responseMessage, myID)
+    myClientApiResponseDetails
+  }
+  def insertApiAccessToken(apiUserId: Int, strAccessToken: String): Int = {
+    val strApifunction: String = "insertApiAccessToken"
+    var myExpiresIn: Int = 0
+
+    val strSQL: String = "{ call dbo.InsertApiAccessToken(?,?,?) }"
+    try {
+      myDB.withConnection { implicit myconn =>
+        try{
+          val mystmt: CallableStatement = myconn.prepareCall(strSQL)
+          mystmt.setInt(1,apiUserId)
+          mystmt.setString(2,strAccessToken)
+
+          mystmt.registerOutParameter("myExpiresIn", java.sql.Types.INTEGER)
+          mystmt.execute()
+          val myVal = mystmt.getInt("myExpiresIn")
+
+          if (myVal != null){
+            myExpiresIn = myVal
+          }
+
+        }
+        catch{
+          case ex : Exception =>
+            log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured." + " apiUserId - " + apiUserId.toString())
+          case t: Throwable =>
+            log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " apiUserId - " + apiUserId.toString())
+        }
+      }
+    }catch {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured." + " apiUserId - " + apiUserId.toString())
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " apiUserId - " + apiUserId.toString())
+    }
+
+    myExpiresIn
+  }
+  def validateApiAccessToken(strAccessToken: String, strChannelType: String, strClientIP: String, myApifunction: String): ClientApiResponseDetails = {
+    val strApifunction: String = "validateApiAccessToken"
+    var myID: Int = 0
+    var responseCode: Int = 1
+    var responseMessage: String = "Error occured during processing, please try again."
+
+    val strSQL: String = "{ call dbo.ValidateApiAccessToken(?,?,?,?,?,?) }"
+
+    try{
+      if (strAccessToken.trim.length == 0 || strChannelType.trim.length == 0 || strClientIP.trim.length == 0 || myApifunction.trim.length == 0){
+      val myClientApiResponseDetails = ClientApiResponseDetails(responseCode, responseMessage, myID)
+      return myClientApiResponseDetails
+    }
+    }
+    catch{
+      case ex : Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured." + " clientip - " + strClientIP)
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " clientip - " + strClientIP)
+    }
+    try {
+      myDB.withConnection { implicit myconn =>
+        try{
+          val mystmt: CallableStatement = myconn.prepareCall(strSQL)
+          mystmt.setString(1,strAccessToken)
+          mystmt.setString(2,strChannelType)
+          mystmt.setString(3,strClientIP)
+          mystmt.setString(4,myApifunction)
 
           mystmt.registerOutParameter("responseCode", java.sql.Types.INTEGER)
           mystmt.registerOutParameter("responseMessage", java.sql.Types.VARCHAR)
@@ -17199,9 +17546,9 @@ class CbsEngine @Inject()
         log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " clientip - " + strClientIP)
     }
 
-    val myClientApiResponseDetails = ClientApiResponseDetails(responseCode, responseMessage)
+    val myClientApiResponseDetails = ClientApiResponseDetails(responseCode, responseMessage, myID)
     myClientApiResponseDetails
-  }  
+  }
   def getOutgoingAccountVerificationUrlIpsl(): String = {
 
     var strURL: String = ""
