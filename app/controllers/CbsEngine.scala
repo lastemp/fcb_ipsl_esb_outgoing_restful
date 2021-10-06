@@ -84,6 +84,8 @@ import java.util.List
 import java.util.Objects
 import org.xml.sax.InputSource
 
+import java.util.regex._
+
 trait MyExecutionContext extends ExecutionContext
 
 class MyExecutionContextImpl @Inject()(system: ActorSystem)
@@ -2661,6 +2663,7 @@ class CbsEngine @Inject()
         var isDataFound: Boolean = false
         var isAuthTokenFound: Boolean = false
         var isCredentialsFound: Boolean = false
+        var isValidUrl: Boolean = false
         //var strChannelType: String = ""
         var strUserName: String = ""
         var strPassword: String = ""
@@ -2717,6 +2720,9 @@ class CbsEngine @Inject()
               strChannelCallBackUrl = myheaderChannelType.get.toString
               if (strChannelCallBackUrl != null){
                 strChannelCallBackUrl = strChannelCallBackUrl.trim
+                if (strChannelCallBackUrl.length > 0){
+                  isValidUrl = validateUrl(strChannelCallBackUrl)
+                }
               }
               else{
                 strChannelCallBackUrl = ""
@@ -2732,7 +2738,7 @@ class CbsEngine @Inject()
         //Log_data(strApifunction + " : " + strRequest + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
         log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
 
-        if (isDataFound && isAuthTokenFound){
+        if (isDataFound && isAuthTokenFound && isValidUrl){
           var strAccessToken: String = ""
           try{
             var myByteAuthToken = Base64.getDecoder.decode(strAuthToken)
@@ -3995,6 +4001,9 @@ class CbsEngine @Inject()
           else if (!isAuthTokenFound) {
             responseMessage = "Invalid Access Token"
           }
+          else if (!isValidUrl) {
+            responseMessage = "Invalid Channel CallBackUrl"
+          }
           else {
             responseMessage = "Invalid Request Data"
           }
@@ -4163,6 +4172,7 @@ class CbsEngine @Inject()
         var isDataFound: Boolean = false
         var isAuthTokenFound: Boolean = false
         var isCredentialsFound: Boolean = false
+        var isValidUrl: Boolean = false
         //var strChannelType: String = ""
         var strUserName: String = ""
         var strPassword: String = ""
@@ -4219,6 +4229,9 @@ class CbsEngine @Inject()
               strChannelCallBackUrl = myheaderChannelType.get.toString
               if (strChannelCallBackUrl != null){
                 strChannelCallBackUrl = strChannelCallBackUrl.trim
+                if (strChannelCallBackUrl.length > 0){
+                  isValidUrl = validateUrl(strChannelCallBackUrl)
+                }
               }
               else{
                 strChannelCallBackUrl = ""
@@ -4234,7 +4247,7 @@ class CbsEngine @Inject()
         //Log_data(strApifunction + " : " + strRequest + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
         log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
 
-        if (isDataFound && isAuthTokenFound){
+        if (isDataFound && isAuthTokenFound && isValidUrl){
           var strAccessToken: String = ""
           try{
             var myByteAuthToken = Base64.getDecoder.decode(strAuthToken)
@@ -5633,6 +5646,9 @@ class CbsEngine @Inject()
           else if (!isAuthTokenFound) {
             responseMessage = "Invalid Access Token"
           }
+          else if (!isValidUrl) {
+            responseMessage = "Invalid Channel CallBackUrl"
+          }
           else {
             responseMessage = "Invalid Request Data"
           }
@@ -6910,6 +6926,7 @@ class CbsEngine @Inject()
         var isDataFound: Boolean = false
         var isAuthTokenFound: Boolean = false
         var isCredentialsFound: Boolean = false
+        var isValidUrl: Boolean = false
         //var strChannelType: String = ""
         var strUserName: String = ""
         var strPassword: String = ""
@@ -6966,6 +6983,9 @@ class CbsEngine @Inject()
               strChannelCallBackUrl = myheaderChannelType.get.toString
               if (strChannelCallBackUrl != null){
                 strChannelCallBackUrl = strChannelCallBackUrl.trim
+                if (strChannelCallBackUrl.length > 0){
+                  isValidUrl = validateUrl(strChannelCallBackUrl)
+                }
               }
               else{
                 strChannelCallBackUrl = ""
@@ -6981,7 +7001,7 @@ class CbsEngine @Inject()
         //Log_data(strApifunction + " : " + strRequest + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
         log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
 
-        if (isDataFound && isAuthTokenFound){
+        if (isDataFound && isAuthTokenFound && isValidUrl){
           var strAccessToken: String = ""
           try{
             var myByteAuthToken = Base64.getDecoder.decode(strAuthToken)
@@ -7446,6 +7466,9 @@ class CbsEngine @Inject()
           else if (!isAuthTokenFound) {
             responseMessage = "Invalid Access Token"
           }
+          else if (!isValidUrl) {
+            responseMessage = "Invalid Channel CallBackUrl"
+          }
           else {
             responseMessage = "Invalid Request Data"
           }
@@ -7500,12 +7523,12 @@ class CbsEngine @Inject()
       }
 
       if (isSendRequest){
-        val accountVerificationDetails = AccountVerificationDetails(strMessageReference, creationDateTime, firstAgentIdentification, assignerAgentIdentification, assigneeAgentIdentification: String, strTransactionReference, strAccountNumber, schemeName, strBankCode)
+        val accountVerificationDetails = AccountVerificationDetails(strMessageReference, creationDateTime, firstAgentIdentification, assignerAgentIdentification, assigneeAgentIdentification, strTransactionReference, strAccountNumber, schemeName, strBankCode)
         //println("schemeName - " + schemeName.toString)
         //println("accountVerificationDetails - " + accountVerificationDetails.toString)
         val f = Future {
           val myRespData: String = getAccountVerificationDetails(accountVerificationDetails, isAccSchemeName)
-          sendAccountVerificationRequestsIpsl(myID, myRespData, strOutgoingAccountVerificationUrlIpsl, strChannelType, strChannelCallBackUrl)
+          sendAccountVerificationRequestsIpsl(myID, myRespData, strMessageReference, strTransactionReference, strOutgoingAccountVerificationUrlIpsl, strChannelType, strChannelCallBackUrl)
         }(myExecutionContext)
 
         val dateToCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
@@ -7540,9 +7563,11 @@ class CbsEngine @Inject()
             }
           }
 
-          val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
-          
-          addOutgoingAccountVerificationDetailsArchive(responseCode, responseMessage, jsonResponse.toString(), myAccountVerificationTableDetails, strChannelType, strChannelCallBackUrl)
+          val f = Future {
+            val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+                  
+            addOutgoingAccountVerificationDetailsArchive(responseCode, responseMessage, jsonResponse.toString(), myAccountVerificationTableDetails, strChannelType, strChannelCallBackUrl)
+          }(myExecutionContext)
         }
         catch{
           case ex: Exception =>
@@ -7683,6 +7708,7 @@ class CbsEngine @Inject()
         var isDataFound: Boolean = false
         var isAuthTokenFound: Boolean = false
         var isCredentialsFound: Boolean = false
+        var isValidUrl: Boolean = false
         //var strChannelType: String = ""
         var strUserName: String = ""
         var strPassword: String = ""
@@ -7739,6 +7765,9 @@ class CbsEngine @Inject()
               strChannelCallBackUrl = myheaderChannelType.get.toString
               if (strChannelCallBackUrl != null){
                 strChannelCallBackUrl = strChannelCallBackUrl.trim
+                if (strChannelCallBackUrl.length > 0){
+                  isValidUrl = validateUrl(strChannelCallBackUrl)
+                }
               }
               else{
                 strChannelCallBackUrl = ""
@@ -7754,7 +7783,7 @@ class CbsEngine @Inject()
         //Log_data(strApifunction + " : " + strRequest + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
         log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
 
-        if (isDataFound && isAuthTokenFound){
+        if (isDataFound && isAuthTokenFound && isValidUrl){
           var strAccessToken: String = ""
           try{
             var myByteAuthToken = Base64.getDecoder.decode(strAuthToken)
@@ -9040,6 +9069,9 @@ class CbsEngine @Inject()
           else if (!isAuthTokenFound) {
             responseMessage = "Invalid Access Token"
           }
+          else if (!isValidUrl) {
+            responseMessage = "Invalid Channel CallBackUrl"
+          }
           else {
             responseMessage = "Invalid Request Data"
           }
@@ -9171,7 +9203,7 @@ class CbsEngine @Inject()
       var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
       var strClientIP: String = ""
       var strChannelType: String = ""
-      var strChannelCallBackUrl: String = ""
+      val strChannelCallBackUrl: String = ""
       var strRequest: String = ""
 
       try
@@ -9231,7 +9263,7 @@ class CbsEngine @Inject()
               }
             }
           }
-
+          /*
           if (request.headers.get("ChannelCallBackUrl") != None){
             val myheaderChannelType = request.headers.get("ChannelCallBackUrl")
             if (myheaderChannelType.get != None){
@@ -9244,7 +9276,7 @@ class CbsEngine @Inject()
               }
             }
           }
-
+          */
         }
         else {
           strRequest = "Invalid Request Data"
@@ -12985,7 +13017,7 @@ class CbsEngine @Inject()
         log_errors(strApifunction + " : " + t.getMessage + " - t exception error occured.")
     }
   }
-  def sendAccountVerificationRequestsIpsl(myID: java.math.BigDecimal, myRequestData: String, strApiURL: String, strChannelType: String, strCallBackApiURL: String): Unit = {
+  def sendAccountVerificationRequestsIpsl(myID: java.math.BigDecimal, myRequestData: String, myMessageReference: String, myTransactionReference: String, strApiURL: String, strChannelType: String, strCallBackApiURL: String): Unit = {
     val strApifunction: String = "sendAccountVerificationRequestsIpsl"
     //var strApiURL: String = "http://localhost:9001/iso20022/v1/verification-request"
 
@@ -13119,6 +13151,8 @@ class CbsEngine @Inject()
         val myEntryID: Future[java.math.BigDecimal] = Future(myID)
         val myChannelType: Future[String] = Future(strChannelType)
         val myCallBackApiURL: Future[String] = Future(strCallBackApiURL)
+        val myMsgRef: Future[String] = Future(myMessageReference)
+				val myTxnRef: Future[String] = Future(myTransactionReference)
         //TESTS ONLY 
         //println("start 1: " + start_time_DB)
 
@@ -13128,16 +13162,20 @@ class CbsEngine @Inject()
               val dateFromIpslApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
               var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
               //println("start 2: " + res.status.intValue())
-              if (res.status != None) {
+              var isValidResponse: Boolean = false
+              var strChannelType: String = ""
+              var strCallBackApiURL: String = ""
+              if (res != null) {
                 if (res.status.intValue() == 200) {
+                  isValidResponse = true
                   var isDataExists: Boolean = false
                   var myCount: Int = 0
                   var strid: String = ""
                   var strResponseData: String = ""
                   val strIntRegex: String = "[0-9]+" //Integers only
                   val strDecimalRegex: String = "^[0-9]*\\.?[0-9]+$" //Decimals
-                  var strChannelType: String = ""
-                  var strCallBackApiURL: String = ""
+                  //var strChannelType: String = ""
+                  //var strCallBackApiURL: String = ""
                   //val resByteStr: String = res.entity.toString
                   //val resByteStr: akka.util.ByteString = res.entity
                   //println("res.entity - " + res.entity.toString())
@@ -13290,16 +13328,7 @@ class CbsEngine @Inject()
 
                       val myAccountVerificationDetailsResponse_Batch = AccountVerificationDetailsResponse_Batch(strTransactionReference, strAccountNumber, strAccountname, strBankCode, responseCode, responseMessage)
                       val myAccountVerificationResponse = AccountVerificationDetailsResponse_BatchData(strMessageReference, myAccountVerificationDetailsResponse_Batch)
-                      /*
-                      if (myEntryID.value.isEmpty != true) {
-                        if (myEntryID.value.get != None) {
-                          val myVal = myEntryID.value.get
-                          if (myVal.get != None) {
-                            myID = myVal.get
-                          }
-                        }
-                      }
-                      */
+                      
                       val f = Future {sendAccountVerificationResponseEchannel(myID, myAccountVerificationResponse, strChannelType, strCallBackApiURL)}
                       
                       val strStatusMessage: String = "Successful"
@@ -13348,33 +13377,166 @@ class CbsEngine @Inject()
                   
                 }
               }
+
+              if (isValidResponse){return}
+
+              try{
+                var strMessageReference: String = ""
+                var strTransactionReference: String = ""
+                val strAccountNumber: String = ""
+                val strBankCode: String = ""
+                val strAccountname: String = ""
+                val responseCode: Int = 1
+                val responseMessage: String = "Timeout at the Beneficary Bank"
+
+                if (myChannelType.value.isEmpty != true) {
+                  if (myChannelType.value.get != None) {
+                    val myVal = myChannelType.value.get
+                    if (myVal.get != None) {
+                      strChannelType = myVal.get
+                    }
+                  }
+                }
+
+                if (myCallBackApiURL.value.isEmpty != true) {
+                  if (myCallBackApiURL.value.get != None) {
+                    val myVal = myCallBackApiURL.value.get
+                    if (myVal.get != None) {
+                      strCallBackApiURL = myVal.get
+                    }
+                  }
+                }
+
+                if (myMsgRef.value.isEmpty != true) {
+                  if (myMsgRef.value.get != None) {
+                    val myVal = myMsgRef.value.get
+                    if (myVal.get != None) {
+                      strMessageReference = myVal.get
+                    }
+                  }
+                }
+
+                if (myTxnRef.value.isEmpty != true) {
+                  if (myTxnRef.value.get != None) {
+                    val myVal = myTxnRef.value.get
+                    if (myVal.get != None) {
+                      strTransactionReference = myVal.get
+                    }
+                  }
+                }
+
+                val myAccountVerificationDetailsResponse_Batch = AccountVerificationDetailsResponse_Batch(strTransactionReference, strAccountNumber, strAccountname, strBankCode, responseCode, responseMessage)
+                val myAccountVerificationResponse = AccountVerificationDetailsResponse_BatchData(strMessageReference, myAccountVerificationDetailsResponse_Batch)
+                
+                val f = Future {sendAccountVerificationResponseEchannel(myID, myAccountVerificationResponse, strChannelType, strCallBackApiURL)}
+              }
+              catch{
+                case ex: Exception =>
+                  log_errors(strApifunction + " : " + ex.getMessage())
+                case io: IOException =>
+                  log_errors(strApifunction + " : " + io.getMessage())
+                case tr: Throwable =>
+                  log_errors(strApifunction + " : " + tr.getMessage())
+              }
             //println(res)
             //case Failure(_)   => sys.error("something wrong")
             case Failure(f) =>
               //println("start 3: " + f.getMessage)
               //myDataManagement.Log_errors("sendRegistrationRequests - main : " + f.getMessage + "exception error occured. Failure.")
-              val strResponseData: String = ""
-              val dateFromIpslApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
-              var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
-              val myHttpStatusCode: Int = 500
-              val strHttpErrorMessage: String = f.getMessage
-              val strStatusMessage: String = "Failure occured when sending the request to API. " + strHttpErrorMessage
+              
+              try{
+                val strResponseData: String = ""
+                val dateFromIpslApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+                var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
+                val myHttpStatusCode: Int = 500
+                val strHttpErrorMessage: String = f.getMessage
+                val strStatusMessage: String = "Failure occured when sending the request to API. " + strHttpErrorMessage
 
-              if (myEntryID.value.isEmpty != true) {
-                if (myEntryID.value.get != None) {
-                  val myVal = myEntryID.value.get
-                  if (myVal.get != None) {
-                    myID = myVal.get
+                if (myEntryID.value.isEmpty != true) {
+                  if (myEntryID.value.get != None) {
+                    val myVal = myEntryID.value.get
+                    if (myVal.get != None) {
+                      myID = myVal.get
+                    }
                   }
                 }
+
+                val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
+                ", [StatusCode_IpslApi] = 1, [StatusMessage_IpslApi] = '" + strStatusMessage +
+                "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
+                insertUpdateRecord(strSQL)
+
+                log_data(strApifunction + " : " + " channeltype - IPSL"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode + " , httperrormessage - " + strHttpErrorMessage)
+              }
+              catch{
+                case ex: Exception =>
+                  log_errors(strApifunction + " : " + ex.getMessage())
+                case io: IOException =>
+                  log_errors(strApifunction + " : " + io.getMessage())
+                case tr: Throwable =>
+                  log_errors(strApifunction + " : " + tr.getMessage())
               }
 
-              val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
-              ", [StatusCode_IpslApi] = 1, [StatusMessage_IpslApi] = '" + strStatusMessage +
-              "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
-              insertUpdateRecord(strSQL)
+              try{
+                var strChannelType: String = ""
+                var strCallBackApiURL: String = ""
+                var strMessageReference: String = ""
+                var strTransactionReference: String = ""
+                val strAccountNumber: String = ""
+                val strBankCode: String = ""
+                val strAccountname: String = ""
+                val responseCode: Int = 1
+                val responseMessage: String = "Timeout at IPSL"
 
-              log_data(strApifunction + " : " + " channeltype - IPSL"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode + " , httperrormessage - " + strHttpErrorMessage)
+                if (myChannelType.value.isEmpty != true) {
+                  if (myChannelType.value.get != None) {
+                    val myVal = myChannelType.value.get
+                    if (myVal.get != None) {
+                      strChannelType = myVal.get
+                    }
+                  }
+                }
+
+                if (myCallBackApiURL.value.isEmpty != true) {
+                  if (myCallBackApiURL.value.get != None) {
+                    val myVal = myCallBackApiURL.value.get
+                    if (myVal.get != None) {
+                      strCallBackApiURL = myVal.get
+                    }
+                  }
+                }
+
+                if (myMsgRef.value.isEmpty != true) {
+                  if (myMsgRef.value.get != None) {
+                    val myVal = myMsgRef.value.get
+                    if (myVal.get != None) {
+                      strMessageReference = myVal.get
+                    }
+                  }
+                }
+
+                if (myTxnRef.value.isEmpty != true) {
+                  if (myTxnRef.value.get != None) {
+                    val myVal = myTxnRef.value.get
+                    if (myVal.get != None) {
+                      strTransactionReference = myVal.get
+                    }
+                  }
+                }
+
+                val myAccountVerificationDetailsResponse_Batch = AccountVerificationDetailsResponse_Batch(strTransactionReference, strAccountNumber, strAccountname, strBankCode, responseCode, responseMessage)
+                val myAccountVerificationResponse = AccountVerificationDetailsResponse_BatchData(strMessageReference, myAccountVerificationDetailsResponse_Batch)
+                
+                val f = Future {sendAccountVerificationResponseEchannel(myID, myAccountVerificationResponse, strChannelType, strCallBackApiURL)}
+              }
+              catch{
+                case ex: Exception =>
+                  log_errors(strApifunction + " : " + ex.getMessage())
+                case io: IOException =>
+                  log_errors(strApifunction + " : " + io.getMessage())
+                case tr: Throwable =>
+                  log_errors(strApifunction + " : " + tr.getMessage())
+              }
               
           }
       }
@@ -17548,6 +17710,30 @@ class CbsEngine @Inject()
 
     val myClientApiResponseDetails = ClientApiResponseDetails(responseCode, responseMessage, myID)
     myClientApiResponseDetails
+  }
+  def validateUrl(url: String): Boolean = {
+    val strApifunction: String = "validateUrl"
+    var validUrl: Boolean = false
+
+    if (url == null) return validUrl
+    if (url.length == 0) return validUrl
+    
+    try{
+      val urlRegex: String = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]"
+      
+      //Compile the ReGex
+      val p: Pattern = Pattern.compile(urlRegex)
+      val m: Matcher = p.matcher(url)
+      validUrl = m.matches()
+    }
+    catch
+    {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage())
+      case tr: Throwable =>
+        log_errors(strApifunction + " : " + tr.getMessage())
+    }
+    validUrl
   }
   def getOutgoingAccountVerificationUrlIpsl(): String = {
 
