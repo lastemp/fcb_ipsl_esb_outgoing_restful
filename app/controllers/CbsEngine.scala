@@ -4625,6 +4625,7 @@ class CbsEngine @Inject()
                     sourceDataTable.addColumnMetadata("ChannelCallBackUrl", java.sql.Types.VARCHAR)
                     sourceDataTable.addColumnMetadata("ValidationResponseCode", java.sql.Types.INTEGER)
                     sourceDataTable.addColumnMetadata("ValidationResponseMessage", java.sql.Types.VARCHAR)
+                    sourceDataTable.addColumnMetadata("CreationDateTime", java.sql.Types.VARCHAR)
 
                     myPaymentDetails_BatchRequest.paymentdata.foreach(myPaymentDetails => {
 
@@ -5462,7 +5463,7 @@ class CbsEngine @Inject()
                               chargeBearer, mandateidentification, assignerAgentIdentification, assigneeAgentIdentification, 
                               myBatchSize, strRequestData, dateFromCbsApi, strClientIP,
                               strChannelType, strChannelCallBackUrl, 
-                              responseCode, responseMessage)
+                              responseCode, responseMessage, creationDateTime)
                           }
                           catch {
                             case io: Throwable =>
