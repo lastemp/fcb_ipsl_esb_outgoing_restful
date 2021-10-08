@@ -2594,6 +2594,8 @@ class CbsEngine @Inject()
   val strOutgoingPaymentCancellationUrlIpsl: String = getSettings("outgoingPaymentCancellationUrlIpsl")
   val strOutgoingBulkCreditTransferUrlIpsl: String = getSettings("outgoingBulkCreditTransferUrlIpsl")
   val strOutgoingPaymentStatusUrlIpsl: String = getSettings("outgoingPaymentStatusUrlIpsl")
+  val strOutgoingLoginUrlEsbCbs: String = getSettings("outgoingLoginUrlEsbCbs")
+  val strOutgoingDebitTransactionUrlEsbCbs: String = getSettings("outgoingDebitTransactionUrlEsbCbs")
   val fac: XMLSignatureFactory = XMLSignatureFactory.getInstance("DOM")//private static final
   val C14N: String = "http://www.w3.org/TR/2001/REC-xml-c14n-20010315"
 
@@ -3840,14 +3842,20 @@ class CbsEngine @Inject()
                           */
                           //def sendLoginRequestEsbCbs(myID: java.math.BigDecimal, requestType: Int, accountNo: String, myDebitTransactionRequest: DebitTransactionRequest_EsbCbs, myRequestData: String, strApiURL: String, strApiURL2: String): Unit = {
                           val f = Future {
+                            /*
                             val strApiURL: String = "https://mbank-uat.fcb.co.ke:8091/login?Username=esbuser&Password=tempP%40ss123&IpAddress=192.168.0.56&Rememberpassword=false"
                             val strApiURL2: String = "https://mbank-uat.fcb.co.ke:8091/api/TransactionProcessing/PostDebitTransactionToImal"
+                            */
+                            val strApiURL: String = strOutgoingLoginUrlEsbCbs
+                            val strApiURL2: String = strOutgoingDebitTransactionUrlEsbCbs
                             val strApiURL3: String = strOutgoingSingleCreditTransferUrlIpsl
                             val strAccountNumber: String = debtoraccountinformationdebtoraccountidentification
+                            val strmessageReference: String = ""
+                            val myBulkPaymentInfo: Seq[BulkPaymentInfo] = null
                             val requestType: Int = 1//CreditTransaction
                             val myRequestData: String = getSingleCreditTransferDetails(singleCreditTransferPaymentInfo)
 
-                            sendLoginRequestEsbCbs(myID, requestType, strAccountNumber, myDebitTransactionRequest, myRequestData, strApiURL, strApiURL2, strApiURL3, strChannelType, strChannelCallBackUrl)
+                            sendLoginRequestEsbCbs(myID, requestType, strAccountNumber, strmessageReference, myDebitTransactionRequest, myBulkPaymentInfo, myRequestData, strApiURL, strApiURL2, strApiURL3, strChannelType, strChannelCallBackUrl)
                           }(myExecutionContext)  
                         }
                       }
@@ -5582,14 +5590,20 @@ class CbsEngine @Inject()
                         }(myExecutionContext)
                         */
                         val f = Future {
+                          /*
                           val strApiURL: String = "https://mbank-uat.fcb.co.ke:8091/login?Username=esbuser&Password=tempP%40ss123&IpAddress=192.168.0.56&Rememberpassword=false"
                           val strApiURL2: String = "https://mbank-uat.fcb.co.ke:8091/api/TransactionProcessing/PostDebitTransactionToImal"
+                          */
+                          val strApiURL: String = strOutgoingLoginUrlEsbCbs
+                          val strApiURL2: String = strOutgoingDebitTransactionUrlEsbCbs
                           val strApiURL3: String = strOutgoingBulkCreditTransferUrlIpsl
                           val strAccountNumber: String = debtoraccountinformationdebtoraccountidentification
+                          val strMessageReference: String = messageidentification
+                          //val myBulkPaymentInfo: Seq[BulkPaymentInfo] = bulkCreditTransferPaymentInfo.paymentdata
                           val requestType: Int = 2//Bulk CreditTransaction
                           val myRequestData: String = getBulkCreditTransferDetails(bulkCreditTransferPaymentInfo)
 
-                          sendLoginRequestEsbCbs(myID, requestType, strAccountNumber, myDebitTransactionRequest, myRequestData, strApiURL, strApiURL2, strApiURL3, strChannelType, strChannelCallBackUrl)
+                          sendLoginRequestEsbCbs(myID, requestType, strAccountNumber, strMessageReference, myDebitTransactionRequest, bulkCreditTransferPaymentInfo.paymentdata, myRequestData, strApiURL, strApiURL2, strApiURL3, strChannelType, strChannelCallBackUrl)
                         }(myExecutionContext)
                       }
                     }
@@ -12027,7 +12041,7 @@ class CbsEngine @Inject()
     }(myExecutionContext)
   }
   //def sendLoginRequestEsbCbs(myID: java.math.BigDecimal, requestType: Int, accountNo: String, myAccountVerificationRequestIpsl: AccountVerification, mySingleCreditTransferRequestIpsl: SingleCreditTransfer, myCreditTransactionRequest: CreditTransactionRequest_EsbCbs, strApiURL: String, strApiURL2: String): Unit = {
-  def sendLoginRequestEsbCbs(myID: java.math.BigDecimal, requestType: Int, accountNo: String, myDebitTransactionRequest: DebitTransactionRequest_EsbCbs, myRequestData: String, strApiURL: String, strApiURL2: String, strApiURL3: String, strChannelType: String, strCallBackApiURL: String): Unit = {
+  def sendLoginRequestEsbCbs(myID: java.math.BigDecimal, requestType: Int, accountNo: String, messageReference: String, myDebitTransactionRequest: DebitTransactionRequest_EsbCbs, bulkPaymentInfo: Seq[BulkPaymentInfo], myRequestData: String, strApiURL: String, strApiURL2: String, strApiURL3: String, strChannelType: String, strCallBackApiURL: String): Unit = {
     val strApifunction: String = "sendLoginRequestEsbCbs"
     val myuri: Uri = strApiURL
     var strMsg: String = ""
@@ -12047,6 +12061,8 @@ class CbsEngine @Inject()
       //val accountVerificationRequestIpsl: Future[AccountVerification] = Future(myAccountVerificationRequestIpsl)
       //val singleCreditTransferRequestIpsl: Future[SingleCreditTransfer] = Future(mySingleCreditTransferRequestIpsl)
       val debitTransactionRequestIpsl: Future[DebitTransactionRequest_EsbCbs] = Future(myDebitTransactionRequest)
+      val myMessageReference: Future[String] = Future(messageReference)
+      val myBulkPaymentInfo: Future[Seq[BulkPaymentInfo]] = Future(bulkPaymentInfo)
       val myChannelType: Future[String] = Future(strChannelType)
       val myCallBackApiURL: Future[String] = Future(strCallBackApiURL)
       //val myHttpResponse = Await.result(responseFuture, timeout.duration)
@@ -12126,6 +12142,7 @@ class CbsEngine @Inject()
               }
             }
           }
+
           /*
           if (accountVerificationRequestIpsl.value.isEmpty != true){
             if (accountVerificationRequestIpsl.value.get != None){
@@ -12206,24 +12223,6 @@ class CbsEngine @Inject()
                 var mystatuscode: Int = 1
                 var strstatusdescription: String = "Failure occured when sending the request to Middleware API - step 1"
 
-                if (myChannelType.value.isEmpty != true) {
-                  if (myChannelType.value.get != None) {
-                    val myVal = myChannelType.value.get
-                    if (myVal.get != None) {
-                      strChannelType = myVal.get
-                    }
-                  }
-                }
-
-                if (myCallBackApiURL.value.isEmpty != true) {
-                  if (myCallBackApiURL.value.get != None) {
-                    val myVal = myCallBackApiURL.value.get
-                    if (myVal.get != None) {
-                      strCallBackApiURL = myVal.get
-                    }
-                  }
-                }
-
                 strMessageReference = myDebitTransactionRequest.externalRefNo
                 strTransactionReference = myDebitTransactionRequest.trace_num
 
@@ -12243,6 +12242,43 @@ class CbsEngine @Inject()
               }
             }
             else if (requestType == 2){//Bulk CreditTransaction
+              try{
+                var bulkPaymentInfo: Seq[BulkPaymentInfo] = null
+                var strMessageReference: String = ""
+                val mystatuscode: Int = 1
+                val strstatusdescription: String = "Failure occured when sending the request to Middleware API - step 1"
+
+                if (myMessageReference.value.isEmpty != true) {
+                  if (myMessageReference.value.get != None) {
+                    val myVal = myMessageReference.value.get
+                    if (myVal.get != None) {
+                      strMessageReference = myVal.get
+                    }
+                  }
+                }
+
+                if (myBulkPaymentInfo.value.isEmpty != true){
+                  if (myBulkPaymentInfo.value.get != None){
+                    val myVal = myBulkPaymentInfo.value.get
+                    if (myVal.get != None){
+                      bulkPaymentInfo = myVal.get
+                    }
+                  }
+                }
+
+                val bulkCreditTransferPaymentInformation = getBulkCreditTransferDetailsResponse_eChannels(strMessageReference, bulkPaymentInfo, mystatuscode, strstatusdescription)
+                
+                val f = Future {sendOutgoingBulkCreditTransferResponseEsbCbs(myID, bulkCreditTransferPaymentInformation, strChannelType, strCallBackApiURL)}
+                
+              }
+              catch{
+                case ex: Exception =>
+                  log_errors(strApifunction + " : " + ex.getMessage())
+                case io: IOException =>
+                  log_errors(strApifunction + " : " + io.getMessage())
+                case tr: Throwable =>
+                  log_errors(strApifunction + " : " + tr.getMessage())
+              }
             }
           }
         case Failure(f) =>
@@ -12344,6 +12380,43 @@ class CbsEngine @Inject()
             }
           }
           else if (requestType == 2){//Bulk CreditTransaction
+            try{
+              var bulkPaymentInfo: Seq[BulkPaymentInfo] = null
+              var strMessageReference: String = ""
+              val mystatuscode: Int = 1
+              val strstatusdescription: String = "Failure occured when sending the request to Middleware API - step 1"
+
+              if (myMessageReference.value.isEmpty != true) {
+                if (myMessageReference.value.get != None) {
+                  val myVal = myMessageReference.value.get
+                  if (myVal.get != None) {
+                    strMessageReference = myVal.get
+                  }
+                }
+              }
+
+              if (myBulkPaymentInfo.value.isEmpty != true){
+                if (myBulkPaymentInfo.value.get != None){
+                  val myVal = myBulkPaymentInfo.value.get
+                  if (myVal.get != None){
+                    bulkPaymentInfo = myVal.get
+                  }
+                }
+              }
+
+              val bulkCreditTransferPaymentInformation = getBulkCreditTransferDetailsResponse_eChannels(strMessageReference, bulkPaymentInfo, mystatuscode, strstatusdescription)
+              
+              val f = Future {sendOutgoingBulkCreditTransferResponseEsbCbs(myID, bulkCreditTransferPaymentInformation, strChannelType, strCallBackApiURL)}
+              
+            }
+            catch{
+              case ex: Exception =>
+                log_errors(strApifunction + " : " + ex.getMessage())
+              case io: IOException =>
+                log_errors(strApifunction + " : " + io.getMessage())
+              case tr: Throwable =>
+                log_errors(strApifunction + " : " + tr.getMessage())
+            }
           }
 
           log_errors(strApifunction + " : " + "error failure - " + f.getMessage)
@@ -12685,7 +12758,7 @@ class CbsEngine @Inject()
           " , responseRef - " + responseRef + " , responseDesc - " + responseDesc +
           " , olTrxCode - " + olTrxCode + " , postedToCbs - " + postedToCbs.toString()
 
-          log_errors(strApifunction + " : " + strMsg)
+          log_data(strApifunction + " : " + strMsg)
           //if (postedToCbs && strAccountNumber.length > 0 && strAccountName.length > 0 && strError.length == 0){
           if (postedToCbs && responseCode.length > 0){
             //Request account and Response account must be same
@@ -12955,7 +13028,7 @@ class CbsEngine @Inject()
         }
         else{
           log_errors(strApifunction + " : Failure in fetching  data - invalid data , application error occured.")
-          return
+          //return
         }
       }
       catch{
@@ -13014,7 +13087,7 @@ class CbsEngine @Inject()
               if (1 == 1){//if (myData.get != None){
                 strResponseData = myDataResponse.toString()
 
-                log_errors(strApifunction + " : " + "strResponseData - " + strResponseData)
+                log_data(strApifunction + " : " + "strResponseData - " + strResponseData)
 
                 //val myTransactionResponse = myData.get
                 if (myDataResponse != None){
@@ -13205,7 +13278,7 @@ class CbsEngine @Inject()
                 " , responseRef - " + responseRef + " , responseDesc - " + responseDesc +
                 " , olTrxCode - " + olTrxCode + " , postedToCbs - " + postedToCbs.toString()
 
-                log_errors(strApifunction + " : " + strMsg)
+                log_data(strApifunction + " : " + strMsg)
                 //if (postedToCbs && strAccountNumber.length > 0 && strAccountName.length > 0 && strError.length == 0){
                 if (postedToCbs && responseCode.length > 0){
                   //Request account and Response account must be same
@@ -16308,14 +16381,15 @@ class CbsEngine @Inject()
     try
     {
       if (isValidData){
-        val accessToken: String = "hsbjbahvs7ahvshvshv"
+        //val accessToken: String = "hsbjbahvs7ahvshvshv"
         val data = HttpEntity(ContentType(MediaTypes.`application/json`), myjsonData)
         val requestData: Future[String] = Future(myjsonData)
         //val singleCreditTransferRequestIpsl: Future[SingleCreditTransfer] = Future(mySingleCreditTransfer)
         var start_time_DB: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
         val myStart_time: Future[String] = Future(start_time_DB)
         //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data))
-        val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization","Bearer " + accessToken)))
+        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization","Bearer " + accessToken)))
+        val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data))
         val myEntryID: Future[java.math.BigDecimal] = Future(myID)
         //TESTS ONLY
         //println("start 1: " + strApifunction + " " + start_time_DB+ " " + myjsonData)
@@ -16415,6 +16489,199 @@ class CbsEngine @Inject()
       case t: Throwable =>
         log_errors(strApifunction + " : " + t.getMessage + " - t exception error occured.")
     }
+
+  }
+  def sendOutgoingBulkCreditTransferResponseEsbCbs(myID: java.math.BigDecimal, bulkCreditTransferPaymentInformation: BulkCreditTransferDetailsResponse_BatchData_eChannels, strChannelType: String, strApiURL: String): Unit = {
+
+    var isSuccessful: Boolean = false
+    var isValidData: Boolean = false
+    var myjsonData: String = ""
+    val strApifunction: String = "sendOutgoingCreditTransferResponseEsbCbs"
+
+    if (bulkCreditTransferPaymentInformation == null){
+      return
+    }
+
+    if (strApiURL.trim.length == 0){
+      return
+    }
+
+    isValidData = true
+    /*
+    try{
+      if (bulkCreditTransferPaymentInformation != null){
+        isValidData = true
+      }
+      
+      if (strApiURL.trim.length == 0){
+        log_errors(strApifunction + " : Failure in fetching  Api URL - " + strApiURL + " , application error occured.")
+        //return
+      }
+    }
+    catch{
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured.")
+    }
+    */
+    val myuri: Uri = strApiURL
+
+    try
+    {
+      if (isValidData){
+       
+        implicit val BulkCreditTransferDetailsResponse_Batch_eChannels_Writes = Json.writes[BulkCreditTransferDetailsResponse_Batch_eChannels]
+        implicit val BulkCreditTransferDetailsResponse_BatchData_eChannels_Writes = Json.writes[BulkCreditTransferDetailsResponse_BatchData_eChannels]
+
+        val jsonRequest = Json.toJson(bulkCreditTransferPaymentInformation)
+
+        myjsonData = jsonRequest.toString()
+
+        //println("sendOutgoingCreditTransferResponseEsbCbs: myjsonData - " + myjsonData)
+        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , request - " + myjsonData  + " , apiurl - " + strApiURL)
+      }
+    }
+    catch
+    {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured.")
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " - t exception error occured.")
+    }
+    /*
+    try{
+      /*
+      if (isValidData){
+        val dateToCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+      
+        val strSQL: String = "update [dbo].[IncomingSingleCreditTransferPaymentDetailsReport] set [Posted_to_CbsApi_Out] = 1, [Post_picked_CbsApi_Out] = 1, [ResponseforPreviousOutgoingRequest] = 1, [RequestMessage_CbsApi_Out] = '" + myjsonData + "', [Date_to_CbsApi_Out] = '" + dateToCbsApi + "' where [ID] = " + myID + ";"
+        insertUpdateRecord(strSQL)
+        */
+      }
+    }
+    catch{
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage())
+      case io: IOException =>
+        log_errors(strApifunction + " : " + io.getMessage())
+      case tr: Throwable =>
+        log_errors(strApifunction + " : " + tr.getMessage())
+    }
+    */
+    try
+    {
+      if (isValidData){
+        //val accessToken: String = "hsbjbahvs7ahvshvshv"
+        val data = HttpEntity(ContentType(MediaTypes.`application/json`), myjsonData)
+        val requestData: Future[String] = Future(myjsonData)
+        //val singleCreditTransferRequestIpsl: Future[SingleCreditTransfer] = Future(mySingleCreditTransfer)
+        var start_time_DB: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+        val myStart_time: Future[String] = Future(start_time_DB)
+        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data))
+        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization","Bearer " + accessToken)))
+        val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data))
+        val myEntryID: Future[java.math.BigDecimal] = Future(myID)
+        //TESTS ONLY
+        //println("start 1: " + strApifunction + " " + start_time_DB+ " " + myjsonData)
+
+        responseFuture
+          .onComplete {
+            case Success(res) =>
+              //println("start 2: " + strApifunction + " " + res.status.intValue())
+              val dateFromCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+              var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
+              var myHttpStatusCode: Int = 0
+              var mystatuscode: Int = 1
+              var strstatusdescription: String = "Failed processing"
+              var strResponseData: String = ""
+
+              if (res != None && res != null){
+                if (res.status.intValue() == 200){
+                  var strstatuscode: String = ""
+                  var strstatusdescription: String = ""
+                  var strRequestData: String = ""
+                  mystatuscode = 0
+                  myHttpStatusCode = res.status.intValue()
+                  strstatusdescription = "Successful"
+
+                }
+                else{
+                  myHttpStatusCode = res.status.intValue()
+                  strstatusdescription = "Failed processing"
+                }
+                res.discardEntityBytes()
+              }
+
+              if (myEntryID.value.isEmpty != true) {
+                if (myEntryID.value.get != None) {
+                  val myVal = myEntryID.value.get
+                  if (myVal.get != None) {
+                    myID = myVal.get
+                  }
+                }
+              }
+
+              log_data(strApifunction + " : Processed - " + strstatusdescription + " - HttpStatusCode." + myHttpStatusCode.toString() + " , myID - " + myID.toString())
+                /*
+                val strSQL: String = "update [dbo].[IncomingSingleCreditTransferPaymentDetailsReport] set [Response_Received_CbsApi_Out] = 1, [HttpStatusCode_CbsApi_Out] = " + myHttpStatusCode + 
+                ", [StatusCode_CbsApi_Out] = " + mystatuscode + ", [StatusMessage_CbsApi_Out] = '" + strstatusdescription +
+                "', [ResponseMessage_CbsApi_Out] = '" + strResponseData + 
+                "', [Date_from_CbsApi_Out] = '" + dateFromCbsApi + "' where [ID] = " + myID + ";"
+                insertUpdateRecord(strSQL)
+                */
+              /*  
+              }
+              else{
+                res.discardEntityBytes()
+              }
+              */
+            //println(res)
+            case Failure(f)   =>
+              //sys.error("something wrong")
+              //println("start 3: " + strApifunction + " " + f.getMessage)
+              try {
+
+                //log_errors(strApifunction + " : Failure - " + f.getMessage + " - ex exception error occured.")
+
+                val dateFromCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+                var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
+                val myHttpStatusCode: Int = 500
+                val strstatusdescription: String = "Failure occured when sending the request to API. " + f.getMessage
+
+                if (myEntryID.value.isEmpty != true) {
+                  if (myEntryID.value.get != None) {
+                    val myVal = myEntryID.value.get
+                    if (myVal.get != None) {
+                      myID = myVal.get
+                    }
+                  }
+                }
+                /*
+                val strSQL: String = "update [dbo].[IncomingSingleCreditTransferPaymentDetailsReport] set [Response_Received_CbsApi_Out] = 1, [HttpStatusCode_CbsApi_Out] = " + myHttpStatusCode + 
+                ", [StatusCode_CbsApi_Out] = 1, [StatusMessage_CbsApi_Out] = '" + strstatusdescription +
+                "', [Date_from_CbsApi_Out] = '" + dateFromCbsApi + "' where [ID] = " + myID + ";"
+                insertUpdateRecord(strSQL)
+                */
+
+                log_errors(strApifunction + " : Failure - " + strstatusdescription + " - ex exception error occured." + " , myID - " + myID.toString())
+              }
+              catch
+              {
+                case ex: Exception =>
+                  log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured.")
+                case t: Throwable =>
+                  log_errors(strApifunction + " : " + t.getMessage + " - t exception error occured.")
+              }
+
+          }
+      }
+    }
+    catch
+      {
+        case ex: Exception =>
+          log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured.")
+        case t: Throwable =>
+          log_errors(strApifunction + " : " + t.getMessage + " - t exception error occured.")
+      }
 
   }
   def getServiceEsbApi(myServiceCode : Int) : Boolean = {
@@ -16828,6 +17095,78 @@ class CbsEngine @Inject()
         log_errors("getBulkPaymentInfo : " + t.getMessage + " exception error occured.")
     }
     creditTransfertransactioninformationbatch
+  }
+  def getBulkCreditTransferDetailsResponse_eChannels(messagereference: String, myBulkPaymentInfo: Seq[BulkPaymentInfo], statuscode: Int, statusdescription: String) : BulkCreditTransferDetailsResponse_BatchData_eChannels = {
+    val strApifunction: String = "getBulkCreditTransferDetailsResponse_eChannels"
+    var myBulkCreditTransferDetailsResponse_Batch = Seq[BulkCreditTransferDetailsResponse_Batch_eChannels]()
+
+    if (messagereference == null){
+      val myBulkCreditTransferDetailsResponse_BatchData = BulkCreditTransferDetailsResponse_BatchData_eChannels("", myBulkCreditTransferDetailsResponse_Batch)
+      return myBulkCreditTransferDetailsResponse_BatchData
+    } 
+    if (statusdescription == null){
+      val myBulkCreditTransferDetailsResponse_BatchData = BulkCreditTransferDetailsResponse_BatchData_eChannels(messagereference, myBulkCreditTransferDetailsResponse_Batch)
+      return myBulkCreditTransferDetailsResponse_BatchData
+    }
+    if (messagereference.length == 0){
+      val myBulkCreditTransferDetailsResponse_BatchData = BulkCreditTransferDetailsResponse_BatchData_eChannels(messagereference, myBulkCreditTransferDetailsResponse_Batch)
+      return myBulkCreditTransferDetailsResponse_BatchData
+    }
+    if (statusdescription.length == 0){
+      val myBulkCreditTransferDetailsResponse_BatchData = BulkCreditTransferDetailsResponse_BatchData_eChannels(messagereference, myBulkCreditTransferDetailsResponse_Batch)
+      return myBulkCreditTransferDetailsResponse_BatchData
+    }
+    if (myBulkPaymentInfo.isEmpty){
+      val myBulkCreditTransferDetailsResponse_BatchData = BulkCreditTransferDetailsResponse_BatchData_eChannels(messagereference, myBulkCreditTransferDetailsResponse_Batch)
+      return myBulkCreditTransferDetailsResponse_BatchData
+    }
+    if (myBulkPaymentInfo.length == 0){
+      val myBulkCreditTransferDetailsResponse_BatchData = BulkCreditTransferDetailsResponse_BatchData_eChannels(messagereference, myBulkCreditTransferDetailsResponse_Batch)
+      return myBulkCreditTransferDetailsResponse_BatchData
+    }
+
+    try{
+      myBulkPaymentInfo.foreach(transactionInformation => {
+
+        try{
+          var transactionreference: String = transactionInformation.transactionreference
+
+          if (transactionreference != null){
+            if (transactionreference.length > 0){
+              transactionreference = transactionreference.replace("'","")//Remove apostrophe
+              transactionreference = transactionreference.replace(" ","")//Remove double spaces
+              transactionreference = transactionreference.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+              transactionreference = transactionreference.trim
+            }
+          }
+
+          val myBulkCreditTransferDetailsResponse = BulkCreditTransferDetailsResponse_Batch_eChannels(transactionreference, statuscode, statusdescription)
+
+          myBulkCreditTransferDetailsResponse_Batch = myBulkCreditTransferDetailsResponse_Batch :+ myBulkCreditTransferDetailsResponse
+        }
+        catch{
+          case ex: Exception =>
+            log_errors(strApifunction + " - Exception : " + ex.getMessage())
+          case io: IOException =>
+            log_errors(strApifunction + " - IOException : " + io.getMessage())
+          case tr: Throwable =>
+            log_errors(strApifunction + " - Throwable : " + tr.getMessage())
+        }
+
+      })
+    }
+    catch{
+      case ex: Exception =>
+        log_errors(strApifunction + " - Exception : " + ex.getMessage())
+      case io: IOException =>
+        log_errors(strApifunction + " - IOException : " + io.getMessage())
+      case tr: Throwable =>
+        log_errors(strApifunction + " - Throwable : " + tr.getMessage())
+    }
+
+    val myBulkCreditTransferDetailsResponse_BatchData = BulkCreditTransferDetailsResponse_BatchData_eChannels(messagereference, myBulkCreditTransferDetailsResponse_Batch)
+
+    myBulkCreditTransferDetailsResponse_BatchData
   }
   def getBulkCreditTransferDetails_old() : String = {
 
