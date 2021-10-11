@@ -2556,13 +2556,15 @@ class CbsEngine @Inject()
 
   val strApplication_path : String = System.getProperty("user.dir")
   var strFileDate  = new SimpleDateFormat("dd-MM-yyyy").format(new java.util.Date)
-  val strpath_file : String = strApplication_path + "\\Logs\\" + strFileDate + "\\Logs.txt"
-  val strpath_file2 : String = strApplication_path + "\\Logs\\" + strFileDate + "\\Errors.txt"
-  var is_Successful : Boolean = create_Folderpaths(strApplication_path)
+  val strpath_file: String = strApplication_path + "\\Logs\\" + strFileDate + "\\Logs.txt"
+  val strpath_file2: String = strApplication_path + "\\Logs\\" + strFileDate + "\\Errors.txt"
+  var is_Successful: Boolean = create_Folderpaths(strApplication_path)
   var writer_data = new PrintWriter(new BufferedWriter(new FileWriter(strpath_file,true)))
   var writer_errors = new PrintWriter(new BufferedWriter(new FileWriter(strpath_file2,true)))
   val strDateRegex: String = "^((19|2[0-9])[0-9]{2})-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$" //"yyyy-mm-dd"
   val strNumbersOnlyRegex: String = "[0-9]+" //validate numbers only
+  val strAlphaNumericRegex: String = "^[a-zA-Z0-9]*$" //"^[a-zA-Z0-9]*$"//validate alphanumeric
+  val strAlphaNumericHyphenRegex: String = "^[a-zA-Z0-9-]*$" //validate alphanumeric and hyphen
   //
   val firstAgentIdentification: String = getSettings("assignerAgentCode")//"0074" //Request creator
   val assignerAgentIdentification: String = firstAgentIdentification //party that deliveres request to IPSL
@@ -3572,7 +3574,9 @@ class CbsEngine @Inject()
                           if (myMessageidentification > 0){isValid = true}
                         }
                         else{
-                          isValid = true
+                          //isValid = true
+                          val isAlphaNumericHyphen: Boolean = messageidentification.matches(strAlphaNumericHyphenRegex) //validate alphanumeric, Hyphen
+                          isValid = isAlphaNumericHyphen
                         }
                       }
                       isValid
@@ -5227,7 +5231,7 @@ class CbsEngine @Inject()
                             if (myMessageidentification > 0){isValid = true}
                           }
                           else{
-                            isValid = true
+                            isValid = messageidentification.matches(strAlphaNumericHyphenRegex) //validate alphanumeric, Hyphen
                           }
                         }
                         isValid
@@ -7326,7 +7330,7 @@ class CbsEngine @Inject()
                           if (myMessageReference > 0){isValid = true}
                         }
                         else{
-                          isValid = true
+                          isValid = strMessageReference.matches(strAlphaNumericHyphenRegex) //validate alphanumeric, Hyphen
                         }
                       }
                       isValid
@@ -7341,7 +7345,7 @@ class CbsEngine @Inject()
                           if (myTransactionReference > 0){isValid = true}
                         }
                         else{
-                          isValid = true
+                          isValid = strTransactionReference.matches(strAlphaNumericHyphenRegex) //validate alphanumeric, Hyphen
                         }
                       }
                       isValid
