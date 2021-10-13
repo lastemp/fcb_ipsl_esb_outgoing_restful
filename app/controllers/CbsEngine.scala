@@ -3550,14 +3550,16 @@ class CbsEngine @Inject()
                       }
                       else if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(phneSchemeName)){
                         isValid = true
-                        transactiontype = "A2P"//account-to-phone
+                        //transactiontype = "A2P"//account-to-phone
+                        transactiontype = "A2A"//account-to-account
                         //Lets assign these values
-                        creditorinformationcreditorname = creditoraccountinformationcreditoraccountidentification
-                        creditorinformationcreditorcontactphonenumber = creditoraccountinformationcreditoraccountname
+                        creditorinformationcreditorname = creditoraccountinformationcreditoraccountname
+                        creditorinformationcreditorcontactphonenumber = creditoraccountinformationcreditoraccountidentification
                       }
                       else if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(walletSchemeName)){
                         isValid = true
-                        transactiontype = "A2P"//account-to-phone
+                        //transactiontype = "A2P"//account-to-phone
+                        transactiontype = "A2A"//account-to-account
                       }
                       else {
                         isValid = false
@@ -5210,8 +5212,8 @@ class CbsEngine @Inject()
                         else if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(phneSchemeName)){
                           isValid = true
                           //Lets assign these values
-                          creditorinformationcreditorname = creditoraccountinformationcreditoraccountidentification
-                          creditorinformationcreditorcontactphonenumber = creditoraccountinformationcreditoraccountname
+                          creditorinformationcreditorname = creditoraccountinformationcreditoraccountname
+                          creditorinformationcreditorcontactphonenumber = creditoraccountinformationcreditoraccountidentification
                         }
                         else if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(walletSchemeName)){
                           isValid = true

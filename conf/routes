@@ -11,6 +11,7 @@ POST        /iso20022/v1/payment-status-request              controllers.IpslEng
 # BANK APIs: e-Channels/ESB-CBS systems will invoke these APIs by posting requests.
 # The requests will be forwarded to IPLS for processing.
 # Account Verification Request will get immediate response from IPSL, others will require callback.
+GET         /v1/generatetoken                              controllers.CbsEngine.generateToken
 POST        /v1/addaccountverificationdetails              controllers.CbsEngine.addAccountVerificationDetails
 POST        /v1/addsinglecredittransferpaymentdetails      controllers.CbsEngine.addSingleCreditTransferPaymentDetails
 POST        /v1/addbulkcredittransferpaymentdetails        controllers.CbsEngine.addBulkCreditTransferPaymentDetails
