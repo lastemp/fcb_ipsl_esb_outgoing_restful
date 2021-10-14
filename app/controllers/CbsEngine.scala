@@ -946,7 +946,7 @@ class CbsEngine @Inject()
                 {getDebtorAccountIdentification(true)}
               </Othr>
             </Id>
-            <Nm>{creditTransferTransactionInformation.debtoraccountinformation.debtoraccountname}</Nm>
+            {getDebtorAccountName(creditTransferTransactionInformation.debtoraccountinformation.debtoraccountname)}
           </DbtrAcct>
           <DbtrAgt>
             <FinInstnId>
@@ -1019,6 +1019,15 @@ class CbsEngine @Inject()
         }
       }
       initiatingPartyInformation
+    }
+    private def getDebtorAccountName(debtorAccname: String) = {
+      val debtorAccountName = 
+      {
+        if (debtorAccname.length > 0){
+          <Nm>{creditTransferTransactionInformation.debtoraccountinformation.debtoraccountname}</Nm>
+        }
+      }
+      debtorAccountName
     }
     private def getCreditorInformation(schemeName: String) = {
       val creditorInformation = 
@@ -1350,7 +1359,7 @@ class CbsEngine @Inject()
                 {getDebtorAccountIdentification(true, creditTransferTransactionInformation)}
               </Othr>
             </Id>
-            <Nm>{creditTransferTransactionInformation.debtoraccountinformation.debtoraccountname}</Nm>
+            {getDebtorAccountName(creditTransferTransactionInformation.debtoraccountinformation.debtoraccountname)}
           </DbtrAcct>
           <DbtrAgt>
             <FinInstnId>
@@ -1426,6 +1435,15 @@ class CbsEngine @Inject()
         }
       }
       initiatingPartyInformation
+    }
+    private def getDebtorAccountName(debtorAccname: String) = {
+      val debtorAccountName = 
+      {
+        if (debtorAccname.length > 0){
+          <Nm>{debtorAccname}</Nm>
+        }
+      }
+      debtorAccountName
     }
     private def getCreditorInformation(schemeName: String, creditorname: String, creditorcontactphonenumber: String) = {
       val creditorInformation = 
@@ -2311,7 +2329,7 @@ class CbsEngine @Inject()
             }
           }
           creditorAccountNameInformation
-        }
+    }
     private def getCreditorNameInformation(creditorName: String) = {
       val creditorNameInformation = 
       {
@@ -3725,7 +3743,8 @@ class CbsEngine @Inject()
                     }
                     //if (isValidMessageReference && isValidTransactionReference && !isMatchingReference && isValidSchemeName && isValidAmount && isValidDebitAccount && isValidDebitAccountName && isValidDebitPhoneNumber && isValidCreditAccount && isValidCreditAccountName && isValidCreditBankCode && isValidDebtorName && isValidRemittanceinfoUnstructured && isValidPurposeCode){
                     //removed && isValidRemittanceinfoUnstructured since its optional
-                    if (isValidMessageReference && isValidTransactionReference && !isMatchingReference && isValidSchemeName && isValidAmount && isValidDebitAccount && isValidDebitAccountName && isValidDebitPhoneNumber && isValidCreditAccount && isValidCreditAccountName && isValidCreditBankCode && isValidDebtorName && isValidPurposeCode){
+                    //if (isValidMessageReference && isValidTransactionReference && !isMatchingReference && isValidSchemeName && isValidAmount && isValidDebitAccount && isValidDebitAccountName && isValidDebitPhoneNumber && isValidCreditAccount && isValidCreditAccountName && isValidCreditBankCode && isValidDebtorName && isValidPurposeCode){
+                    if (isValidMessageReference && isValidTransactionReference && !isMatchingReference && isValidSchemeName && isValidAmount && isValidDebitAccount && isValidDebitPhoneNumber && isValidCreditAccount && isValidCreditBankCode && isValidDebtorName && isValidPurposeCode){
                       isValidInputData = true
                       /*
                       myHttpStatusCode = HttpStatusCode.Accepted //TESTS ONLY
@@ -3931,18 +3950,22 @@ class CbsEngine @Inject()
                         else if (!isValidDebitAccount){
                           responseMessage = "Invalid Input Data. debitaccountnumber"
                         }
+                        /*
                         else if (!isValidDebitAccountName){
                           responseMessage = "Invalid Input Data. debitaccountname"
                         }
+                        */
                         else if (!isValidDebitPhoneNumber){
                           responseMessage = "Invalid Input Data. debit phonenumber"
                         }
                         else if (!isValidCreditAccount){
                           responseMessage = "Invalid Input Data. creditaccountnumber"
                         }
+                        /*
                         else if (!isValidCreditAccountName){
                           responseMessage = "Invalid Input Data. creditaccountname"
                         }
+                        */
                         else if (!isValidCreditBankCode){
                           responseMessage = "Invalid Input Data. credit bankcode"
                         }
@@ -5248,6 +5271,8 @@ class CbsEngine @Inject()
                             if (myPaymentendtoendidentification > 0){isValid = true}
                           }
                           else{
+                            //Lets ensure that value "BULK" in paymentendtoendidentification is always passed in CAPs
+                            paymentendtoendidentification = paymentendtoendidentification.replace("bulk","BULK")
                             isValid = true
                           }
                         }
@@ -5378,8 +5403,8 @@ class CbsEngine @Inject()
                         }
                         isValid
                       }
-
-                      if (isValidMessageReference && isValidTransactionReference && !isMatchingReference && isValidSchemeName && isValidAmount && isValidDebitAccount && isValidDebitAccountName && isValidDebitPhoneNumber && isValidCreditAccount && isValidCreditAccountName && isValidCreditBankCode && isValidDebtorName && isValidRemittanceinfoUnstructured && isValidPurposeCode){
+                      //if (isValidMessageReference && isValidTransactionReference && !isMatchingReference && isValidSchemeName && isValidAmount && isValidDebitAccount && isValidDebitAccountName && isValidDebitPhoneNumber && isValidCreditAccount && isValidCreditAccountName && isValidCreditBankCode && isValidDebtorName && isValidRemittanceinfoUnstructured && isValidPurposeCode){
+                      if (isValidMessageReference && isValidTransactionReference && !isMatchingReference && isValidSchemeName && isValidAmount && isValidDebitAccount && isValidDebitPhoneNumber && isValidCreditAccount && isValidCreditBankCode && isValidDebtorName && isValidRemittanceinfoUnstructured && isValidPurposeCode){
                         responseCode = 0
                         responseMessage = "Successful"
                       }
@@ -5405,18 +5430,22 @@ class CbsEngine @Inject()
                         else if (!isValidDebitAccount){
                           responseMessage = "Invalid Input Data. debitaccountnumber"
                         }
+                        /*
                         else if (!isValidDebitAccountName){
                           responseMessage = "Invalid Input Data. debitaccountname"
                         }
+                        */
                         else if (!isValidDebitPhoneNumber){
                           responseMessage = "Invalid Input Data. debit phonenumber"
                         }
                         else if (!isValidCreditAccount){
                           responseMessage = "Invalid Input Data. creditaccountnumber"
                         }
+                        /*
                         else if (!isValidCreditAccountName){
                           responseMessage = "Invalid Input Data. creditaccountname"
                         }
+                        */
                         else if (!isValidCreditBankCode){
                           responseMessage = "Invalid Input Data. credit bankcode"
                         }
