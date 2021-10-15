@@ -263,7 +263,8 @@ class CbsEngine @Inject()
   case class PaymentCancellationDetailsResponse(statuscode: Int, statusdescription: String)
   //PaymentStatus Details i.e PaymentStatus request to IPSL through ESB
   //The request is initiated from ESB-CBS/Other CHannels
-  case class PaymentStatusDetails_Request(transactionreference: Option[JsValue], originalrequesttype: Option[JsValue])
+  //case class PaymentStatusDetails_Request(transactionreference: Option[JsValue], originalrequesttype: Option[JsValue])
+  case class PaymentStatusDetails_Request(transactionreference: Option[JsValue], originalrequesttype: Option[JsValue], originaloutgoingtransaction: Option[JsValue])
   case class PaymentStatusDetails_BatchRequest(messagereference: Option[JsValue], paymentdata: PaymentStatusDetails_Request)
   case class PaymentStatusDetailsResponse(statuscode: Int, statusdescription: String)
   case class PaymentStatusDetailsIpsl(messagereference: String, creationdatetime: String, instructingagentidentification: String, instructedagentidentification: String,
@@ -3568,16 +3569,14 @@ class CbsEngine @Inject()
                       }
                       else if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(phneSchemeName)){
                         isValid = true
-                        //transactiontype = "A2P"//account-to-phone
-                        transactiontype = "A2A"//account-to-account
+                        transactiontype = "A2P"//account-to-phone
                         //Lets assign these values
                         creditorinformationcreditorname = creditoraccountinformationcreditoraccountname
                         creditorinformationcreditorcontactphonenumber = creditoraccountinformationcreditoraccountidentification
                       }
                       else if (creditoraccountinformationcreditoraccountschemename.equalsIgnoreCase(walletSchemeName)){
                         isValid = true
-                        //transactiontype = "A2P"//account-to-phone
-                        transactiontype = "A2A"//account-to-account
+                        transactiontype = "A2P"//account-to-phone
                       }
                       else {
                         isValid = false
@@ -9273,6 +9272,7 @@ class CbsEngine @Inject()
       var strBankCode: String = ""
       */
       var strOriginalRequestType: String = ""
+      var strOriginalOutgoingTransaction: String = ""
       var isValidMessageReference: Boolean = false
       var isValidTransactionReference: Boolean = false
       var isMatchingReference: Boolean = false
@@ -9280,6 +9280,7 @@ class CbsEngine @Inject()
       //var isValidAccountNumber: Boolean = false
       //var isValidBankCode: Boolean = false
       var isValidOriginalRequestType: Boolean = false
+      var isOriginalOutgoingTransaction: Boolean = true
 	    //val accSchemeName: String = SchemeName.ACCOUNT.toString.toUpperCase
       //val phneSchemeName: String = SchemeName.PHONE.toString.toUpperCase
       val transfer: String = RequestType.TRANSFER.toString.toUpperCase
@@ -9453,7 +9454,8 @@ class CbsEngine @Inject()
 
             implicit val PaymentStatusDetails_Request_Reads: Reads[PaymentStatusDetails_Request] = (
               (JsPath \ "transactionreference").readNullable[JsValue] and
-                (JsPath \ "originalrequesttype").readNullable[JsValue]
+                (JsPath \ "originalrequesttype").readNullable[JsValue] and
+                (JsPath \ "originaloutgoingtransaction").readNullable[JsValue]
               )(PaymentStatusDetails_Request.apply _)
 
             implicit val PaymentStatusDetails_BatchRequest_Reads: Reads[PaymentStatusDetails_BatchRequest] = (
@@ -9508,6 +9510,7 @@ class CbsEngine @Inject()
                     strMessageReference = ""
                     strTransactionReference = ""
                     strOriginalRequestType = ""
+                    strOriginalOutgoingTransaction = ""
                     /*
                     strAccountNumber = ""
                     strSchemeName = ""
@@ -9516,6 +9519,7 @@ class CbsEngine @Inject()
                     isValidMessageReference = false
                     isValidTransactionReference = false
                     isValidOriginalRequestType = false
+                    isOriginalOutgoingTransaction
                     /*
                     isMatchingReference = false
                     isValidSchemeName = false
@@ -9574,8 +9578,28 @@ class CbsEngine @Inject()
                           }
                         }
                       }
+
+                      //strOriginalOutgoingTransaction
+                      if (myPaymentDetails.paymentdata.originaloutgoingtransaction != None) {
+                        if (myPaymentDetails.paymentdata.originaloutgoingtransaction.get != None) {
+                          val myData = myPaymentDetails.paymentdata.originaloutgoingtransaction.get
+                          strOriginalOutgoingTransaction = myData.toString()
+                          if (strOriginalOutgoingTransaction != null && strOriginalOutgoingTransaction != None){
+                            strOriginalOutgoingTransaction = strOriginalOutgoingTransaction.trim
+                            if (strOriginalOutgoingTransaction.length > 0){
+                              strOriginalOutgoingTransaction = strOriginalOutgoingTransaction.replace("'","")//Remove apostrophe
+                              strOriginalOutgoingTransaction = strOriginalOutgoingTransaction.replace(" ","")//Remove spaces
+                              strOriginalOutgoingTransaction = strOriginalOutgoingTransaction.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strOriginalOutgoingTransaction = strOriginalOutgoingTransaction.trim
+                              if (strOriginalOutgoingTransaction.equalsIgnoreCase("false")){
+                                  isOriginalOutgoingTransaction = false
+                              }
+                            }
+                          }
+                        }
+                      }
                       /*
-                      //strAccountNumber
+                      //strAccountNumber 
                       if (myPaymentDetails.accountdata.accountnumber != None) {
                         if (myPaymentDetails.accountdata.accountnumber.get != None) {
                           val myData = myPaymentDetails.accountdata.accountnumber.get
@@ -9775,8 +9799,13 @@ class CbsEngine @Inject()
                         strMessageReference, strTransactionReference, strOriginalRequestType, 
                         assignerAgentIdentification, assigneeAgentIdentification,
                         myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+
+                        val myOriginalOutgoingTransaction: Integer = {
+                          if (isOriginalOutgoingTransaction){1}
+                          else {0}
+                        }
                         
-                        val myPaymentStatusTableResponseDetails = addOutgoingPaymentStatusDetails(myPaymentStatusTableDetails, strChannelType, strChannelCallBackUrl)
+                        val myPaymentStatusTableResponseDetails = addOutgoingPaymentStatusDetails(myPaymentStatusTableDetails, strChannelType, strChannelCallBackUrl, myOriginalOutgoingTransaction)
                         /*
                         myID = myPaymentStatusTableResponseDetails.id
                         responseCode = myPaymentStatusTableResponseDetails.responsecode
@@ -18206,7 +18235,7 @@ class CbsEngine @Inject()
       }
     }
   }
-  def addOutgoingPaymentStatusDetails(myPaymentStatusTableDetails: PaymentStatusTableDetails, strChannelType: String, strChannelCallBackUrl: String): PaymentStatusTableResponseDetails = {
+  def addOutgoingPaymentStatusDetails(myPaymentStatusTableDetails: PaymentStatusTableDetails, strChannelType: String, strChannelCallBackUrl: String, isOriginalOutgoingTransaction: Integer): PaymentStatusTableResponseDetails = {
     val strApifunction: String = "addOutgoingPaymentStatusDetails"
     var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
     var responseCode: Int = 1
@@ -18239,7 +18268,7 @@ class CbsEngine @Inject()
       else {strRandomUUID}
     }
 
-    val strSQL: String = "{ call dbo.Add_OutgoingPaymentStatusDetails(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) }"
+    val strSQL: String = "{ call dbo.Add_OutgoingPaymentStatusDetails(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) }"
     try {
       myDB.withConnection { implicit myconn =>
         try{
@@ -18264,14 +18293,15 @@ class CbsEngine @Inject()
           mystmt.setString(2,myPaymentStatusTableDetails.messagereference)
           mystmt.setString(3,myPaymentStatusTableDetails.transactionreference)
           mystmt.setString(4,myPaymentStatusTableDetails.originalrequesttype)
-          mystmt.setString(5,myPaymentStatusTableDetails.instructingagentbankcode)
-          mystmt.setString(6,myPaymentStatusTableDetails.instructedagentbankcode)
-          mystmt.setInt(7,myPaymentStatusTableDetails.batchsize)
-          mystmt.setString(8,myPaymentStatusTableDetails.requestmessagecbsapi)
-          mystmt.setString(9,myPaymentStatusTableDetails.datefromcbsapi)
-          mystmt.setString(10,myPaymentStatusTableDetails.remoteaddresscbsapi)
-          mystmt.setString(11,strChannelType)
-          mystmt.setString(12,strChannelCallBackUrl)          
+          mystmt.setInt(5,isOriginalOutgoingTransaction)
+          mystmt.setString(6,myPaymentStatusTableDetails.instructingagentbankcode)
+          mystmt.setString(7,myPaymentStatusTableDetails.instructedagentbankcode)
+          mystmt.setInt(8,myPaymentStatusTableDetails.batchsize)
+          mystmt.setString(9,myPaymentStatusTableDetails.requestmessagecbsapi)
+          mystmt.setString(10,myPaymentStatusTableDetails.datefromcbsapi)
+          mystmt.setString(11,myPaymentStatusTableDetails.remoteaddresscbsapi)
+          mystmt.setString(12,strChannelType)
+          mystmt.setString(13,strChannelCallBackUrl)          
           mystmt.execute()
           myID = mystmt.getBigDecimal("myID")
           responseCode = mystmt.getInt("responseCode")
