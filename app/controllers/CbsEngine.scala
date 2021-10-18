@@ -2622,8 +2622,8 @@ class CbsEngine @Inject()
 
   def addSingleCreditTransferPaymentDetails = Action.async { request =>
     Future {
-      val dateFromCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
-      val startDate: String =  new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new java.util.Date)
+      val dateFromCbsApi: String = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+      val startDate: String = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new java.util.Date)
       var entryID: Int = 0
       var responseCode: Int = 1
       var responseMessage: String = "Error occured during processing, please try again."
@@ -3740,10 +3740,18 @@ class CbsEngine @Inject()
                       }
                       isValid
                     }
+
+                    //We should not send any requests to FCB as beneficiary Bank, hence validate BankCode
+                    val isclientBankCode_creditor: Boolean = {
+                      if (!isValidCreditBankCode){false}
+                      else if (creditoragentinformationfinancialInstitutionIdentification.equalsIgnoreCase(firstAgentIdentification)){true}
+                      else {false}
+                    }
                     //if (isValidMessageReference && isValidTransactionReference && !isMatchingReference && isValidSchemeName && isValidAmount && isValidDebitAccount && isValidDebitAccountName && isValidDebitPhoneNumber && isValidCreditAccount && isValidCreditAccountName && isValidCreditBankCode && isValidDebtorName && isValidRemittanceinfoUnstructured && isValidPurposeCode){
                     //removed && isValidRemittanceinfoUnstructured since its optional
                     //if (isValidMessageReference && isValidTransactionReference && !isMatchingReference && isValidSchemeName && isValidAmount && isValidDebitAccount && isValidDebitAccountName && isValidDebitPhoneNumber && isValidCreditAccount && isValidCreditAccountName && isValidCreditBankCode && isValidDebtorName && isValidPurposeCode){
-                    if (isValidMessageReference && isValidTransactionReference && !isMatchingReference && isValidSchemeName && isValidAmount && isValidDebitAccount && isValidDebitPhoneNumber && isValidCreditAccount && isValidCreditBankCode && isValidDebtorName && isValidPurposeCode){
+                    //if (isValidMessageReference && isValidTransactionReference && !isMatchingReference && isValidSchemeName && isValidAmount && isValidDebitAccount && isValidDebitPhoneNumber && isValidCreditAccount && isValidCreditBankCode && isValidDebtorName && isValidPurposeCode){
+                    if (isValidMessageReference && isValidTransactionReference && !isMatchingReference && isValidSchemeName && isValidAmount && isValidDebitAccount && isValidDebitPhoneNumber && isValidCreditAccount && isValidCreditBankCode && isValidDebtorName && isValidPurposeCode && !isclientBankCode_creditor){
                       isValidInputData = true
                       /*
                       myHttpStatusCode = HttpStatusCode.Accepted //TESTS ONLY
@@ -3787,7 +3795,8 @@ class CbsEngine @Inject()
                         creditoraccountinformationcreditoraccountschemename = schemeName
                         */
 
-                        val transferDefaultInfo = TransferDefaultInfo(firstAgentIdentification, assigneeAgentIdentification, chargeBearer, settlementMethod, clearingSystem, serviceLevel, localInstrumentCode, categoryPurpose)
+                        //val transferDefaultInfo = TransferDefaultInfo(firstAgentIdentification, assigneeAgentIdentification, chargeBearer, settlementMethod, clearingSystem, serviceLevel, localInstrumentCode, categoryPurpose)
+                        val transferDefaultInfo = TransferDefaultInfo(firstAgentIdentification, assigneeAgentIdentification, chargeBearer, settlementMethod, clearingSystem, serviceLevel, localInstrumentCode, strChannelType.toUpperCase)
                         val debitcontactinformation = ContactInfo(debtorinformationdebtorname, debtorinformationdebtorcontactphonenumber)
                         val debitAccountInfo = DebitAccountInfo(debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, debitcontactinformation, SchemeName.ACCOUNT.toString.toUpperCase)
                         val creditcontactinformation = ContactInfo(creditorinformationcreditorname, creditorinformationcreditorcontactphonenumber)
@@ -3976,6 +3985,9 @@ class CbsEngine @Inject()
                         }
                         else if (!isValidPurposeCode){
                           responseMessage = "Invalid Input Data. purposeinformation - purposecode"
+                        }
+                        else if (isclientBankCode_creditor){
+                          responseMessage = "Invalid Input Data. FCB cannot be beneficiary Bank"
                         }
                         /*
                         else if (!isValidCreditPhoneNumber){
@@ -5402,8 +5414,17 @@ class CbsEngine @Inject()
                         }
                         isValid
                       }
+
+                      //We should not send any requests to FCB as beneficiary Bank, hence validate BankCode
+                      val isclientBankCode_creditor: Boolean = {
+                        if (!isValidCreditBankCode){false}
+                        else if (creditoragentinformationfinancialInstitutionIdentification.equalsIgnoreCase(firstAgentIdentification)){true}
+                        else {false}
+                      }
+
                       //if (isValidMessageReference && isValidTransactionReference && !isMatchingReference && isValidSchemeName && isValidAmount && isValidDebitAccount && isValidDebitAccountName && isValidDebitPhoneNumber && isValidCreditAccount && isValidCreditAccountName && isValidCreditBankCode && isValidDebtorName && isValidRemittanceinfoUnstructured && isValidPurposeCode){
-                      if (isValidMessageReference && isValidTransactionReference && !isMatchingReference && isValidSchemeName && isValidAmount && isValidDebitAccount && isValidDebitPhoneNumber && isValidCreditAccount && isValidCreditBankCode && isValidDebtorName && isValidRemittanceinfoUnstructured && isValidPurposeCode){
+                      //if (isValidMessageReference && isValidTransactionReference && !isMatchingReference && isValidSchemeName && isValidAmount && isValidDebitAccount && isValidDebitPhoneNumber && isValidCreditAccount && isValidCreditBankCode && isValidDebtorName && isValidRemittanceinfoUnstructured && isValidPurposeCode){
+                      if (isValidMessageReference && isValidTransactionReference && !isMatchingReference && isValidSchemeName && isValidAmount && isValidDebitAccount && isValidDebitPhoneNumber && isValidCreditAccount && isValidCreditBankCode && isValidDebtorName && isValidRemittanceinfoUnstructured && isValidPurposeCode && !isclientBankCode_creditor){
                         responseCode = 0
                         responseMessage = "Successful"
                       }
@@ -5457,11 +5478,9 @@ class CbsEngine @Inject()
                         else if (!isValidPurposeCode){
                           responseMessage = "Invalid Input Data. purposeinformation - purposecode"
                         }
-                        /*
-                        else if (!isValidCreditPhoneNumber){
-                          responseMessage = "Invalid Input Data. credit phonenumber"
+                        else if (isclientBankCode_creditor){
+                          responseMessage = "Invalid Input Data. FCB cannot be beneficiary Bank"
                         }
-                        */
                       }
 
                       try{
@@ -5602,7 +5621,8 @@ class CbsEngine @Inject()
                         myHttpStatusCode = HttpStatusCode.Accepted
                         responseMessage = "Message accepted for processing."
 
-                        val transferDefaultInfo = TransferDefaultInfo(firstAgentIdentification, assigneeAgentIdentification, chargeBearer, settlementMethod, clearingSystem, serviceLevel, localInstrumentCode, categoryPurpose)
+                        //val transferDefaultInfo = TransferDefaultInfo(firstAgentIdentification, assigneeAgentIdentification, chargeBearer, settlementMethod, clearingSystem, serviceLevel, localInstrumentCode, categoryPurpose)
+                        val transferDefaultInfo = TransferDefaultInfo(firstAgentIdentification, assigneeAgentIdentification, chargeBearer, settlementMethod, clearingSystem, serviceLevel, localInstrumentCode, strChannelType.toUpperCase)
                         val bulkCreditTransferPaymentInfo = BulkCreditTransferPaymentInfo(messageidentification, creationDateTime, numberoftransactions, totalinterbanksettlementamount, transferDefaultInfo, paymentdata)
                         //TESTS ONLY
                         val transactiontype: String = "A2A"//account-to-account
@@ -7404,7 +7424,6 @@ class CbsEngine @Inject()
                       if (strBankCode.length > 0 && strBankCode.length <= 35){
                         val isNumeric: Boolean = strBankCode.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
                         if (isNumeric){
-                          //val myBankCode = strBankCode.toInt
                           val myBankCode = BigDecimal(strBankCode)
                           if (myBankCode > 0){isValid = true}
                         }
@@ -7415,8 +7434,16 @@ class CbsEngine @Inject()
                       isValid
                     }
 
+                    //We should not send any requests to FCB as beneficiary Bank, hence validate BankCode
+                    val isclientBankCode_creditor: Boolean = {
+                      if (!isValidBankCode){false}
+                      else if (strBankCode.equalsIgnoreCase(firstAgentIdentification)){true}
+                      else {false}
+                    }
+
                     /* Lets set var isValidInputData to true if valid data is received from e-Channels/ESB-CBS System */
-                    if (isValidMessageReference && isValidTransactionReference && isValidAccountNumber && isValidSchemeName && isValidBankCode && !isMatchingReference){
+                    //if (isValidMessageReference && isValidTransactionReference && isValidAccountNumber && isValidSchemeName && isValidBankCode && !isMatchingReference){
+                    if (isValidMessageReference && isValidTransactionReference && isValidAccountNumber && isValidSchemeName && isValidBankCode && !isMatchingReference && !isclientBankCode_creditor){
                       /*
                       isValidInputData = true
                       myHttpStatusCode = HttpStatusCode.Accepted //TESTS ONLY
@@ -7493,6 +7520,9 @@ class CbsEngine @Inject()
                         }
                         else if (isMatchingReference){
                           responseMessage = "Invalid Input Data. messagereference and transactionreference should have different values"
+                        }
+                        else if (isclientBankCode_creditor){
+                          responseMessage = "Invalid Input Data. FCB cannot be beneficiary Bank"
                         }
                         /*
                         val myBatchSize: Integer = 1
@@ -8943,7 +8973,8 @@ class CbsEngine @Inject()
                         val reasoncode: String = "FRAD"
                         val additionalinformation: String = "Fraudulent entry"
 
-                        val transferDefaultInfo = TransferDefaultInfo(firstAgentIdentification, assigneeAgentIdentification, chargeBearer, settlementMethod, clearingSystem, serviceLevel, localInstrumentCode, categoryPurpose)
+                        //val transferDefaultInfo = TransferDefaultInfo(firstAgentIdentification, assigneeAgentIdentification, chargeBearer, settlementMethod, clearingSystem, serviceLevel, localInstrumentCode, categoryPurpose)
+                        val transferDefaultInfo = TransferDefaultInfo(firstAgentIdentification, assigneeAgentIdentification, chargeBearer, settlementMethod, clearingSystem, serviceLevel, localInstrumentCode, strChannelType.toUpperCase)
                         val debitcontactinformation = ContactInfo(debtorinformationdebtorname, debtorinformationdebtorcontactphonenumber)
                         val debitAccountInfo = DebitAccountInfo(debtoraccountinformationdebtoraccountidentification, debtoraccountinformationdebtoraccountname, debitcontactinformation, SchemeName.ACCOUNT.toString.toUpperCase)
                         val creditcontactinformation = ContactInfo(creditorinformationcreditorname, creditorinformationcreditorcontactphonenumber)
@@ -12151,7 +12182,7 @@ class CbsEngine @Inject()
           if (myDataResponse != None){
             strResponseData = myDataResponse.toString()
 
-            log_errors(strApifunction + " : " + "strResponseData - " + strResponseData)
+            //log_data(strApifunction + " : " + "strResponseData - " + strResponseData)
 
             //strToken
             if (myDataResponse.token != None) {
@@ -12258,7 +12289,8 @@ class CbsEngine @Inject()
           if (mystatuscode == 0){transactionStatus = "ACCP"}
           else {transactionStatus = "RJCT"}
           */
-          log_errors(strApifunction + " : " + "token - " + strToken + " , expiration - " + strExpiration + " , code - " + strCode)
+          //log_data(strApifunction + " : " + "token - " + strToken + " , expiration - " + strExpiration + " , code - " + strCode)
+          log_data(strApifunction + " : " + "token - " + strToken.length + " , expiration - " + strExpiration + " , code - " + strCode)
 
           if (validToken){
             //sendAccountDetailsRequestEsbCbs_Test(strToken)
