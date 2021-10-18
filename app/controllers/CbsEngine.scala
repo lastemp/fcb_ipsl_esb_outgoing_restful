@@ -2700,10 +2700,27 @@ class CbsEngine @Inject()
         if (!request.body.asJson.isEmpty) {
           isDataFound = true
           strRequest = request.body.asJson.get.toString()
+          /*
           if (request.remoteAddress != null){
             strClientIP = request.remoteAddress
             strClientIP = strClientIP.trim
           }
+          */
+
+          //Because we are using a proxy-server we'll use "X-Real-IP" and not request.remoteAddress
+          if (request.headers.get("X-Real-IP") != None){
+            val myheaderClientIP = request.headers.get("X-Real-IP")
+            if (myheaderClientIP.get != None){
+              strClientIP = myheaderClientIP.get.toString
+              if (strClientIP != null){
+                strClientIP = strClientIP.trim
+              }
+              else{
+                strClientIP = ""
+              }
+            }
+          }
+
           if (request.headers.get("Authorization") != None){
             val myheader = request.headers.get("Authorization")
             if (myheader.get != None){
@@ -4234,10 +4251,27 @@ class CbsEngine @Inject()
         if (!request.body.asJson.isEmpty) {
           isDataFound = true
           strRequest = request.body.asJson.get.toString()
+          /*
           if (request.remoteAddress != null){
             strClientIP = request.remoteAddress
             strClientIP = strClientIP.trim
           }
+          */
+
+          //Because we are using a proxy-server we'll use "X-Real-IP" and not request.remoteAddress
+          if (request.headers.get("X-Real-IP") != None){
+            val myheaderClientIP = request.headers.get("X-Real-IP")
+            if (myheaderClientIP.get != None){
+              strClientIP = myheaderClientIP.get.toString
+              if (strClientIP != null){
+                strClientIP = strClientIP.trim
+              }
+              else{
+                strClientIP = ""
+              }
+            }
+          }
+
           if (request.headers.get("Authorization") != None){
             val myheader = request.headers.get("Authorization")
             if (myheader.get != None){
@@ -6766,11 +6800,27 @@ class CbsEngine @Inject()
         var isCredentialsFound: Boolean = false
         var strUserName: String = ""
         var strPassword: String = ""
-
+        /*
         if (request.remoteAddress != null){
           strClientIP = request.remoteAddress
           strClientIP = strClientIP.trim
         }
+        */
+
+        //Because we are using a proxy-server we'll use "X-Real-IP" and not request.remoteAddress
+        if (request.headers.get("X-Real-IP") != None){
+          val myheaderClientIP = request.headers.get("X-Real-IP")
+          if (myheaderClientIP.get != None){
+            strClientIP = myheaderClientIP.get.toString
+            if (strClientIP != null){
+              strClientIP = strClientIP.trim
+            }
+            else{
+              strClientIP = ""
+            }
+          }
+        }
+
         if (request.headers.get("Authorization") != None){
           val myheader = request.headers.get("Authorization")
           if (myheader.get != None){
@@ -7038,10 +7088,27 @@ class CbsEngine @Inject()
         if (!request.body.asJson.isEmpty) {
           isDataFound = true
           strRequest = request.body.asJson.get.toString()
+          /*
           if (request.remoteAddress != null){
             strClientIP = request.remoteAddress
             strClientIP = strClientIP.trim
           }
+          */
+          
+          //Because we are using a proxy-server we'll use "X-Real-IP" and not request.remoteAddress
+          if (request.headers.get("X-Real-IP") != None){
+            val myheaderClientIP = request.headers.get("X-Real-IP")
+            if (myheaderClientIP.get != None){
+              strClientIP = myheaderClientIP.get.toString
+              if (strClientIP != null){
+                strClientIP = strClientIP.trim
+              }
+              else{
+                strClientIP = ""
+              }
+            }
+          }
+
           if (request.headers.get("Authorization") != None){
             val myheader = request.headers.get("Authorization")
             if (myheader.get != None){
@@ -7830,10 +7897,27 @@ class CbsEngine @Inject()
         if (!request.body.asJson.isEmpty) {
           isDataFound = true
           strRequest = request.body.asJson.get.toString()
+          /*
           if (request.remoteAddress != null){
             strClientIP = request.remoteAddress
             strClientIP = strClientIP.trim
           }
+          */
+
+          //Because we are using a proxy-server we'll use "X-Real-IP" and not request.remoteAddress
+          if (request.headers.get("X-Real-IP") != None){
+            val myheaderClientIP = request.headers.get("X-Real-IP")
+            if (myheaderClientIP.get != None){
+              strClientIP = myheaderClientIP.get.toString
+              if (strClientIP != null){
+                strClientIP = strClientIP.trim
+              }
+              else{
+                strClientIP = ""
+              }
+            }
+          }
+
           if (request.headers.get("Authorization") != None){
             val myheader = request.headers.get("Authorization")
             if (myheader.get != None){
@@ -9338,10 +9422,27 @@ class CbsEngine @Inject()
         if (!request.body.asJson.isEmpty) {
           isDataFound = true
           strRequest = request.body.asJson.get.toString()
+          /*
           if (request.remoteAddress != null){
             strClientIP = request.remoteAddress
             strClientIP = strClientIP.trim
           }
+          */
+          
+          //Because we are using a proxy-server we'll use "X-Real-IP" and not request.remoteAddress
+          if (request.headers.get("X-Real-IP") != None){
+            val myheaderClientIP = request.headers.get("X-Real-IP")
+            if (myheaderClientIP.get != None){
+              strClientIP = myheaderClientIP.get.toString
+              if (strClientIP != null){
+                strClientIP = strClientIP.trim
+              }
+              else{
+                strClientIP = ""
+              }
+            }
+          }
+
           if (request.headers.get("Authorization") != None){
             val myheader = request.headers.get("Authorization")
             if (myheader.get != None){
