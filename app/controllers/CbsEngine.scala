@@ -15438,9 +15438,9 @@ class CbsEngine @Inject()
     
     val myuri: Uri = strApiURL
 
-    var isValidData : Boolean = false
-    var isSuccessful : Boolean = false
-    var myXmlData : String = ""
+    var isValidData: Boolean = false
+    var isSuccessful: Boolean = false
+    var myXmlData: String = ""
     //var strDeveloperId: String = ""//strDeveloperId_Verification
 
     try {
