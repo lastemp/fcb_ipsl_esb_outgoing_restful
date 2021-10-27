@@ -2603,6 +2603,7 @@ class CbsEngine @Inject()
   val senderKeyPairName: String =  getSettings("senderKeyPairName")//"senderKeyPair"
   val senderKeyStorePwd: String =  getSettings("senderKeyStorePwd")//"CYv.BF33*cpb%s4U"
   val senderKeyStorePwdCharArray = senderKeyStorePwd.toCharArray()
+  val senderKeyStore: KeyStore = getSenderKeyStore()
   val privateKey: PrivateKey = getPrivateKey()
 
   val receiver_keystore_path: String = getSettings("receiverKeyStorePath")//"certsconf/receiver_keystore.p12"
@@ -18885,7 +18886,7 @@ class CbsEngine @Inject()
   def getSignedXml(sourceXml: String): String = {
     var rawSignedXml: String = ""
     try {
-      val keyStore: KeyStore = getSenderKeyStore()
+      //val keyStore: KeyStore = getSenderKeyStore()
       val alias: String = senderKeyPairName
       val password = senderKeyStorePwdCharArray
       val myTransformParameterSpec: TransformParameterSpec = null
@@ -18904,7 +18905,8 @@ class CbsEngine @Inject()
 
       // Create the KeyInfo containing the X509Data.
       val keyInfoFactory: KeyInfoFactory = fac.getKeyInfoFactory()
-      val certificate: X509Certificate = keyStore.getCertificate(alias).asInstanceOf[X509Certificate]
+      //val certificate: X509Certificate = keyStore.getCertificate(alias).asInstanceOf[X509Certificate]
+	  val certificate: X509Certificate = senderKeyStore.getCertificate(alias).asInstanceOf[X509Certificate]
 
       val newX509Data: X509Data = keyInfoFactory.newX509Data(Collections.singletonList(certificate))
       //Commented out on 10-08-2021: Emmanuel
@@ -18931,9 +18933,11 @@ class CbsEngine @Inject()
 
       // Create a DOMSignContext and specify the RSA PrivateKey and
       // location of the resulting XMLSignature's parent element.
-      val key: Key = keyStore.getKey(alias, password)
+      //val key: Key = keyStore.getKey(alias, password)
+	  val key: Key = senderKeyStore.getKey(alias, password)
       if (key == null) {
-          throw new Exception(String.format("Private Key not found for alias '%s' in KS '%s'", alias, keyStore))
+          //throw new Exception(String.format("Private Key not found for alias '%s' in KS '%s'", alias, keyStore))
+		  throw new Exception(String.format("Private Key not found for alias '%s' in KS '%s'", alias, senderKeyStore))
       }
 
       val dsc: DOMSignContext = new DOMSignContext(key, doc.getDocumentElement())
