@@ -6942,7 +6942,7 @@ class CbsEngine @Inject()
             
             if (!isCredentialsFound){strPassword = ""}
 
-            val myOutput = validateClientApi(strChannelType, strUserName, strPassword, strClientIP, strApifunction)
+            val myOutput = validateClientApi(strChannelType, strUserName, strPassword, strClientIP, strApifunction, strOrigin)
 
             if (myOutput.myid != null){
               myID = myOutput.myid
@@ -9652,7 +9652,7 @@ class CbsEngine @Inject()
                     isValidMessageReference = false
                     isValidTransactionReference = false
                     isValidOriginalRequestType = false
-                    isOriginalOutgoingTransaction
+                    isOriginalOutgoingTransaction = true
                     /*
                     isMatchingReference = false
                     isValidSchemeName = false
@@ -18585,13 +18585,13 @@ class CbsEngine @Inject()
       }  
     }
   }
-  def validateClientApi(strChannelType: String, strUserName: String, strPassword: String, strClientIP: String, myApifunction: String): ClientApiResponseDetails = {
+  def validateClientApi(strChannelType: String, strUserName: String, strPassword: String, strClientIP: String, myApifunction: String, strOrigin: String): ClientApiResponseDetails = {
     val strApifunction: String = "validateClientApi"
     var myID: Int = 0
     var responseCode: Int = 1
     var responseMessage: String = "Error occured during processing, please try again."
 
-    val strSQL: String = "{ call dbo.ValidateClientAPI(?,?,?,?,?,?,?,?) }"
+    val strSQL: String = "{ call dbo.ValidateClientAPI(?,?,?,?,?,?,?,?,?) }"
     try {
       myDB.withConnection { implicit myconn =>
         try{
@@ -18601,6 +18601,7 @@ class CbsEngine @Inject()
           mystmt.setString(3,strPassword)
           mystmt.setString(4,strClientIP)
           mystmt.setString(5,myApifunction)
+		  mystmt.setString(6,strOrigin)
 
           mystmt.registerOutParameter("myID", java.sql.Types.INTEGER)
           mystmt.registerOutParameter("responseCode", java.sql.Types.INTEGER)
