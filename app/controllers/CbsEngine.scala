@@ -2649,6 +2649,7 @@ class CbsEngine @Inject()
       var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
       var strClientIP: String = ""
       var strChannelType: String = ""
+	  var strOrigin: String = ""
       var strChannelCallBackUrl: String = ""
       var strRequest: String = ""
 
@@ -2759,6 +2760,19 @@ class CbsEngine @Inject()
               }
             }
           }
+		  
+		  if (request.headers.get("Origin") != None){
+			  val myheaderOrigin = request.headers.get("Origin")
+			  if (myheaderOrigin.get != None){
+				strOrigin = myheaderOrigin.get.toString
+				if (strOrigin != null){
+				  strOrigin = strOrigin.trim
+				}
+				else{
+				  strOrigin = ""
+				}
+			  }
+			}
 
           if (request.headers.get("ChannelCallBackUrl") != None){
             val myheaderChannelType = request.headers.get("ChannelCallBackUrl")
@@ -2781,8 +2795,7 @@ class CbsEngine @Inject()
           strRequest = "Invalid Request Data"
         }
 
-        //Log_data(strApifunction + " : " + strRequest + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
-        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
+        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , Origin - " + strOrigin + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
 
         if (isDataFound && isAuthTokenFound && isValidUrl){
           var strAccessToken: String = ""
@@ -2837,8 +2850,8 @@ class CbsEngine @Inject()
 
           try{
             if (!isCredentialsFound){strPassword = ""}
-            //val myOutput = validateClientApi(strChannelType, strUserName, strPassword, strClientIP, strApifunction)
-            val myOutput = validateApiAccessToken(strAccessToken, strChannelType, strClientIP, strApifunction)
+			
+            val myOutput = validateApiAccessToken(strAccessToken, strChannelType, strClientIP, strApifunction, strOrigin)
             if (myOutput.responsecode != null){
               responseCode = myOutput.responsecode
             }
@@ -4202,6 +4215,7 @@ class CbsEngine @Inject()
       var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
       var strClientIP: String = ""
       var strChannelType: String = ""
+	  var strOrigin: String = ""
       var strChannelCallBackUrl: String = ""
       var strRequest: String = ""
 
@@ -4310,6 +4324,19 @@ class CbsEngine @Inject()
               }
             }
           }
+		  
+		  if (request.headers.get("Origin") != None){
+			  val myheaderOrigin = request.headers.get("Origin")
+			  if (myheaderOrigin.get != None){
+				strOrigin = myheaderOrigin.get.toString
+				if (strOrigin != null){
+				  strOrigin = strOrigin.trim
+				}
+				else{
+				  strOrigin = ""
+				}
+			  }
+			}
 
           if (request.headers.get("ChannelCallBackUrl") != None){
             val myheaderChannelType = request.headers.get("ChannelCallBackUrl")
@@ -4332,8 +4359,7 @@ class CbsEngine @Inject()
           strRequest = "Invalid Request Data"
         }
 
-        //Log_data(strApifunction + " : " + strRequest + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
-        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
+        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , Origin - " + strOrigin + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
 
         if (isDataFound && isAuthTokenFound && isValidUrl){
           var strAccessToken: String = ""
@@ -4388,8 +4414,8 @@ class CbsEngine @Inject()
 
           try{
             if (!isCredentialsFound){strPassword = ""}
-            //val myOutput = validateClientApi(strChannelType, strUserName, strPassword, strClientIP, strApifunction)
-            val myOutput = validateApiAccessToken(strAccessToken, strChannelType, strClientIP, strApifunction)
+            
+            val myOutput = validateApiAccessToken(strAccessToken, strChannelType, strClientIP, strApifunction, strOrigin)
             if (myOutput.responsecode != null){
               responseCode = myOutput.responsecode
             }
@@ -7064,11 +7090,12 @@ class CbsEngine @Inject()
       var isValidSchemeName: Boolean = false
       var isValidAccountNumber: Boolean = false
       var isValidBankCode: Boolean = false
-	    val accSchemeName: String = SchemeName.ACCOUNT.toString.toUpperCase
+	  val accSchemeName: String = SchemeName.ACCOUNT.toString.toUpperCase
       val phneSchemeName: String = SchemeName.PHONE.toString.toUpperCase
       var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
       var strClientIP: String = ""
       var strChannelType: String = ""
+	  var strOrigin: String = ""
       var strChannelCallBackUrl: String = ""
       var strRequest: String = ""
 
@@ -7147,6 +7174,19 @@ class CbsEngine @Inject()
               }
             }
           }
+		  
+		  if (request.headers.get("Origin") != None){
+			  val myheaderOrigin = request.headers.get("Origin")
+			  if (myheaderOrigin.get != None){
+				strOrigin = myheaderOrigin.get.toString
+				if (strOrigin != null){
+				  strOrigin = strOrigin.trim
+				}
+				else{
+				  strOrigin = ""
+				}
+			  }
+			}
 
           if (request.headers.get("ChannelCallBackUrl") != None){
             val myheaderChannelType = request.headers.get("ChannelCallBackUrl")
@@ -7169,8 +7209,7 @@ class CbsEngine @Inject()
           strRequest = "Invalid Request Data"
         }
 
-        //Log_data(strApifunction + " : " + strRequest + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
-        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
+        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , Origin - " + strOrigin + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
 
         if (isDataFound && isAuthTokenFound && isValidUrl){
           var strAccessToken: String = ""
@@ -7225,8 +7264,7 @@ class CbsEngine @Inject()
 
           try{
             if (!isCredentialsFound){strPassword = ""}
-            //val myOutput = validateClientApi(strChannelType, strUserName, strPassword, strClientIP, strApifunction)
-            val myOutput = validateApiAccessToken(strAccessToken, strChannelType, strClientIP, strApifunction)
+            val myOutput = validateApiAccessToken(strAccessToken, strChannelType, strClientIP, strApifunction, strOrigin)
             if (myOutput.responsecode != null){
               responseCode = myOutput.responsecode
             }
@@ -7842,6 +7880,7 @@ class CbsEngine @Inject()
       var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
       var strClientIP: String = ""
       var strChannelType: String = ""
+	  var strOrigin: String = ""
       var strChannelCallBackUrl: String = ""
       var strRequest: String = ""
 
@@ -7956,6 +7995,19 @@ class CbsEngine @Inject()
               }
             }
           }
+		  
+		  if (request.headers.get("Origin") != None){
+			  val myheaderOrigin = request.headers.get("Origin")
+			  if (myheaderOrigin.get != None){
+				strOrigin = myheaderOrigin.get.toString
+				if (strOrigin != null){
+				  strOrigin = strOrigin.trim
+				}
+				else{
+				  strOrigin = ""
+				}
+			  }
+			}
 
           if (request.headers.get("ChannelCallBackUrl") != None){
             val myheaderChannelType = request.headers.get("ChannelCallBackUrl")
@@ -7978,8 +8030,7 @@ class CbsEngine @Inject()
           strRequest = "Invalid Request Data"
         }
 
-        //Log_data(strApifunction + " : " + strRequest + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
-        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
+        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , Origin - " + strOrigin + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
 
         if (isDataFound && isAuthTokenFound && isValidUrl){
           var strAccessToken: String = ""
@@ -8034,8 +8085,8 @@ class CbsEngine @Inject()
 
           try{
             if (!isCredentialsFound){strPassword = ""}
-            //val myOutput = validateClientApi(strChannelType, strUserName, strPassword, strClientIP, strApifunction)
-            val myOutput = validateApiAccessToken(strAccessToken, strChannelType, strClientIP, strApifunction)
+            
+            val myOutput = validateApiAccessToken(strAccessToken, strChannelType, strClientIP, strApifunction, strOrigin)
             if (myOutput.responsecode != null){
               responseCode = myOutput.responsecode
             }
@@ -9404,6 +9455,7 @@ class CbsEngine @Inject()
       var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
       var strClientIP: String = ""
       var strChannelType: String = ""
+	  var strOrigin: String = ""
       val strChannelCallBackUrl: String = ""
       var strRequest: String = ""
 
@@ -9481,6 +9533,20 @@ class CbsEngine @Inject()
               }
             }
           }
+		  
+		  if (request.headers.get("Origin") != None){
+			  val myheaderOrigin = request.headers.get("Origin")
+			  if (myheaderOrigin.get != None){
+				strOrigin = myheaderOrigin.get.toString
+				if (strOrigin != null){
+				  strOrigin = strOrigin.trim
+				}
+				else{
+				  strOrigin = ""
+				}
+			  }
+			}
+		  
           /*
           if (request.headers.get("ChannelCallBackUrl") != None){
             val myheaderChannelType = request.headers.get("ChannelCallBackUrl")
@@ -9500,8 +9566,7 @@ class CbsEngine @Inject()
           strRequest = "Invalid Request Data"
         }
 
-        //Log_data(strApifunction + " : " + strRequest + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
-        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
+        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , Origin - " + strOrigin + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
 
         if (isDataFound && isAuthTokenFound){
           var strAccessToken: String = ""
@@ -9556,8 +9621,8 @@ class CbsEngine @Inject()
 
           try{
             if (!isCredentialsFound){strPassword = ""}
-            //val myOutput = validateClientApi(strChannelType, strUserName, strPassword, strClientIP, strApifunction)
-            val myOutput = validateApiAccessToken(strAccessToken, strChannelType, strClientIP, strApifunction)
+
+            val myOutput = validateApiAccessToken(strAccessToken, strChannelType, strClientIP, strApifunction, strOrigin)
             if (myOutput.responsecode != null){
               responseCode = myOutput.responsecode
             }
@@ -18677,16 +18742,16 @@ class CbsEngine @Inject()
 
     myExpiresIn
   }
-  def validateApiAccessToken(strAccessToken: String, strChannelType: String, strClientIP: String, myApifunction: String): ClientApiResponseDetails = {
+  def validateApiAccessToken(strAccessToken: String, strChannelType: String, strClientIP: String, myApifunction: String, strOrigin: String): ClientApiResponseDetails = {
     val strApifunction: String = "validateApiAccessToken"
     var myID: Int = 0
     var responseCode: Int = 1
     var responseMessage: String = "Error occured during processing, please try again."
 
-    val strSQL: String = "{ call dbo.ValidateApiAccessToken(?,?,?,?,?,?) }"
+    val strSQL: String = "{ call dbo.ValidateApiAccessToken(?,?,?,?,?,?,?) }"
 
     try{
-      if (strAccessToken.trim.length == 0 || strChannelType.trim.length == 0 || strClientIP.trim.length == 0 || myApifunction.trim.length == 0){
+      if (strAccessToken.trim.length == 0 || strChannelType.trim.length == 0 || strClientIP.trim.length == 0 || myApifunction.trim.length == 0 || strOrigin.trim.length == 0){
       val myClientApiResponseDetails = ClientApiResponseDetails(responseCode, responseMessage, myID)
       return myClientApiResponseDetails
     }
@@ -18705,6 +18770,7 @@ class CbsEngine @Inject()
           mystmt.setString(2,strChannelType)
           mystmt.setString(3,strClientIP)
           mystmt.setString(4,myApifunction)
+		  mystmt.setString(5,strOrigin)
 
           mystmt.registerOutParameter("responseCode", java.sql.Types.INTEGER)
           mystmt.registerOutParameter("responseMessage", java.sql.Types.VARCHAR)
