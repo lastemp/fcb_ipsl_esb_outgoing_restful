@@ -2795,7 +2795,7 @@ class CbsEngine @Inject()
           strRequest = "Invalid Request Data"
         }
 
-        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , Origin - " + strOrigin + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
+        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , Origin - " + strOrigin + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + strClientIP)
 
         if (isDataFound && isAuthTokenFound && isValidUrl){
           var strAccessToken: String = ""
@@ -4359,7 +4359,7 @@ class CbsEngine @Inject()
           strRequest = "Invalid Request Data"
         }
 
-        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , Origin - " + strOrigin + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
+        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , Origin - " + strOrigin + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + strClientIP)
 
         if (isDataFound && isAuthTokenFound && isValidUrl){
           var strAccessToken: String = ""
@@ -5719,7 +5719,8 @@ class CbsEngine @Inject()
                           val requestType: Int = 2//Bulk CreditTransaction
                           val myRequestData: String = getBulkCreditTransferDetails(bulkCreditTransferPaymentInfo)
 
-                          sendLoginRequestEsbCbs(myID, requestType, strAccountNumber, strMessageReference, myDebitTransactionRequest, bulkCreditTransferPaymentInfo.paymentdata, myRequestData, strApiURL, strApiURL2, strApiURL3, strChannelType, strChannelCallBackUrl)
+                          //sendLoginRequestEsbCbs(myID, requestType, strAccountNumber, strMessageReference, myDebitTransactionRequest, bulkCreditTransferPaymentInfo.paymentdata, myRequestData, strApiURL, strApiURL2, strApiURL3, strChannelType, strChannelCallBackUrl)
+						  sendLoginRequestEsbCbs(myBatchReference, requestType, strAccountNumber, strMessageReference, myDebitTransactionRequest, bulkCreditTransferPaymentInfo.paymentdata, myRequestData, strApiURL, strApiURL2, strApiURL3, strChannelType, strChannelCallBackUrl)
                         }(myExecutionContext)
                       }
                     }
@@ -6912,9 +6913,7 @@ class CbsEngine @Inject()
           }
         }
 
-        //Log_data(strApifunction + " : " + strRequest + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
-        //log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
-        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , Origin - " + strOrigin + " , Referer - " + strReferer + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
+        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , Origin - " + strOrigin + " , Referer - " + strReferer + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + strClientIP)
 
         if (isDataFound && isAuthTokenFound){
 
@@ -7042,7 +7041,7 @@ class CbsEngine @Inject()
     val jsonResponse = Json.toJson(myAccessTokenDetailsResponse)
 
     try{
-      log_data(strApifunction + " : " + "response - " + jsonResponse.toString() + " , remoteAddress - " + request.remoteAddress)
+      log_data(strApifunction + " : " + "response - " + jsonResponse.toString() + " , remoteAddress - " + strClientIP)
     }
     catch{
       case ex: Exception =>
@@ -7209,7 +7208,7 @@ class CbsEngine @Inject()
           strRequest = "Invalid Request Data"
         }
 
-        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , Origin - " + strOrigin + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
+        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , Origin - " + strOrigin + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + strClientIP)
 
         if (isDataFound && isAuthTokenFound && isValidUrl){
           var strAccessToken: String = ""
@@ -7798,7 +7797,7 @@ class CbsEngine @Inject()
         }
       }
 
-      log_data(strApifunction + " : " + "response - " + jsonResponse.toString() + " , remoteAddress - " + request.remoteAddress)
+      log_data(strApifunction + " : " + "response - " + jsonResponse.toString() + " , remoteAddress - " + strClientIP)
     }
     catch{
       case ex: Exception =>
@@ -8030,7 +8029,7 @@ class CbsEngine @Inject()
           strRequest = "Invalid Request Data"
         }
 
-        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , Origin - " + strOrigin + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
+        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , Origin - " + strOrigin + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + strClientIP)
 
         if (isDataFound && isAuthTokenFound && isValidUrl){
           var strAccessToken: String = ""
@@ -9566,7 +9565,7 @@ class CbsEngine @Inject()
           strRequest = "Invalid Request Data"
         }
 
-        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , Origin - " + strOrigin + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + request.remoteAddress)
+        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , Origin - " + strOrigin + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + strClientIP)
 
         if (isDataFound && isAuthTokenFound){
           var strAccessToken: String = ""
@@ -10246,7 +10245,7 @@ class CbsEngine @Inject()
         }
       }
 
-      log_data(strApifunction + " : " + "response - " + jsonResponse.toString() + " , remoteAddress - " + request.remoteAddress)
+      log_data(strApifunction + " : " + "response - " + jsonResponse.toString() + " , remoteAddress - " + strClientIP)
     }
     catch{
       case ex: Exception =>
@@ -13559,11 +13558,22 @@ class CbsEngine @Inject()
                     strstatusdescription = "successful"
                   }
                 }
+				
+				var myBulkID: java.math.BigDecimal = new java.math.BigDecimal(0)
+				
+				if (myEntryID.value.isEmpty != true) {
+					if (myEntryID.value.get != None) {
+					  val myVal = myEntryID.value.get
+					  if (myVal.get != None) {
+						myBulkID = myVal.get
+					  }
+					}
+				  }
 
                 if (isPostedSuccessfully){
                   //send the outgoing request to IPSL
                   val f = Future {
-                    sendBulkCreditTransferRequestsIpsl(myID, myRequestData, strApiURL2)
+                    sendBulkCreditTransferRequestsIpsl(myBulkID, myRequestData, strApiURL2)
                   }(myExecutionContext)
                 }
                 else{
