@@ -86,6 +86,14 @@ import org.xml.sax.InputSource
 
 import java.util.regex._
 
+import akka.kafka.scaladsl.{Consumer, Producer}
+import akka.kafka.{ProducerMessage, ProducerSettings, Subscriptions}
+import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.common.serialization.StringSerializer
+import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.clients.producer.Producer
+import java.util.Properties
+
 trait MyExecutionContext extends ExecutionContext
 
 class MyExecutionContextImpl @Inject()(system: ActorSystem)
@@ -2520,7 +2528,7 @@ class CbsEngine @Inject()
   /*** Xml data ***/
 
   case class AccountVerificationTableDetails(batchreference: java.math.BigDecimal, accountnumber: String, bankcode: String, messagereference: String, transactionreference: String, schemename: String, batchsize: Integer, requestmessagecbsapi: String, datefromcbsapi: String, remoteaddresscbsapi: String)
-  case class AccountVerificationTableResponseDetails(id: java.math.BigDecimal, responsecode: Int, responsemessage: String)
+  case class AccountVerificationTableResponseDetails(id: BigDecimal, responsecode: Int, responsemessage: String)
   case class ClientApiResponseDetails(responsecode: Int, responsemessage: String, myid: Int)
 
   case class SingleCreditTransferPaymentTableDetails(batchreference: java.math.BigDecimal, 
@@ -2540,7 +2548,7 @@ class CbsEngine @Inject()
   case class SingleCreditTransferPaymentTableResponseDetails(id: java.math.BigDecimal, responsecode: Int, responsemessage: String)
   case class PaymentStatusTableResponseDetails(id: java.math.BigDecimal, responsecode: Int, responsemessage: String, paymentstatusdetails: PaymentStatusDetailsIpsl)
 
-  //TESTS ONLY
+  //
   case class Login_EsbCbs(token: Option[spray.json.JsValue], expiration: Option[spray.json.JsValue])
   case object Login_EsbCbs extends SprayJsonSupport with DefaultJsonProtocol {
     implicit val Login_EsbCbsFormat = jsonFormat2(Login_EsbCbs.apply)
@@ -2557,6 +2565,9 @@ class CbsEngine @Inject()
   case object DebitTransactionResponse_EsbCbs extends SprayJsonSupport with DefaultJsonProtocol {
     implicit val DebitTransactionResponse_EsbCbsFormat = jsonFormat10(DebitTransactionResponse_EsbCbs.apply)
   }
+  
+  //EchannelsResponse
+  case class EchannelsResponse_Kafka(id: BigDecimal, responsetype: String, responsemessage: String, channeltype: String, callbackapiurl: String)
   //
 
   implicit val system = ActorSystem("CbsEngine")
@@ -2620,6 +2631,8 @@ class CbsEngine @Inject()
   val strOutgoingDebitTransactionUrlEsbCbs: String = getSettings("outgoingDebitTransactionUrlEsbCbs")
   val fac: XMLSignatureFactory = XMLSignatureFactory.getInstance("DOM")//private static final
   val C14N: String = "http://www.w3.org/TR/2001/REC-xml-c14n-20010315"
+  
+  val kafkaProducer = createKafkaProducer()
 
   def addSingleCreditTransferPaymentDetails = Action.async { request =>
     Future {
@@ -7091,7 +7104,7 @@ class CbsEngine @Inject()
       var isValidBankCode: Boolean = false
 	  val accSchemeName: String = SchemeName.ACCOUNT.toString.toUpperCase
       val phneSchemeName: String = SchemeName.PHONE.toString.toUpperCase
-      var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
+      var myID: BigDecimal = 0
       var strClientIP: String = ""
       var strChannelType: String = ""
 	  var strOrigin: String = ""
@@ -13659,7 +13672,7 @@ class CbsEngine @Inject()
         log_errors(strApifunction + " : " + t.getMessage + " - t exception error occured.")
     }
   }
-  def sendAccountVerificationRequestsIpsl(myID: java.math.BigDecimal, myRequestData: String, myMessageReference: String, myTransactionReference: String, strApiURL: String, strChannelType: String, strCallBackApiURL: String): Unit = {
+  def sendAccountVerificationRequestsIpsl(myID: BigDecimal, myRequestData: String, myMessageReference: String, myTransactionReference: String, strApiURL: String, strChannelType: String, strCallBackApiURL: String): Unit = {
     val strApifunction: String = "sendAccountVerificationRequestsIpsl"
     //var strApiURL: String = "http://localhost:9001/iso20022/v1/verification-request"
 
@@ -13790,7 +13803,7 @@ class CbsEngine @Inject()
         //val myEntryID: Future[java.math.BigDecimal] = Future(entryID)
         var start_time_DB: String = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
         val myStart_time: Future[String] = Future(start_time_DB)
-        val myEntryID: Future[java.math.BigDecimal] = Future(myID)
+        val myEntryID: Future[BigDecimal] = Future(myID)
         val myChannelType: Future[String] = Future(strChannelType)
         val myCallBackApiURL: Future[String] = Future(strCallBackApiURL)
         val myMsgRef: Future[String] = Future(myMessageReference)
@@ -13802,7 +13815,7 @@ class CbsEngine @Inject()
           .onComplete {
             case Success(res) =>
               val dateFromIpslApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
-              var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
+              var myID: BigDecimal = 0
               //println("start 2: " + res.status.intValue())
               var isValidResponse: Boolean = false
               var strChannelType: String = ""
@@ -13971,7 +13984,37 @@ class CbsEngine @Inject()
                       val myAccountVerificationDetailsResponse_Batch = AccountVerificationDetailsResponse_Batch(strTransactionReference, strAccountNumber, strAccountname, strBankCode, responseCode, responseMessage)
                       val myAccountVerificationResponse = AccountVerificationDetailsResponse_BatchData(strMessageReference, myAccountVerificationDetailsResponse_Batch)
                       
-                      val f = Future {sendAccountVerificationResponseEchannel(myID, myAccountVerificationResponse, strChannelType, strCallBackApiURL)}
+                      //val f = Future {sendAccountVerificationResponseEchannel(myID, myAccountVerificationResponse, strChannelType, strCallBackApiURL)}
+					  
+						try{
+							val f = Future {
+								val responseType: String = "accountverification"
+								
+								implicit val AccountVerificationDetailsResponse_BatchWrites = Json.writes[AccountVerificationDetailsResponse_Batch]
+								implicit val AccountVerificationDetailsResponse_BatchDataWrites = Json.writes[AccountVerificationDetailsResponse_BatchData]
+
+								val myJsonAccountVerificationData = Json.toJson(myAccountVerificationResponse)
+								val myAccountVerificationData: String = myJsonAccountVerificationData.toString()
+
+								val responseMessage: String = new String(Base64.getEncoder().encode(myAccountVerificationData.getBytes(StandardCharsets.UTF_8)))
+								val echannelsResponse = EchannelsResponse_Kafka(myID, responseType, responseMessage, strChannelType, strCallBackApiURL)
+
+								implicit val EchannelsResponse_Kafka_Writes = Json.writes[EchannelsResponse_Kafka]
+
+								val myJsonData = Json.toJson(echannelsResponse)
+								val myData: String = myJsonData.toString()
+								//We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
+								sendEchannelsResponseKafka(myData)
+							}(myExecutionContext)
+						}
+						catch{
+							case ex: Exception =>
+								log_errors(strApifunction + " a : " + ex.getMessage())
+							case io: IOException =>
+								log_errors(strApifunction + " b : " + io.getMessage())
+							case tr: Throwable =>
+								log_errors(strApifunction + " c : " + tr.getMessage())
+						}
                       
                       val strStatusMessage: String = "Successful"
                       strResponseData = ""//TESTS ONLY
@@ -14090,7 +14133,7 @@ class CbsEngine @Inject()
               try{
                 val strResponseData: String = ""
                 val dateFromIpslApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
-                var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
+                var myID: BigDecimal = 0
                 val myHttpStatusCode: Int = 500
                 val strHttpErrorMessage: String = f.getMessage
                 val strStatusMessage: String = "Failure occured when sending the request to API. " + strHttpErrorMessage
@@ -16316,7 +16359,7 @@ class CbsEngine @Inject()
         log_errors(strApifunction + " : " + t.getMessage + "t exception error occured.")
     }
   }
-  def sendAccountVerificationResponseEchannel(myID: java.math.BigDecimal, myAccountVerificationData: AccountVerificationDetailsResponse_BatchData, strChannelType: String, strApiURL: String): Unit = {
+  def sendAccountVerificationResponseEchannel(myID: BigDecimal, myAccountVerificationData: AccountVerificationDetailsResponse_BatchData, strChannelType: String, strApiURL: String): Unit = {
 
     //var strApiURL: String = "http://localhost:9001/addaccountverificationreesponsebcbs"
     var isSuccessful: Boolean = false
@@ -16388,7 +16431,7 @@ class CbsEngine @Inject()
     {
       if (isValidData){
         val data = HttpEntity(ContentType(MediaTypes.`application/json`), myjsonData)
-        val myEntryID: Future[java.math.BigDecimal] = Future(myID)
+        val myEntryID: Future[BigDecimal] = Future(myID)
         //val requestData : Future[String] = Future(myjsonData)
         //var start_time_DB : String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
         //val myStart_time : Future[String] = Future(start_time_DB)
@@ -16406,7 +16449,7 @@ class CbsEngine @Inject()
             case Success(res) =>
               //println("start 2: " + strApifunction + " " + res.status.intValue())
               val dateFromCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
-              var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
+              var myID: BigDecimal = 0
               var myHttpStatusCode: Int = 0
               var mystatuscode: Int = 1
               var strStatusMessage: String = "Failed processing"
@@ -16530,7 +16573,7 @@ class CbsEngine @Inject()
             case Failure(f)   =>
               try {
                 val dateFromCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
-                var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
+                var myID: BigDecimal = 0
                 val strHttpErrorMessage: String = f.getMessage
                 val strResponseData: String = ""
                 //log_errors(strApifunction + " : Failure - " + f.getMessage + " - ex exception error occured.")
@@ -16957,6 +17000,50 @@ class CbsEngine @Inject()
           log_errors(strApifunction + " : " + t.getMessage + " - t exception error occured.")
       }
 
+  }
+  def sendEchannelsResponseKafka(myRecordData: String) : Unit = {
+    val strApifunction: String = "sendEchannelsResponseKafka"
+    try{
+	  val topic = "topic-echannelsresponse"
+	  //val key = "key"
+	  //The records with the same key will always end up in the same partition
+	  //If the key is null or unique, a producer will choose a partition in a round-robin fashion
+	  //Lets generate a unique key for each record
+	  val K: String = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
+	  val key = "key_" + K
+      val value = myRecordData
+	  val message = new ProducerRecord(topic, key, value)
+	  kafkaProducer.send(message)
+    }
+    catch
+    {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + "exception error occured.")
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + "t exception error occured.")
+    }
+  }
+  def createKafkaProducer(): Producer[String,String] = {
+	val strApifunction: String = "createKafkaProducer"  
+    try{
+      // Zookeeper connection properties
+	  val properties: Properties  = new Properties()
+	  properties.put("bootstrap.servers", "localhost:9092")
+	  properties.put("acks", "all")
+	  properties.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+	  properties.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+	  val kafkaProducer: Producer[String,String]  = new KafkaProducer[String,String](properties)
+	  
+	  return kafkaProducer
+	}
+	catch {
+	  case ex: Exception =>
+		log_errors(strApifunction + " : " + ex.getMessage + " exception error occured.")
+	  case t: Throwable =>
+		log_errors(strApifunction + " : " + t.getMessage + " throwable error occured.")
+	}
+	  
+	null
   }
   def getServiceEsbApi(myServiceCode : Int) : Boolean = {
     var isServiceEsbApi : Boolean = false
@@ -18237,7 +18324,8 @@ class CbsEngine @Inject()
     }
   def addOutgoingAccountVerificationDetails(myAccountVerificationTableDetails: AccountVerificationTableDetails, strChannelType: String, strChannelCallBackUrl: String): AccountVerificationTableResponseDetails = {
     val strApifunction: String = "addOutgoingAccountVerificationDetails"
-    var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
+    //var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
+	var myID: BigDecimal = 0
     var responseCode: Int = 1
     var responseMessage: String = ""
 
