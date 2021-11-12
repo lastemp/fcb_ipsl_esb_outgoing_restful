@@ -10072,7 +10072,7 @@ class CbsEngine @Inject()
                             //val myRespData: String = getSingleCreditTransferDetails(singleCreditTransferPaymentInfo, isAccSchemeName)
                             val myPaymentStatusDetails = myPaymentStatusTableResponseDetails.paymentstatusdetails
                             val myRespData: String = getPaymentStatusDetailsIpsl(myPaymentStatusDetails)
-                            sendPaymentStatusRequestsIpsl(myID, myRespData, strOutgoingPaymentStatusUrlIpsl)
+                            sendPaymentStatusRequestsIpsl(myID, strMessageReference, strTransactionReference, myRespData, strOutgoingPaymentStatusUrlIpsl, strChannelType)
                           }(myExecutionContext)
                         }
                       }
@@ -14300,248 +14300,261 @@ class CbsEngine @Inject()
               var isValidResponse: Boolean = false
               var strChannelType: String = ""
               var strCallBackApiURL: String = ""
-              if (res != null) {
-                if (res.status.intValue() == 200) {
-                  isValidResponse = true
-                  var isDataExists: Boolean = false
-                  var myCount: Int = 0
-                  var strid: String = ""
-                  var strResponseData: String = ""
-                  val strIntRegex: String = "[0-9]+" //Integers only
-                  val strDecimalRegex: String = "^[0-9]*\\.?[0-9]+$" //Decimals
-                  //var strChannelType: String = ""
-                  //var strCallBackApiURL: String = ""
-                  //val resByteStr: String = res.entity.toString
-                  //val resByteStr: akka.util.ByteString = res.entity
-                  //println("res.entity - " + res.entity.toString())
+			  
+			  try{
+				  if (res != null) {
+					if (res.status.intValue() == 200) {
+					  isValidResponse = true
+					  var isDataExists: Boolean = false
+					  var myCount: Int = 0
+					  var strid: String = ""
+					  var strResponseData: String = ""
+					  val strIntRegex: String = "[0-9]+" //Integers only
+					  val strDecimalRegex: String = "^[0-9]*\\.?[0-9]+$" //Decimals
+					  //var strChannelType: String = ""
+					  //var strCallBackApiURL: String = ""
+					  //val resByteStr: String = res.entity.toString
+					  //val resByteStr: akka.util.ByteString = res.entity
+					  //println("res.entity - " + res.entity.toString())
 
-                  val myData = res.entity
-                  if (myData != null){
-                    val x = myData.asInstanceOf[HttpEntity.Strict].getData().decodeString(StandardCharsets.UTF_8)
-                    strResponseData = x.toString
-                    //println("res.entity x - " + x.toString)
-                    if (myEntryID.value.isEmpty != true) {
-                      if (myEntryID.value.get != None) {
-                        val myVal = myEntryID.value.get
-                        if (myVal.get != None) {
-                          myID = myVal.get
-                        }
-                      }
-                    }
+					  val myData = res.entity
+					  if (myData != null){
+						val x = myData.asInstanceOf[HttpEntity.Strict].getData().decodeString(StandardCharsets.UTF_8)
+						strResponseData = x.toString
+						//println("res.entity x - " + x.toString)
+						if (myEntryID.value.isEmpty != true) {
+						  if (myEntryID.value.get != None) {
+							val myVal = myEntryID.value.get
+							if (myVal.get != None) {
+							  myID = myVal.get
+							}
+						  }
+						}
 
-                    if (myChannelType.value.isEmpty != true) {
-                      if (myChannelType.value.get != None) {
-                        val myVal = myChannelType.value.get
-                        if (myVal.get != None) {
-                          strChannelType = myVal.get
-                        }
-                      }
-                    }
+						if (myChannelType.value.isEmpty != true) {
+						  if (myChannelType.value.get != None) {
+							val myVal = myChannelType.value.get
+							if (myVal.get != None) {
+							  strChannelType = myVal.get
+							}
+						  }
+						}
 
-                    if (myCallBackApiURL.value.isEmpty != true) {
-                      if (myCallBackApiURL.value.get != None) {
-                        val myVal = myCallBackApiURL.value.get
-                        if (myVal.get != None) {
-                          strCallBackApiURL = myVal.get
-                        }
-                      }
-                    }
+						if (myCallBackApiURL.value.isEmpty != true) {
+						  if (myCallBackApiURL.value.get != None) {
+							val myVal = myCallBackApiURL.value.get
+							if (myVal.get != None) {
+							  strCallBackApiURL = myVal.get
+							}
+						  }
+						}
 
-                    log_data(strApifunction + " : " + " channeltype - IPSL"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + res.status.intValue())
+						log_data(strApifunction + " : " + " channeltype - IPSL"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + res.status.intValue())
 
-                    val y: scala.xml.Node = scala.xml.XML.loadString(x)
-                    val myAccountVerification = AccountVerificationResponse.fromXml(y)
-                    //println("myAccountVerification - " + myAccountVerification.toString)
-                    //println("myAccountVerification.originalMessageIdentification - " + myAccountVerification.originalMessageIdentification.toString)
-                    //println("myAccountVerification.updatedBeneficiaryAccountNumber - " + myAccountVerification.updatedBeneficiaryAccountNumber.toString)
-                    //println("myAccountVerification.updatedBeneficiaryAccountName - " + myAccountVerification.updatedBeneficiaryAccountName.toString)
-                    try{
-                      var strMessageReference: String = myAccountVerification.originalassignmentinformation.messageIdentification//originalMessageIdentification
-                      var strTransactionReference: String = myAccountVerification.verificationreportinformation.originalidentification//originalVerificationIdentification
-                      var strAccountNumber: String = myAccountVerification.verificationreportinformation.updatedpartyandaccountidentificationinformation.updatedAccountInformation.accountIdentification//updatedBeneficiaryAccountNumber
-                      //var strSchemeMode: String = ""
-                      var strBankCode : String = myAccountVerification.verificationreportinformation.updatedpartyandaccountidentificationinformation.agentInformation.financialInstitutionIdentification//.updatedBeneficiaryAgentIdentification
-                      var strAccountname: String = myAccountVerification.verificationreportinformation.updatedpartyandaccountidentificationinformation.updatedAccountInformation.accountIdentificationName//updatedBeneficiaryAccountName
-                      var verificationStatus: String = myAccountVerification.verificationreportinformation.verificationstatus//.verificationStatus
-                      var verificationReasonCode: String = myAccountVerification.verificationreportinformation.verificationreasoncode//.verificationReasonCode
-                      var isVerified: Boolean = false
-                      var responseCode: Int = 1
-                      var responseMessage: String = "Error occured during processing, please try again."
-
-                      if (strAccountNumber != null){
-                        if (strAccountNumber.length > 0){
-                          strAccountNumber = strAccountNumber.replace("'","")//Remove apostrophe
-                          strAccountNumber = strAccountNumber.replace(" ","")//Remove spaces
-                          strAccountNumber = strAccountNumber.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                          strAccountNumber = strAccountNumber.trim
-                        }
-                      }
-
-                      if (strBankCode != null){
-                        if (strBankCode.length > 0){
-                          strBankCode = strBankCode.replace("'","")//Remove apostrophe
-                          strBankCode = strBankCode.replace(" ","")//Remove spaces
-                          strBankCode = strBankCode.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                          strBankCode = strBankCode.trim
-                        }
-                      }
-
-                      if (strAccountname != null){
-                        if (strAccountname.length > 0){
-                          strAccountname = strAccountname.replace("'","")//Remove apostrophe
-                          strAccountname = strAccountname.replace("  "," ")//Remove double spaces
-                          strAccountname = strAccountname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                          strAccountname = strAccountname.trim
-                        }
-                      }
-
-                      if (verificationStatus != null){
-                        if (verificationStatus.length > 0){
-                          verificationStatus = verificationStatus.replace("'","")//Remove apostrophe
-                          verificationStatus = verificationStatus.replace(" ","")//Remove double spaces
-                          verificationStatus = verificationStatus.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                          verificationStatus = verificationStatus.trim
-                        }
-                      }
-
-                      if (verificationStatus.length > 0){
-                        if (verificationStatus.equalsIgnoreCase("true")){
-                          isVerified = true
-                        }
-                      }
-
-                      if (isVerified){
-                        responseCode = 0
-                        responseMessage = "successful"
-                        if (verificationStatus.length > 0){
-                          strAccountname = strAccountname.replace("'","")//Remove apostrophe
-                          strAccountname = strAccountname.replace("  "," ")//Remove double spaces
-                          strAccountname = strAccountname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                          strAccountname = strAccountname.trim
-                        }
-                      }
-                      else{
-                        strAccountNumber = ""
-                        strAccountname = ""
-                        strBankCode = ""
-                        responseCode = 1
-
-                        if (verificationReasonCode != null){
-                          if (verificationReasonCode.length > 0){
-                            verificationReasonCode = verificationReasonCode.replace("'","")//Remove apostrophe
-                            verificationReasonCode = verificationReasonCode.replace("  "," ")//Remove double spaces
-                            verificationReasonCode = verificationReasonCode.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-                            verificationReasonCode = verificationReasonCode.trim
-                          }
-                        }
-
-                        responseMessage = {
-                          var msg: String = "Error occured during processing, try again later"
-                          if (verificationReasonCode.length > 0){
-                            if (verificationReasonCode.equalsIgnoreCase("AB05")){
-                              msg = "Timeout at the Beneficary Bank"
-                            }
-                            else if (verificationReasonCode.equalsIgnoreCase("AB06")){
-                              msg = "Timeout at the Beneficary Bank"
-                            }
-                            else if (verificationReasonCode.equalsIgnoreCase("AC01")){
-                              msg = "Account number is invalid or does not exist"
-                            }
-                            else if (verificationReasonCode.equalsIgnoreCase("AC04")){
-                              msg = "Account number is closed account"
-                            }
-                            else if (verificationReasonCode.equalsIgnoreCase("AC06")){
-                              msg = "Account number is blocked"
-                            }
-                            else if (verificationReasonCode.equalsIgnoreCase("AG01")){
-                              msg = "Transaction forbidden on this type of account"
-                            }
-                          }
-                          msg
-                        }
-                      }
-
-                      val myAccountVerificationDetailsResponse_Batch = AccountVerificationDetailsResponse_Batch(strTransactionReference, strAccountNumber, strAccountname, strBankCode, responseCode, responseMessage)
-                      val myAccountVerificationResponse = AccountVerificationDetailsResponse_BatchData(strMessageReference, myAccountVerificationDetailsResponse_Batch)
-                      
-                      //val f = Future {sendAccountVerificationResponseEchannel(myID, myAccountVerificationResponse, strChannelType, strCallBackApiURL)}
-					  
+						val y: scala.xml.Node = scala.xml.XML.loadString(x)
+						val myAccountVerification = AccountVerificationResponse.fromXml(y)
+						//println("myAccountVerification - " + myAccountVerification.toString)
+						//println("myAccountVerification.originalMessageIdentification - " + myAccountVerification.originalMessageIdentification.toString)
+						//println("myAccountVerification.updatedBeneficiaryAccountNumber - " + myAccountVerification.updatedBeneficiaryAccountNumber.toString)
+						//println("myAccountVerification.updatedBeneficiaryAccountName - " + myAccountVerification.updatedBeneficiaryAccountName.toString)
 						try{
-							val f = Future {
-								val responseType: String = "accountverification"
-								
-								implicit val AccountVerificationDetailsResponse_BatchWrites = Json.writes[AccountVerificationDetailsResponse_Batch]
-								implicit val AccountVerificationDetailsResponse_BatchDataWrites = Json.writes[AccountVerificationDetailsResponse_BatchData]
+						  var strMessageReference: String = myAccountVerification.originalassignmentinformation.messageIdentification//originalMessageIdentification
+						  var strTransactionReference: String = myAccountVerification.verificationreportinformation.originalidentification//originalVerificationIdentification
+						  var strAccountNumber: String = myAccountVerification.verificationreportinformation.updatedpartyandaccountidentificationinformation.updatedAccountInformation.accountIdentification//updatedBeneficiaryAccountNumber
+						  //var strSchemeMode: String = ""
+						  var strBankCode : String = myAccountVerification.verificationreportinformation.updatedpartyandaccountidentificationinformation.agentInformation.financialInstitutionIdentification//.updatedBeneficiaryAgentIdentification
+						  var strAccountname: String = myAccountVerification.verificationreportinformation.updatedpartyandaccountidentificationinformation.updatedAccountInformation.accountIdentificationName//updatedBeneficiaryAccountName
+						  var verificationStatus: String = myAccountVerification.verificationreportinformation.verificationstatus//.verificationStatus
+						  var verificationReasonCode: String = myAccountVerification.verificationreportinformation.verificationreasoncode//.verificationReasonCode
+						  var isVerified: Boolean = false
+						  var responseCode: Int = 1
+						  var responseMessage: String = "Error occured during processing, please try again."
 
-								val myJsonAccountVerificationData = Json.toJson(myAccountVerificationResponse)
-								val myAccountVerificationData: String = myJsonAccountVerificationData.toString()
+						  if (strAccountNumber != null){
+							if (strAccountNumber.length > 0){
+							  strAccountNumber = strAccountNumber.replace("'","")//Remove apostrophe
+							  strAccountNumber = strAccountNumber.replace(" ","")//Remove spaces
+							  strAccountNumber = strAccountNumber.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+							  strAccountNumber = strAccountNumber.trim
+							}
+						  }
 
-								val responseMessage: String = new String(Base64.getEncoder().encode(myAccountVerificationData.getBytes(StandardCharsets.UTF_8)))
-								val echannelsResponse = EchannelsResponse_Kafka(myID, responseType, responseMessage, strChannelType, strCallBackApiURL)
+						  if (strBankCode != null){
+							if (strBankCode.length > 0){
+							  strBankCode = strBankCode.replace("'","")//Remove apostrophe
+							  strBankCode = strBankCode.replace(" ","")//Remove spaces
+							  strBankCode = strBankCode.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+							  strBankCode = strBankCode.trim
+							}
+						  }
 
-								implicit val EchannelsResponse_Kafka_Writes = Json.writes[EchannelsResponse_Kafka]
+						  if (strAccountname != null){
+			                if (strAccountname.length > 0){
+							  strAccountname = strAccountname.replace("'","")//Remove apostrophe
+							  strAccountname = strAccountname.replace("  "," ")//Remove double spaces
+							  strAccountname = strAccountname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+							  strAccountname = strAccountname.trim
+							}
+						  }
 
-								val myJsonData = Json.toJson(echannelsResponse)
-								val myData: String = myJsonData.toString()
-								//We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
-								sendEchannelsResponseKafka(myData)
-							}(myExecutionContext)
+						  if (verificationStatus != null){
+							if (verificationStatus.length > 0){
+							  verificationStatus = verificationStatus.replace("'","")//Remove apostrophe
+							  verificationStatus = verificationStatus.replace(" ","")//Remove double spaces
+							  verificationStatus = verificationStatus.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+							  verificationStatus = verificationStatus.trim
+							}
+						  }
+
+						  if (verificationStatus.length > 0){
+							if (verificationStatus.equalsIgnoreCase("true")){
+							  isVerified = true
+							}
+						  }
+
+						  if (isVerified){
+							responseCode = 0
+							responseMessage = "successful"
+							if (verificationStatus.length > 0){
+							  strAccountname = strAccountname.replace("'","")//Remove apostrophe
+							  strAccountname = strAccountname.replace("  "," ")//Remove double spaces
+							  strAccountname = strAccountname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+							  strAccountname = strAccountname.trim
+							}
+						  }
+						  else{
+							strAccountNumber = ""
+							strAccountname = ""
+							strBankCode = ""
+							responseCode = 1
+
+							if (verificationReasonCode != null){
+							  if (verificationReasonCode.length > 0){
+								verificationReasonCode = verificationReasonCode.replace("'","")//Remove apostrophe
+								verificationReasonCode = verificationReasonCode.replace("  "," ")//Remove double spaces
+								verificationReasonCode = verificationReasonCode.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+								verificationReasonCode = verificationReasonCode.trim
+							  }
+							}
+
+							responseMessage = {
+							  var msg: String = "Error occured during processing, try again later"
+							  if (verificationReasonCode.length > 0){
+								if (verificationReasonCode.equalsIgnoreCase("AB05")){
+								  msg = "Timeout at the Beneficary Bank"
+								}
+								else if (verificationReasonCode.equalsIgnoreCase("AB06")){
+								  msg = "Timeout at the Beneficary Bank"
+								}
+								else if (verificationReasonCode.equalsIgnoreCase("AC01")){
+								  msg = "Account number is invalid or does not exist"
+								}
+								else if (verificationReasonCode.equalsIgnoreCase("AC04")){
+								  msg = "Account number is closed account"
+								}
+								else if (verificationReasonCode.equalsIgnoreCase("AC06")){
+								  msg = "Account number is blocked"
+								}
+								else if (verificationReasonCode.equalsIgnoreCase("AG01")){
+								  msg = "Transaction forbidden on this type of account"
+								}
+							  }
+							  msg
+							}
+						  }
+
+						  val myAccountVerificationDetailsResponse_Batch = AccountVerificationDetailsResponse_Batch(strTransactionReference, strAccountNumber, strAccountname, strBankCode, responseCode, responseMessage)
+						  val myAccountVerificationResponse = AccountVerificationDetailsResponse_BatchData(strMessageReference, myAccountVerificationDetailsResponse_Batch)
+						  
+						  //val f = Future {sendAccountVerificationResponseEchannel(myID, myAccountVerificationResponse, strChannelType, strCallBackApiURL)}
+						  
+							try{
+								val f = Future {
+									val responseType: String = "accountverification"
+									
+									implicit val AccountVerificationDetailsResponse_BatchWrites = Json.writes[AccountVerificationDetailsResponse_Batch]
+									implicit val AccountVerificationDetailsResponse_BatchDataWrites = Json.writes[AccountVerificationDetailsResponse_BatchData]
+
+									val myJsonAccountVerificationData = Json.toJson(myAccountVerificationResponse)
+									val myAccountVerificationData: String = myJsonAccountVerificationData.toString()
+
+									val responseMessage: String = new String(Base64.getEncoder().encode(myAccountVerificationData.getBytes(StandardCharsets.UTF_8)))
+									val echannelsResponse = EchannelsResponse_Kafka(myID, responseType, responseMessage, strChannelType, strCallBackApiURL)
+
+									implicit val EchannelsResponse_Kafka_Writes = Json.writes[EchannelsResponse_Kafka]
+
+									val myJsonData = Json.toJson(echannelsResponse)
+									val myData: String = myJsonData.toString()
+									//We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
+									sendEchannelsResponseKafka(myData)
+								}(myExecutionContext)
+							}
+							catch{
+								case ex: Exception =>
+									log_errors(strApifunction + " a : " + ex.getMessage())
+								case io: IOException =>
+									log_errors(strApifunction + " b : " + io.getMessage())
+								case tr: Throwable =>
+									log_errors(strApifunction + " c : " + tr.getMessage())
+							}
+						  
+						  val strStatusMessage: String = "Successful"
+						  strResponseData = ""//TESTS ONLY
+						  val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + res.status.intValue() + 
+						  ", [StatusCode_IpslApi] = 0, [StatusMessage_IpslApi] = '" + strStatusMessage +
+						  "', [isVerified] = '" + isVerified + "', [VerificationStatus] = '" + verificationStatus + 
+						  "', [VerificationReasonCode] = '" + verificationReasonCode + "', [AccountName] = '" + strAccountname + 
+						  "', [ResponseMessage_IpslApi] = '" + strResponseData + 
+						  "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
+						  insertUpdateRecord(strSQL)
+
 						}
 						catch{
-							case ex: Exception =>
-								log_errors(strApifunction + " a : " + ex.getMessage())
-							case io: IOException =>
-								log_errors(strApifunction + " b : " + io.getMessage())
-							case tr: Throwable =>
-								log_errors(strApifunction + " c : " + tr.getMessage())
+						  case ex: Exception =>
+							log_errors(strApifunction + " : " + ex.getMessage())
+						  case io: IOException =>
+							log_errors(strApifunction + " : " + io.getMessage())
+						  case tr: Throwable =>
+							log_errors(strApifunction + " : " + tr.getMessage())
 						}
-                      
-                      val strStatusMessage: String = "Successful"
-                      strResponseData = ""//TESTS ONLY
-                      val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + res.status.intValue() + 
-                      ", [StatusCode_IpslApi] = 0, [StatusMessage_IpslApi] = '" + strStatusMessage +
-                      "', [isVerified] = '" + isVerified + "', [VerificationStatus] = '" + verificationStatus + 
-                      "', [VerificationReasonCode] = '" + verificationReasonCode + "', [AccountName] = '" + strAccountname + 
-                      "', [ResponseMessage_IpslApi] = '" + strResponseData + 
-                      "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
-                      insertUpdateRecord(strSQL)
 
-                    }
-                    catch{
-                      case ex: Exception =>
-                        log_errors(strApifunction + " : " + ex.getMessage())
-                      case io: IOException =>
-                        log_errors(strApifunction + " : " + io.getMessage())
-                      case tr: Throwable =>
-                        log_errors(strApifunction + " : " + tr.getMessage())
-                    }
+					  }  
+					}
+					else {
 
-                  }  
-                }
-                else {
+					  //Lets log the status code returned by CBS webservice
+					  val strResponseData: String = ""
+					  val strStatusMessage: String = "Failed"
 
-                  //Lets log the status code returned by CBS webservice
-                  val strResponseData: String = ""
-                  val strStatusMessage: String = "Failed"
+					  if (myEntryID.value.isEmpty != true) {
+						if (myEntryID.value.get != None) {
+						  val myVal = myEntryID.value.get
+						  if (myVal.get != None) {
+							myID = myVal.get
+						  }
+						}
+					  }
 
-                  if (myEntryID.value.isEmpty != true) {
-                    if (myEntryID.value.get != None) {
-                      val myVal = myEntryID.value.get
-                      if (myVal.get != None) {
-                        myID = myVal.get
-                      }
-                    }
-                  }
+					  val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + res.status.intValue() + 
+					  ", [StatusCode_IpslApi] = 1, [StatusMessage_IpslApi] = '" + strStatusMessage +
+					  "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
+					  insertUpdateRecord(strSQL)
 
-                  val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + res.status.intValue() + 
-                  ", [StatusCode_IpslApi] = 1, [StatusMessage_IpslApi] = '" + strStatusMessage +
-                  "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
-                  insertUpdateRecord(strSQL)
-
-                  log_data(strApifunction + " : " + " channeltype - IPSL"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + res.status.intValue())
-                  
-                }
-              }
+					  log_data(strApifunction + " : " + " channeltype - IPSL"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + res.status.intValue())
+					  
+					}
+				  }
+			  
+			  }
+			  catch{
+				case ex: Exception =>
+					log_errors(strApifunction + " a : " + ex.getMessage())
+				case io: IOException =>
+					log_errors(strApifunction + " b : " + io.getMessage())
+				case tr: Throwable =>
+					log_errors(strApifunction + " c : " + tr.getMessage())
+			   }
+			  
               //Send response to e-channel where IPSL failed to give a success response
               if (!isValidResponse)
               {
@@ -14634,11 +14647,8 @@ class CbsEngine @Inject()
                     log_errors(strApifunction + " : " + tr.getMessage())
                 }
               }
-            //println(res)
-            //case Failure(_)   => sys.error("something wrong")
+
             case Failure(f) =>
-              //println("start 3: " + f.getMessage)
-              //myDataManagement.Log_errors("sendRegistrationRequests - main : " + f.getMessage + "exception error occured. Failure.")
               
               try{
                 val strResponseData: String = ""
@@ -17171,71 +17181,23 @@ class CbsEngine @Inject()
         log_errors(strApifunction + " : " + t.getMessage + "t exception error occured.")
     }
   }
-  def sendPaymentStatusRequestsIpsl(myID: java.math.BigDecimal, myRequestData: String, strApiURL: String): Unit = {
+  def sendPaymentStatusRequestsIpsl(myID: java.math.BigDecimal, strMessageReference: String, strTransactionReference: String, myRequestData: String, strApiURL: String, strChannelType: String): Unit = {
     val strApifunction: String = "sendPaymentStatusRequestsIpsl"
-    //var strApiURL: String = "http://localhost:9001/iso20022/v1/credit-transfer"
     
-    val myuri : Uri = strApiURL
+    val myuri: Uri = strApiURL
 
     var isValidData : Boolean = false
     var isSuccessful : Boolean = false
     var myXmlData : String = ""
-    //var strDeveloperId: String = ""//strDeveloperId_Verification
 
     try {
       isValidData = true//TESTS ONLY
       if (isValidData) {
 
-        //val myDataManagement = new DataManagement
-        //val accessToken: String = GetCbsApiAuthorizationHeader(strDeveloperId)
-
-        //var strUserName: String = "testUid"
-        //var strPassWord: String = "testPwd"
-        /*
-        try {
-          strUserName = getCbsApiUserName
-          var strPwd: String = getCbsApiPassword //n6,e$=p8QK\+c^h~
-          var myByteAuthToken = Base64.getDecoder.decode(strPwd)
-          var myPwd : String = new String(myByteAuthToken, StandardCharsets.UTF_8)
-          strPassWord = myPwd
-        }
-        catch
-        {
-          case ex: Exception =>
-            isSuccessful = false//strname = "no data"//println("Got some other kind of exception")
-          case t: Throwable =>
-            isSuccessful = false//strname = "no data"//println("Got some other kind of exception")
-        }
-        */
-        /*
-        if (strUserName == null){
-          strUserName = ""
-        }
-
-        if (strPassWord == null){
-          strPassWord = ""
-        }
-
-        if (strUserName.trim.length == 0){
-          log_errors(strApifunction + " : Failure in fetching  Api UserName - " + strUserName + " , application error occured.")
-          return
-        }
-
-        if (strPassWord.trim.length == 0){
-          log_errors(strApifunction + " : Failure in fetching  Api UserName - " + strPassWord + " , application error occured.")
-          return
-        }
-        */
         try{
           val dateToIpslApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
           var strRequestData: String = ""
-          /*
-          var strRequestData: String = myRequestData
-          strRequestData = strRequestData.replace("'","")//Remove apostrophe
-          strRequestData = strRequestData.replace(" ","")//Remove spaces
-          strRequestData = strRequestData.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
-          strRequestData = strRequestData.trim
-          */
+
           val strSQL: String = "update [dbo].[OutgoingPaymentStatusDetails] set [Posted_to_IpslApi] = 1, [Post_picked_IpslApi] = 1, [RequestMessage_IpslApi] = '" + strRequestData + "', [Date_to_IpslApi] = '" + dateToIpslApi + "' where [ID] = " + myID + ";"
           insertUpdateRecord(strSQL)
 
@@ -17271,72 +17233,188 @@ class CbsEngine @Inject()
           context.init(keyManagerFactory.getKeyManagers, certManagerFactory.getTrustManagers, new SecureRandom)
           ConnectionContext.httpsClient(context)
         }
-        //val data = HttpEntity(ContentType(MediaTypes.`application/json`), myjsonData)
-        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization", "bearer " + accessToken)))
-        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("username", strUserName),RawHeader("password", strPassWord)))
-        //***working*** val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(GET, uri = myuri).withHeaders(RawHeader("username", strUserName),RawHeader("password", strPassWord)))
-        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(GET, uri = myuri).withHeaders(RawHeader("username", "FundMasterApi"),RawHeader("password", "n6,e$=p8QK\\+c^h~")))
-        /* TESTS ONLY */
-        //val accessToken: String = "sassasasss"
+
         myXmlData = myRequestData
         val data = HttpEntity(ContentType.WithCharset(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`), myXmlData)
-        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization", "bearer " + accessToken)))
-        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data))
-        //val conctx = Http().createClientHttpsContext(Http().sslConfig)
-        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data), connectionContext = conctx)
         val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data), connectionContext = clientContext)
         val myEntryID: Future[java.math.BigDecimal] = Future(myID)
-        //var start_time_DB: String = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
-        //val myStart_time: Future[String] = Future(start_time_DB)
-        //TESTS ONLY
-        //println("start 1: " + start_time_DB)
+        val myMessageReference: Future[String] = Future(strMessageReference)
+		val myTransactionReference: Future[String] = Future(strTransactionReference)
+		val myChannelType: Future[String] = Future(strChannelType)
 
         responseFuture
           .onComplete {
             case Success(res) =>
-              //println("start 2: " + res.status.intValue())
               val dateFromIpslApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
               var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
               var myHttpStatusCode: Int = 0
               var mystatuscode: Int = 1
               var strStatusMessage: String = "Failed processing"
               var strResponseData: String = ""
-              if (res.status != None) {
-                if (res.status.intValue() == 202) {
-                  val myData = res.entity
-                  if (myData != null){
-                    val x = myData.asInstanceOf[HttpEntity.Strict].getData().decodeString(StandardCharsets.UTF_8)
-                    strResponseData = x.toString
-                    //println("res.entity x - " + x.toString)
-                    //println("mySingleCreditTransfer - " + x.toString)
-                  }
-                  mystatuscode = 0
-                  strStatusMessage = "successful"
-                }
-                else {
-                  //Lets log the status code returned by CBS webservice
-                  strStatusMessage = "Failed"
-                }
+			  var isValidResponse: Boolean = false
+			  
+			  try{
+				  if (res != null) {
+					if (res.status.intValue() == 202) {
+					  isValidResponse = true
+					  
+					  val myData = res.entity
+					  if (myData != null){
+						val x = myData.asInstanceOf[HttpEntity.Strict].getData().decodeString(StandardCharsets.UTF_8)
+						strResponseData = x.toString
+						//println("res.entity x - " + x.toString)
+						//println("mySingleCreditTransfer - " + x.toString)
+					  }
+					  mystatuscode = 0
+					  strStatusMessage = "successful"
+					}
+					else {
+					  //Lets log the status code returned by CBS webservice
+					  strStatusMessage = "Failed processing"
+					}
 
-                myHttpStatusCode = res.status.intValue()
+					myHttpStatusCode = res.status.intValue()
 
-                if (myEntryID.value.isEmpty != true) {
-                  if (myEntryID.value.get != None) {
-                    val myVal = myEntryID.value.get
-                    if (myVal.get != None) {
-                      myID = myVal.get
-                    }
-                  }
-                }
+					if (myEntryID.value.isEmpty != true) {
+					  if (myEntryID.value.get != None) {
+						val myVal = myEntryID.value.get
+						if (myVal.get != None) {
+						  myID = myVal.get
+						}
+					  }
+					}
 
-                val strSQL: String = "update [dbo].[OutgoingPaymentStatusDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
-                ", [StatusCode_IpslApi] = " + mystatuscode + ", [StatusMessage_IpslApi] = '" + strStatusMessage +
-                "', [ResponseMessage_IpslApi] = '" + strResponseData + 
-                "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
-                insertUpdateRecord(strSQL)
+					val strSQL: String = "update [dbo].[OutgoingPaymentStatusDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
+					", [StatusCode_IpslApi] = " + mystatuscode + ", [StatusMessage_IpslApi] = '" + strStatusMessage +
+					"', [ResponseMessage_IpslApi] = '" + strResponseData + 
+					"', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
+					insertUpdateRecord(strSQL)
 
-                log_data(strApifunction + " : " + " channeltype - IPSL"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode)
-              }
+					log_data(strApifunction + " : " + " channeltype - IPSL"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode)
+				  }
+				  else{
+					strStatusMessage = "Timeout at the Beneficary Bank"
+				  }
+		      }
+			  catch{
+				case ex: Exception =>
+					log_errors(strApifunction + " a : " + ex.getMessage())
+				case io: IOException =>
+					log_errors(strApifunction + " b : " + io.getMessage())
+				case tr: Throwable =>
+					log_errors(strApifunction + " c : " + tr.getMessage())
+			  }
+			  
+			  try{
+				  //Send response to echannels where the request failed to be sent to IPSL
+				  if (!isValidResponse){
+					  
+					var strMessageReference: String = ""
+					var strTransactionReference: String = ""
+					var strChannelType: String = ""
+					var strCallBackApiURL: String = ""
+					var isValidUrl: Boolean = false
+					
+					try{
+						if (myMessageReference.value.isEmpty != true) {
+						  if (myMessageReference.value.get != None) {
+							val myVal = myMessageReference.value.get
+							if (myVal.get != None) {
+							  strMessageReference = myVal.get
+							}
+						  }
+						}
+						
+						if (myTransactionReference.value.isEmpty != true) {
+						  if (myTransactionReference.value.get != None) {
+							val myVal = myTransactionReference.value.get
+							if (myVal.get != None) {
+							  strTransactionReference = myVal.get
+							}
+						  }
+						}
+						
+						if (myChannelType.value.isEmpty != true) {
+						  if (myChannelType.value.get != None) {
+							val myVal = myChannelType.value.get
+							if (myVal.get != None) {
+							  strChannelType = myVal.get
+							}
+						  }
+						}
+						
+						strCallBackApiURL = getOutgoingSingleCreditTransferChannelCallBackUrl(strMessageReference, strTransactionReference)
+						if (strCallBackApiURL == null){
+							strCallBackApiURL = ""
+						}
+						
+						if (strCallBackApiURL.trim.length == 0){
+						   strCallBackApiURL = getOutgoingBulkCreditTransferChannelCallBackUrl(strMessageReference)
+						   if (strCallBackApiURL == null){
+							 strCallBackApiURL = ""
+						   }
+						}
+						
+						if (strCallBackApiURL.trim.length > 0){
+						  isValidUrl = true	
+						}
+					
+					}
+					catch{
+						case ex: Exception =>
+							log_errors(strApifunction + " a : " + ex.getMessage())
+						case io: IOException =>
+							log_errors(strApifunction + " b : " + io.getMessage())
+						case tr: Throwable =>
+							log_errors(strApifunction + " c : " + tr.getMessage())
+					}
+					
+					if (isValidUrl)
+					{	
+						try{
+							val mystatuscode: Int = 1
+							val strstatusdescription: String = "Timeout at IPSL"
+							val f = Future {
+								val responseType: String = "accounttransfer"
+								val paymentdata = SingleCreditTransferDetailsResponse_Batch_eChannels(strTransactionReference, mystatuscode, strstatusdescription)
+								val singleCreditTransferPaymentInformation = SingleCreditTransferDetailsResponse_BatchData_eChannels(strMessageReference, paymentdata)
+								
+								implicit val SingleCreditTransferDetailsResponse_Batch_eChannels_Writes = Json.writes[SingleCreditTransferDetailsResponse_Batch_eChannels]
+								implicit val SingleCreditTransferDetailsResponse_BatchData_eChannels_Writes = Json.writes[SingleCreditTransferDetailsResponse_BatchData_eChannels]
+
+								val myJsonSingleCreditTransferData = Json.toJson(singleCreditTransferPaymentInformation)
+								val mySingleCreditTransferData: String = myJsonSingleCreditTransferData.toString()
+
+								val responseMessage: String = new String(Base64.getEncoder().encode(mySingleCreditTransferData.getBytes(StandardCharsets.UTF_8)))
+								val echannelsResponse = EchannelsResponse_Kafka(myID, responseType, responseMessage, strChannelType, strCallBackApiURL)
+
+								implicit val EchannelsResponse_Kafka_Writes = Json.writes[EchannelsResponse_Kafka]
+
+								val myJsonData = Json.toJson(echannelsResponse)
+								val myData: String = myJsonData.toString()
+								//We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
+								sendEchannelsResponseKafka(myData)
+							}(myExecutionContext) 
+						}
+						catch{
+							case ex: Exception =>
+								log_errors(strApifunction + " a : " + ex.getMessage())
+							case io: IOException =>
+								log_errors(strApifunction + " b : " + io.getMessage())
+							case tr: Throwable =>
+								log_errors(strApifunction + " c : " + tr.getMessage())
+						}
+					}
+				  }
+				}
+				catch{
+					case ex: Exception =>
+						log_errors(strApifunction + " a : " + ex.getMessage())
+					case io: IOException =>
+						log_errors(strApifunction + " b : " + io.getMessage())
+					case tr: Throwable =>
+						log_errors(strApifunction + " c : " + tr.getMessage())
+				}
             case Failure(f) =>
               val dateFromIpslApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
               var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
@@ -17345,21 +17423,129 @@ class CbsEngine @Inject()
               val strStatusMessage: String = "Failure occured when sending the request to API. " + strHttpErrorMessage
               val strResponseData: String = ""
 
-              if (myEntryID.value.isEmpty != true) {
-                if (myEntryID.value.get != None) {
-                  val myVal = myEntryID.value.get
-                  if (myVal.get != None) {
-                    myID = myVal.get
-                  }
-                }
-              }
+			  try{
+				  if (myEntryID.value.isEmpty != true) {
+					if (myEntryID.value.get != None) {
+					  val myVal = myEntryID.value.get
+					  if (myVal.get != None) {
+						myID = myVal.get
+					  }
+					}
+				  }
 
-              val strSQL: String = "update [dbo].[OutgoingPaymentStatusDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
-              ", [StatusCode_IpslApi] = 1, [StatusMessage_IpslApi] = '" + strStatusMessage +
-              "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
-              insertUpdateRecord(strSQL)
+				  val strSQL: String = "update [dbo].[OutgoingPaymentStatusDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
+				  ", [StatusCode_IpslApi] = 1, [StatusMessage_IpslApi] = '" + strStatusMessage +
+				  "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
+				  insertUpdateRecord(strSQL)
 
-              log_data(strApifunction + " : " + " channeltype - IPSL"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode + " , httperrormessage - " + strHttpErrorMessage)
+				  log_data(strApifunction + " : " + " channeltype - IPSL"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode + " , httperrormessage - " + strHttpErrorMessage)
+			  }
+			catch{
+				case ex: Exception =>
+					log_errors(strApifunction + " a : " + ex.getMessage())
+				case io: IOException =>
+					log_errors(strApifunction + " b : " + io.getMessage())
+				case tr: Throwable =>
+					log_errors(strApifunction + " c : " + tr.getMessage())
+			}
+			
+			var strMessageReference: String = ""
+			var strTransactionReference: String = ""
+			var strChannelType: String = ""
+			var strCallBackApiURL: String = ""
+			var isValidUrl: Boolean = false
+  
+			try{
+				if (myMessageReference.value.isEmpty != true) {
+				  if (myMessageReference.value.get != None) {
+					val myVal = myMessageReference.value.get
+					if (myVal.get != None) {
+					  strMessageReference = myVal.get
+					}
+				  }
+				}
+
+				if (myTransactionReference.value.isEmpty != true) {
+				  if (myTransactionReference.value.get != None) {
+					val myVal = myTransactionReference.value.get
+					if (myVal.get != None) {
+					  strTransactionReference = myVal.get
+					}
+				  }
+				}
+
+				if (myChannelType.value.isEmpty != true) {
+				  if (myChannelType.value.get != None) {
+					val myVal = myChannelType.value.get
+					if (myVal.get != None) {
+					  strChannelType = myVal.get
+					}
+				  }
+				}
+				
+				strCallBackApiURL = getOutgoingSingleCreditTransferChannelCallBackUrl(strMessageReference, strTransactionReference)
+				if (strCallBackApiURL == null){
+					strCallBackApiURL = ""
+				}
+				
+				if (strCallBackApiURL.trim.length == 0){
+				   strCallBackApiURL = getOutgoingBulkCreditTransferChannelCallBackUrl(strMessageReference)
+				   if (strCallBackApiURL == null){
+					 strCallBackApiURL = ""
+				   }
+				}
+				
+				if (strCallBackApiURL.trim.length > 0){
+				  isValidUrl = true	
+				}
+			
+			}
+			catch{
+				case ex: Exception =>
+					log_errors(strApifunction + " a : " + ex.getMessage())
+				case io: IOException =>
+					log_errors(strApifunction + " b : " + io.getMessage())
+				case tr: Throwable =>
+					log_errors(strApifunction + " c : " + tr.getMessage())
+			}
+			
+			//Send response to echannels where the request failed to be sent to IPSL
+			if (isValidUrl)
+			{	
+				try{
+					val mystatuscode: Int = 1
+					val strstatusdescription: String = "Timeout at IPSL"
+					val f = Future {
+						val responseType: String = "accounttransfer"
+						val paymentdata = SingleCreditTransferDetailsResponse_Batch_eChannels(strTransactionReference, mystatuscode, strstatusdescription)
+						val singleCreditTransferPaymentInformation = SingleCreditTransferDetailsResponse_BatchData_eChannels(strMessageReference, paymentdata)
+							
+						implicit val SingleCreditTransferDetailsResponse_Batch_eChannels_Writes = Json.writes[SingleCreditTransferDetailsResponse_Batch_eChannels]
+						implicit val SingleCreditTransferDetailsResponse_BatchData_eChannels_Writes = Json.writes[SingleCreditTransferDetailsResponse_BatchData_eChannels]
+
+						val myJsonSingleCreditTransferData = Json.toJson(singleCreditTransferPaymentInformation)
+						val mySingleCreditTransferData: String = myJsonSingleCreditTransferData.toString()
+
+						val responseMessage: String = new String(Base64.getEncoder().encode(mySingleCreditTransferData.getBytes(StandardCharsets.UTF_8)))
+						val echannelsResponse = EchannelsResponse_Kafka(myID, responseType, responseMessage, strChannelType, strCallBackApiURL)
+
+						implicit val EchannelsResponse_Kafka_Writes = Json.writes[EchannelsResponse_Kafka]
+
+						val myJsonData = Json.toJson(echannelsResponse)
+						val myData: String = myJsonData.toString()
+						//We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
+						sendEchannelsResponseKafka(myData)
+					}(myExecutionContext)  
+				}
+				catch{
+					case ex: Exception =>
+						log_errors(strApifunction + " a : " + ex.getMessage())
+					case io: IOException =>
+						log_errors(strApifunction + " b : " + io.getMessage())
+					case tr: Throwable =>
+						log_errors(strApifunction + " c : " + tr.getMessage())
+				}
+			}
           }
       }
     }
@@ -18073,6 +18259,75 @@ class CbsEngine @Inject()
 	}
 	  
 	null
+  }
+  def getOutgoingSingleCreditTransferChannelCallBackUrl(strMessageReference: String, strTransactionReference: String) : String = {
+    var strChannelCallBackUrl: String = ""
+    val strApifunction: String = "getOutgoingSingleCreditTransferChannelCallBackUrl"
+    val strSQL: String = "{ call dbo.GetOutgoingSingleCreditTransferChannelCallBackUrl(?,?,?) }"
+    try {
+      myDB.withConnection { implicit myconn =>
+        try{
+          val mystmt: CallableStatement = myconn.prepareCall(strSQL)
+          mystmt.registerOutParameter("ChannelCallBackUrl", java.sql.Types.VARCHAR)
+          mystmt.setString(1,strMessageReference)
+          mystmt.setString(2,strTransactionReference)
+          mystmt.execute()
+          strChannelCallBackUrl = mystmt.getString("ChannelCallBackUrl")
+        }
+        catch{
+          case io: IOException =>
+            log_errors(strApifunction + " : " + io.getMessage + " - io exception error occured.")
+          case ex : Exception =>
+            log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured.")
+          case t: Throwable =>
+            log_errors(strApifunction + " : " + t.getMessage + " - t exception error occured.")
+        }
+      }
+
+    }catch {
+      case io: IOException =>
+        log_errors(strApifunction + " : " + io.getMessage + " - io exception error occured.")
+      case ex : Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured.")
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " - t exception error occured.")
+    }
+
+    strChannelCallBackUrl
+  }
+  def getOutgoingBulkCreditTransferChannelCallBackUrl(strMessageReference: String) : String = {
+    var strChannelCallBackUrl: String = ""
+    val strApifunction: String = "getOutgoingBulkCreditTransferChannelCallBackUrl"
+    val strSQL: String = "{ call dbo.GetOutgoingBulkCreditTransferChannelCallBackUrl(?,?) }"
+    try {
+      myDB.withConnection { implicit myconn =>
+        try{
+          val mystmt: CallableStatement = myconn.prepareCall(strSQL)
+          mystmt.registerOutParameter("ChannelCallBackUrl", java.sql.Types.VARCHAR)
+          mystmt.setString(1,strMessageReference)
+          mystmt.execute()
+          strChannelCallBackUrl = mystmt.getString("ChannelCallBackUrl")
+        }
+        catch{
+          case io: IOException =>
+            log_errors(strApifunction + " : " + io.getMessage + " - io exception error occured.")
+          case ex : Exception =>
+            log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured.")
+          case t: Throwable =>
+            log_errors(strApifunction + " : " + t.getMessage + " - t exception error occured.")
+        }
+      }
+
+    }catch {
+      case io: IOException =>
+        log_errors(strApifunction + " : " + io.getMessage + " - io exception error occured.")
+      case ex : Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured.")
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " - t exception error occured.")
+    }
+
+    strChannelCallBackUrl
   }
   def getServiceEsbApi(myServiceCode : Int) : Boolean = {
     var isServiceEsbApi : Boolean = false
