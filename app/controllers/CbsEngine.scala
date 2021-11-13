@@ -3931,19 +3931,19 @@ class CbsEngine @Inject()
                           //def sendLoginRequestEsbCbs(myID: java.math.BigDecimal, requestType: Int, accountNo: String, myDebitTransactionRequest: DebitTransactionRequest_EsbCbs, myRequestData: String, strApiURL: String, strApiURL2: String): Unit = {
                           val f = Future {
                             //DebitReversalTransaction
-						    val transactiontype: String = "KITSREV"
-						    val fromaccountnumber: String = debtoraccountinformationdebtoraccountidentification
-						    val toaccountnumber: String = ""
-						    val transactionAmt: BigDecimal = interbanksettlementamount
-						    val trace_num: String = paymentendtoendidentification
-						    val currency: String = "404"//default KES
-						    val externalRefNo: String = messageidentification
-						    val clientMobileNumber: String = ""
-						    val clientName: String = ""
-						    val username: String = ""
-						    val password: String = ""
-						    val retrievalref: String = ""
-						    val myDebitReversalTransactionRequest = DebitReversalTransactionRequest_EsbCbs(transactiontype, fromaccountnumber, toaccountnumber, transactionAmt, currency, externalRefNo, trace_num, clientMobileNumber, clientName, username, password, retrievalref)
+                            val transactiontype: String = "KITSREV"
+                            val fromaccountnumber: String = debtoraccountinformationdebtoraccountidentification
+                            val toaccountnumber: String = ""
+                            val transactionAmt: BigDecimal = interbanksettlementamount
+                            val trace_num: String = paymentendtoendidentification
+                            val currency: String = "404"//default KES
+                            val externalRefNo: String = messageidentification
+                            val clientMobileNumber: String = ""
+                            val clientName: String = ""
+                            val username: String = ""
+                            val password: String = ""
+                            val retrievalref: String = ""
+                            val myDebitReversalTransactionRequest = DebitReversalTransactionRequest_EsbCbs(transactiontype, fromaccountnumber, toaccountnumber, transactionAmt, currency, externalRefNo, trace_num, clientMobileNumber, clientName, username, password, retrievalref)
 							
                             val strApiURL: String = strOutgoingLoginUrlEsbCbs
                             val strApiURL2: String = strOutgoingDebitTransactionUrlEsbCbs
