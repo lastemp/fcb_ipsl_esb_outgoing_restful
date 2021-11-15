@@ -2573,6 +2573,9 @@ class CbsEngine @Inject()
     implicit val DebitReversalTransactionResponse_EsbCbsFormat = jsonFormat10(DebitReversalTransactionResponse_EsbCbs.apply)
   }
   
+  //DebitPosting
+  case class DebitPosting_Kafka(id: BigDecimal, requesttype: String, messagereference: String, debittransactionrequest: String, bulkpaymentinfo: String, credittransfer: String, channeltype: String, channelcallbackurl: String, debitreversaltransactionrequest: String)
+  
   //DebitReversal
   case class DebitReversalPosting_Kafka(id: BigDecimal, accountnumber: String, debitreversal: String)
   
@@ -3929,6 +3932,7 @@ class CbsEngine @Inject()
                           */
 						  
                           //def sendLoginRequestEsbCbs(myID: java.math.BigDecimal, requestType: Int, accountNo: String, myDebitTransactionRequest: DebitTransactionRequest_EsbCbs, myRequestData: String, strApiURL: String, strApiURL2: String): Unit = {
+						  /*	  
                           val f = Future {
                             //DebitReversalTransaction
                             val transactiontype: String = "KITSREV"
@@ -3955,7 +3959,59 @@ class CbsEngine @Inject()
                             val myRequestData: String = getSingleCreditTransferDetails(singleCreditTransferPaymentInfo)
 
                             sendLoginRequestEsbCbs(myID, requestType, strAccountNumber, strmessageReference, myDebitTransactionRequest, myBulkPaymentInfo, myRequestData, strApiURL, strApiURL2, strApiURL3, strChannelType, strChannelCallBackUrl, myDebitReversalTransactionRequest)
-                          }(myExecutionContext)  
+                          }(myExecutionContext)
+						  */
+
+						  try{
+							val f = Future {
+							  //DebitReversalTransaction
+                              val transactiontype: String = "KITSREV"
+                              val fromaccountnumber: String = debtoraccountinformationdebtoraccountidentification
+                              val toaccountnumber: String = ""
+                              val transactionAmt: BigDecimal = interbanksettlementamount
+                              val trace_num: String = paymentendtoendidentification
+                              val currency: String = "404"//default KES
+                              val externalRefNo: String = messageidentification
+                              val clientMobileNumber: String = ""
+                              val clientName: String = ""
+                              val username: String = ""
+                              val password: String = ""
+                              val retrievalref: String = ""
+                              val myDebitReversalTransactionRequest = DebitReversalTransactionRequest_EsbCbs(transactiontype, fromaccountnumber, toaccountnumber, transactionAmt, currency, externalRefNo, trace_num, clientMobileNumber, clientName, username, password, retrievalref)
+							  
+							  val myBulkPaymentInfo: Seq[BulkPaymentInfo] = null
+							  val myRequestData: String = getSingleCreditTransferDetails(singleCreditTransferPaymentInfo)
+							  
+							  val id: BigDecimal = myID
+							  var strRequestType: String = "accounttransfer"
+							  var strMessageReference: String = "" 
+							  var strDebitTransactionRequest: String = myDebitTransactionRequest.toString() 
+							  var strBulkPaymentInfo: String = myBulkPaymentInfo.toString() 
+							  var strCreditTransfer: String = myRequestData
+							  var strDebitReversalTransactionRequest: String = myDebitReversalTransactionRequest.toString()
+							  
+							  val debitTransactionRequest: String = new String(Base64.getEncoder().encode(strDebitTransactionRequest.getBytes(StandardCharsets.UTF_8)))
+							  val bulkPaymentInfo: String = new String(Base64.getEncoder().encode(strBulkPaymentInfo.getBytes(StandardCharsets.UTF_8)))
+							  val debitReversalTransactionRequest: String = new String(Base64.getEncoder().encode(strDebitReversalTransactionRequest.getBytes(StandardCharsets.UTF_8)))
+							  val debitPosting = DebitPosting_Kafka(id, strRequestType, strMessageReference, debitTransactionRequest, bulkPaymentInfo, strCreditTransfer, strChannelType, strChannelCallBackUrl, debitReversalTransactionRequest)
+							  
+							  implicit val DebitPosting_Kafka_Writes = Json.writes[DebitPosting_Kafka]
+							  
+							  val myJsonData = Json.toJson(debitPosting)
+							  val myData: String = myJsonData.toString()
+							  //We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
+							  sendDebitPostingRequestKafka(myData)
+							}(myExecutionContext)
+						  }
+						  catch{
+							case ex: Exception =>
+							  log_errors(strApifunction + " a : " + ex.getMessage())
+							case io: IOException =>
+							  log_errors(strApifunction + " b : " + io.getMessage())
+							case tr: Throwable =>
+							  log_errors(strApifunction + " c : " + tr.getMessage())
+						  }
+						  
                         }
                       }
                     }
@@ -5740,7 +5796,8 @@ class CbsEngine @Inject()
                           sendBulkCreditTransferRequestsIpsl(myBatchReference, myRespData, strOutgoingBulkCreditTransferUrlIpsl)
                         }(myExecutionContext)
                         */
-						  
+						
+					    /*
                         val f = Future {
                           //DebitReversalTransaction
 						  val transactiontype: String = "KITSREV"
@@ -5770,6 +5827,58 @@ class CbsEngine @Inject()
 						  val myID: BigDecimal = BigDecimal(myBatchReference.toString())
 						  sendLoginRequestEsbCbs(myID, requestType, strAccountNumber, strMessageReference, myDebitTransactionRequest, bulkCreditTransferPaymentInfo.paymentdata, myRequestData, strApiURL, strApiURL2, strApiURL3, strChannelType, strChannelCallBackUrl, myDebitReversalTransactionRequest)
                         }(myExecutionContext)
+						*/
+						
+						try{
+							val f = Future {
+							  //DebitReversalTransaction
+						      val transactiontype: String = "KITSREV"
+						      val fromaccountnumber: String = debtoraccountinformationdebtoraccountidentification
+						      val toaccountnumber: String = ""
+						      val transactionAmt: BigDecimal = totalinterbanksettlementamount
+						      val trace_num: String = myBatchReference.toString()
+							  val currency: String = "404"//default KES
+							  val externalRefNo: String = messageidentification
+							  val clientMobileNumber: String = ""
+							  val clientName: String = ""
+							  val username: String = ""
+							  val password: String = ""
+							  val retrievalref: String = ""
+							  val myDebitReversalTransactionRequest = DebitReversalTransactionRequest_EsbCbs(transactiontype, fromaccountnumber, toaccountnumber, transactionAmt, currency, externalRefNo, trace_num, clientMobileNumber, clientName, username, password, retrievalref)
+							  
+							  val myBulkPaymentInfo: Seq[BulkPaymentInfo] = null
+							  val myRequestData: String = getBulkCreditTransferDetails(bulkCreditTransferPaymentInfo)
+							  
+							  val id: BigDecimal = BigDecimal(myBatchReference.toString())
+							  var strRequestType: String = "accountbulktransfer"
+							  var strMessageReference: String = "" 
+							  var strDebitTransactionRequest: String = myDebitTransactionRequest.toString() 
+							  var strBulkPaymentInfo: String = bulkCreditTransferPaymentInfo.paymentdata.toString() 
+							  var strCreditTransfer: String = myRequestData
+							  var strDebitReversalTransactionRequest: String = myDebitReversalTransactionRequest.toString()
+							  
+							  val debitTransactionRequest: String = new String(Base64.getEncoder().encode(strDebitTransactionRequest.getBytes(StandardCharsets.UTF_8)))
+							  val bulkPaymentInfo: String = new String(Base64.getEncoder().encode(strBulkPaymentInfo.getBytes(StandardCharsets.UTF_8)))
+							  val debitReversalTransactionRequest: String = new String(Base64.getEncoder().encode(strDebitReversalTransactionRequest.getBytes(StandardCharsets.UTF_8)))
+							  val debitPosting = DebitPosting_Kafka(id, strRequestType, strMessageReference, debitTransactionRequest, bulkPaymentInfo, strCreditTransfer, strChannelType, strChannelCallBackUrl, debitReversalTransactionRequest)
+							  
+							  implicit val DebitPosting_Kafka_Writes = Json.writes[DebitPosting_Kafka]
+							  
+							  val myJsonData = Json.toJson(debitPosting)
+							  val myData: String = myJsonData.toString()
+							  //We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
+							  sendDebitPostingRequestKafka(myData)
+							}(myExecutionContext)
+						  }
+						  catch{
+							case ex: Exception =>
+							  log_errors(strApifunction + " a : " + ex.getMessage())
+							case io: IOException =>
+							  log_errors(strApifunction + " b : " + io.getMessage())
+							case tr: Throwable =>
+							  log_errors(strApifunction + " c : " + tr.getMessage())
+						  }
+						
                       }
                     }
                     catch {
@@ -18198,6 +18307,28 @@ class CbsEngine @Inject()
     val strApifunction: String = "sendEchannelsResponseKafka"
     try{
 	  val topic = "topic-echannelsresponse"
+	  //val key = "key"
+	  //The records with the same key will always end up in the same partition
+	  //If the key is null or unique, a producer will choose a partition in a round-robin fashion
+	  //Lets generate a unique key for each record
+	  val K: String = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
+	  val key = "key_" + K
+      val value = myRecordData
+	  val message = new ProducerRecord(topic, key, value)
+	  kafkaProducer.send(message)
+    }
+    catch
+    {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + "exception error occured.")
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + "t exception error occured.")
+    }
+  }
+  def sendDebitPostingRequestKafka(myRecordData: String) : Unit = {
+    val strApifunction: String = "sendDebitPostingRequestKafka"
+    try{
+	  val topic = "topic-debitposting"
 	  //val key = "key"
 	  //The records with the same key will always end up in the same partition
 	  //If the key is null or unique, a producer will choose a partition in a round-robin fashion
