@@ -3978,22 +3978,35 @@ class CbsEngine @Inject()
                               val password: String = ""
                               val retrievalref: String = ""
                               val myDebitReversalTransactionRequest = DebitReversalTransactionRequest_EsbCbs(transactiontype, fromaccountnumber, toaccountnumber, transactionAmt, currency, externalRefNo, trace_num, clientMobileNumber, clientName, username, password, retrievalref)
-							  
-							  val myBulkPaymentInfo: Seq[BulkPaymentInfo] = null
+							  //val myBulkPaymentInfo: Seq[BulkPaymentInfo] = null
 							  val myRequestData: String = getSingleCreditTransferDetails(singleCreditTransferPaymentInfo)
 							  
 							  val id: BigDecimal = myID
 							  var strRequestType: String = "accounttransfer"
 							  var strMessageReference: String = "" 
-							  var strDebitTransactionRequest: String = myDebitTransactionRequest.toString() 
-							  var strBulkPaymentInfo: String = myBulkPaymentInfo.toString() 
+							  var strDebitTransactionRequest: String = ""//myDebitTransactionRequest.toString() 
+							  //var strBulkPaymentInfo: String = myBulkPaymentInfo.toString() 
 							  var strCreditTransfer: String = myRequestData
-							  var strDebitReversalTransactionRequest: String = myDebitReversalTransactionRequest.toString()
+							  var strDebitReversalTransactionRequest: String = ""//myDebitReversalTransactionRequest.toString()
+							  
+							  implicit val DebitTransactionRequest_EsbCbs_Writes = Json.writes[DebitTransactionRequest_EsbCbs]
+
+                              //convert case class to json
+							  val myJsonDebitTransactionData = Json.toJson(myDebitTransactionRequest)
+							  strDebitTransactionRequest = myJsonDebitTransactionData.toString()
+							  
+							  implicit val DebitReversalTransactionRequest_EsbCbs_Writes = Json.writes[DebitReversalTransactionRequest_EsbCbs]
+
+							  //convert case class to json
+							  val myJsonDebitReversalTransactionData = Json.toJson(myDebitReversalTransactionRequest)
+							  strDebitReversalTransactionRequest = myJsonDebitReversalTransactionData.toString()
 							  
 							  val debitTransactionRequest: String = new String(Base64.getEncoder().encode(strDebitTransactionRequest.getBytes(StandardCharsets.UTF_8)))
-							  val bulkPaymentInfo: String = new String(Base64.getEncoder().encode(strBulkPaymentInfo.getBytes(StandardCharsets.UTF_8)))
+							  //val bulkPaymentInfo: String = new String(Base64.getEncoder().encode(strBulkPaymentInfo.getBytes(StandardCharsets.UTF_8)))
+							  val bulkPaymentInfo: String = ""
+							  val creditTransfer: String = new String(Base64.getEncoder().encode(strCreditTransfer.getBytes(StandardCharsets.UTF_8)))
 							  val debitReversalTransactionRequest: String = new String(Base64.getEncoder().encode(strDebitReversalTransactionRequest.getBytes(StandardCharsets.UTF_8)))
-							  val debitPosting = DebitPosting_Kafka(id, strRequestType, strMessageReference, debitTransactionRequest, bulkPaymentInfo, strCreditTransfer, strChannelType, strChannelCallBackUrl, debitReversalTransactionRequest)
+							  val debitPosting = DebitPosting_Kafka(id, strRequestType, strMessageReference, debitTransactionRequest, bulkPaymentInfo, creditTransfer, strChannelType, strChannelCallBackUrl, debitReversalTransactionRequest)
 							  
 							  implicit val DebitPosting_Kafka_Writes = Json.writes[DebitPosting_Kafka]
 							  
@@ -5846,21 +5859,34 @@ class CbsEngine @Inject()
 							  val retrievalref: String = ""
 							  val myDebitReversalTransactionRequest = DebitReversalTransactionRequest_EsbCbs(transactiontype, fromaccountnumber, toaccountnumber, transactionAmt, currency, externalRefNo, trace_num, clientMobileNumber, clientName, username, password, retrievalref)
 							  
-							  val myBulkPaymentInfo: Seq[BulkPaymentInfo] = null
+							  //val myBulkPaymentInfo: Seq[BulkPaymentInfo] = null
 							  val myRequestData: String = getBulkCreditTransferDetails(bulkCreditTransferPaymentInfo)
 							  
 							  val id: BigDecimal = BigDecimal(myBatchReference.toString())
 							  var strRequestType: String = "accountbulktransfer"
 							  var strMessageReference: String = "" 
-							  var strDebitTransactionRequest: String = myDebitTransactionRequest.toString() 
+							  var strDebitTransactionRequest: String = ""//myDebitTransactionRequest.toString() 
 							  var strBulkPaymentInfo: String = bulkCreditTransferPaymentInfo.paymentdata.toString() 
 							  var strCreditTransfer: String = myRequestData
-							  var strDebitReversalTransactionRequest: String = myDebitReversalTransactionRequest.toString()
+							  var strDebitReversalTransactionRequest: String = ""//myDebitReversalTransactionRequest.toString()
+							  
+							  implicit val DebitTransactionRequest_EsbCbs_Writes = Json.writes[DebitTransactionRequest_EsbCbs]
+
+                              //convert case class to json
+							  val myJsonDebitTransactionData = Json.toJson(myDebitTransactionRequest)
+							  strDebitTransactionRequest = myJsonDebitTransactionData.toString()
+							  
+							  implicit val DebitReversalTransactionRequest_EsbCbs_Writes = Json.writes[DebitReversalTransactionRequest_EsbCbs]
+
+							  //convert case class to json
+							  val myJsonDebitReversalTransactionData = Json.toJson(myDebitReversalTransactionRequest)
+							  strDebitReversalTransactionRequest = myJsonDebitReversalTransactionData.toString()
 							  
 							  val debitTransactionRequest: String = new String(Base64.getEncoder().encode(strDebitTransactionRequest.getBytes(StandardCharsets.UTF_8)))
 							  val bulkPaymentInfo: String = new String(Base64.getEncoder().encode(strBulkPaymentInfo.getBytes(StandardCharsets.UTF_8)))
+							  val creditTransfer: String = new String(Base64.getEncoder().encode(strCreditTransfer.getBytes(StandardCharsets.UTF_8)))
 							  val debitReversalTransactionRequest: String = new String(Base64.getEncoder().encode(strDebitReversalTransactionRequest.getBytes(StandardCharsets.UTF_8)))
-							  val debitPosting = DebitPosting_Kafka(id, strRequestType, strMessageReference, debitTransactionRequest, bulkPaymentInfo, strCreditTransfer, strChannelType, strChannelCallBackUrl, debitReversalTransactionRequest)
+							  val debitPosting = DebitPosting_Kafka(id, strRequestType, strMessageReference, debitTransactionRequest, bulkPaymentInfo, creditTransfer, strChannelType, strChannelCallBackUrl, debitReversalTransactionRequest)
 							  
 							  implicit val DebitPosting_Kafka_Writes = Json.writes[DebitPosting_Kafka]
 							  
