@@ -2507,6 +2507,7 @@ class CbsEngine @Inject()
   val transport_keystore_path: String =  getSettings("transportKeyStorePath")
   val cachain_cert_path: String =  getSettings("caChainCertPath")
   val transportKeyStorePwd: String =  getSettings("transportKeyStorePwd")
+  val clientContext = getClientConnectionContext()
   //
   val account_to_account: String =  getSettings("accountToAccountTxntype")//"A2A"
   val account_to_phone: String =  getSettings("accountToPhoneTxntype")//"A2P"
@@ -14063,7 +14064,7 @@ class CbsEngine @Inject()
           case tr: Throwable =>
             log_errors(strApifunction + " : " + tr.getMessage())
         }
-       
+       /*
         val strCertPath: String = transport_keystore_path//"certsconf/bank0074_transport.p12"
         val strCaChainCertPath: String = cachain_cert_path//"certsconf/ca_chain.crt.pem"
         val clientContext = {
@@ -14085,6 +14086,7 @@ class CbsEngine @Inject()
           context.init(keyManagerFactory.getKeyManagers, certManagerFactory.getTrustManagers, new SecureRandom)
           ConnectionContext.httpsClient(context)
         }
+        */
         
         myXmlData = myRequestData
         val data = HttpEntity(ContentType.WithCharset(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`), myXmlData)
@@ -15932,7 +15934,7 @@ class CbsEngine @Inject()
           case tr: Throwable =>
             log_errors(strApifunction + " : " + tr.getMessage())
         }
-
+        /*
         val strCertPath: String = transport_keystore_path
         val strCaChainCertPath: String = cachain_cert_path
         val clientContext = {
@@ -15954,17 +15956,18 @@ class CbsEngine @Inject()
           context.init(keyManagerFactory.getKeyManagers, certManagerFactory.getTrustManagers, new SecureRandom)
           ConnectionContext.httpsClient(context)
         }
+        */
  
         myXmlData = myRequestData
         val data = HttpEntity(ContentType.WithCharset(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`), myXmlData)
 
         val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data), connectionContext = clientContext)
         val myEntryID: Future[BigDecimal] = Future(myID)
-		val myMessageReference: Future[String] = Future(strMessageReference)
-		val myTransactionReference: Future[String] = Future(strTransactionReference)
-		val myChannelType: Future[String] = Future(strChannelType)
-		val myCallBackApiURL: Future[String] = Future(strCallBackApiURL)
-		val debitReversalTransactionRequestEsbCbs: Future[DebitReversalTransactionRequest_EsbCbs] = Future(myDebitReversalTransactionRequest)
+        val myMessageReference: Future[String] = Future(strMessageReference)
+        val myTransactionReference: Future[String] = Future(strTransactionReference)
+        val myChannelType: Future[String] = Future(strChannelType)
+        val myCallBackApiURL: Future[String] = Future(strCallBackApiURL)
+        val debitReversalTransactionRequestEsbCbs: Future[DebitReversalTransactionRequest_EsbCbs] = Future(myDebitReversalTransactionRequest)
 
         responseFuture
           .onComplete {
@@ -16353,7 +16356,7 @@ class CbsEngine @Inject()
           case tr: Throwable =>
             log_errors(strApifunction + " : " + tr.getMessage())
         }
-
+        /*
         val strCertPath: String = transport_keystore_path
         val strCaChainCertPath: String = cachain_cert_path
         val clientContext = {
@@ -16375,16 +16378,17 @@ class CbsEngine @Inject()
           context.init(keyManagerFactory.getKeyManagers, certManagerFactory.getTrustManagers, new SecureRandom)
           ConnectionContext.httpsClient(context)
         }
- 
+        */
+
         myXmlData = myRequestData
         val data = HttpEntity(ContentType.WithCharset(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`), myXmlData)
         val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data), connectionContext = clientContext)
         val myEntryID: Future[BigDecimal] = Future(myID)
         val myMessageReference: Future[String] = Future(strMessageReference)
         val myBulkPaymentInfo: Future[Seq[BulkPaymentInfo]] = Future(bulkPaymentInfo)
-		val myChannelType: Future[String] = Future(strChannelType)
-		val myCallBackApiURL: Future[String] = Future(strCallBackApiURL)
-		val debitReversalTransactionRequestEsbCbs: Future[DebitReversalTransactionRequest_EsbCbs] = Future(myDebitReversalTransactionRequest)
+        val myChannelType: Future[String] = Future(strChannelType)
+        val myCallBackApiURL: Future[String] = Future(strCallBackApiURL)
+        val debitReversalTransactionRequestEsbCbs: Future[DebitReversalTransactionRequest_EsbCbs] = Future(myDebitReversalTransactionRequest)
 
         responseFuture
           .onComplete {
@@ -16857,7 +16861,7 @@ class CbsEngine @Inject()
           case tr: Throwable =>
             log_errors(strApifunction + " : " + tr.getMessage())
         }
-
+        /*
         val strCertPath: String = transport_keystore_path
         val strCaChainCertPath: String = cachain_cert_path
         val clientContext = {
@@ -16879,19 +16883,11 @@ class CbsEngine @Inject()
           context.init(keyManagerFactory.getKeyManagers, certManagerFactory.getTrustManagers, new SecureRandom)
           ConnectionContext.httpsClient(context)
         }
-        //val data = HttpEntity(ContentType(MediaTypes.`application/json`), myjsonData)
-        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization", "bearer " + accessToken)))
-        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("username", strUserName),RawHeader("password", strPassWord)))
-        //***working*** val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(GET, uri = myuri).withHeaders(RawHeader("username", strUserName),RawHeader("password", strPassWord)))
-        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(GET, uri = myuri).withHeaders(RawHeader("username", "FundMasterApi"),RawHeader("password", "n6,e$=p8QK\\+c^h~")))
-        /* TESTS ONLY */
-        //val accessToken: String = "sassasasss"
+        */
+        
         myXmlData = myRequestData
         val data = HttpEntity(ContentType.WithCharset(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`), myXmlData)
-        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data).withHeaders(RawHeader("Authorization", "bearer " + accessToken)))
-        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data))
-        //val conctx = Http().createClientHttpsContext(Http().sslConfig)
-        //val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data), connectionContext = conctx)
+        
         val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data), connectionContext = clientContext)
         val myEntryID: Future[java.math.BigDecimal] = Future(myID)
         //var start_time_DB: String = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
@@ -17011,7 +17007,7 @@ class CbsEngine @Inject()
           case tr: Throwable =>
             log_errors(strApifunction + " : " + tr.getMessage())
         }
-
+        /*
         val strCertPath: String = transport_keystore_path
         val strCaChainCertPath: String = cachain_cert_path
         val clientContext = {
@@ -17033,6 +17029,7 @@ class CbsEngine @Inject()
           context.init(keyManagerFactory.getKeyManagers, certManagerFactory.getTrustManagers, new SecureRandom)
           ConnectionContext.httpsClient(context)
         }
+        */
 
         myXmlData = myRequestData
         val data = HttpEntity(ContentType.WithCharset(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`), myXmlData)
@@ -19278,6 +19275,42 @@ class CbsEngine @Inject()
       val keyStore: KeyStore = KeyStore.getInstance(keystore_type)
       keyStore.load(new FileInputStream(sender_keystore_path), senderKeyStorePwdCharArray)
       return keyStore
+    }catch {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured.")
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured.")
+    }
+
+    return null
+  }
+  def getClientConnectionContext() : akka.http.scaladsl.HttpsConnectionContext = {
+    val strApifunction: String = "getClientConnectionContext"
+    
+    try {
+        val strCertPath: String = transport_keystore_path//"certsconf/bank0074_transport.p12"
+        val strCaChainCertPath: String = cachain_cert_path//"certsconf/ca_chain.crt.pem"
+        val clientContext = {
+          val certStore = KeyStore.getInstance(keystore_type)//"PKCS12"
+          val myKeyStore: InputStream = getResourceStream(strCertPath)
+          val password: String = transportKeyStorePwd
+          val myPassword = password.toCharArray()
+          certStore.load(myKeyStore, myPassword)
+          // only do this if you want to accept a custom root CA. Understand what you are doing!
+          certStore.setCertificateEntry("ca", loadX509Certificate(strCaChainCertPath))
+
+          val certManagerFactory = TrustManagerFactory.getInstance("SunX509")
+          certManagerFactory.init(certStore)
+
+          val keyManagerFactory = KeyManagerFactory.getInstance("SunX509")
+          keyManagerFactory.init(certStore, myPassword)
+
+          val context = SSLContext.getInstance("TLS")//TLSv1.2, TLSv1.3
+          context.init(keyManagerFactory.getKeyManagers, certManagerFactory.getTrustManagers, new SecureRandom)
+          ConnectionContext.httpsClient(context)
+        }
+
+      return clientContext
     }catch {
       case ex: Exception =>
         log_errors(strApifunction + " : " + ex.getMessage + " exception error occured.")
