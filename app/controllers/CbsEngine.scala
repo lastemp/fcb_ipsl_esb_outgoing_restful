@@ -20046,6 +20046,8 @@ class CbsEngine @Inject()
 
     if (url == null) return validUrl
     if (url.length == 0) return validUrl
+    if (url.contains("_")) return validUrl
+    //url should not contain "_" underscore
     
     try{
       val urlRegex: String = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]"
