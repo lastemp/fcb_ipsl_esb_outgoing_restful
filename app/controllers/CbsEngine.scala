@@ -2489,12 +2489,12 @@ class CbsEngine @Inject()
   val localInstrumentCode: String = getSettings("localInstrumentCode")//"INST"
   val categoryPurpose: String = getSettings("categoryPurpose")//"IBNK"
 
-  val keystore_type: String =  getSettings("keyStoreType")//"PKCS12"
-  val encryptionAlgorithm: String =  getSettings("encryptionAlgorithm")//"RSA"
-  val messageHashAlgorithm: String =  getSettings("messageHashAlgorithm")//"SHA-256"
-  val sender_keystore_path: String =  getSettings("senderKeyStorePath")
-  val senderKeyPairName: String =  getSettings("senderKeyPairName")
-  val senderKeyStorePwd: String =  getSettings("senderKeyStorePwd")
+  val keystore_type: String = getSettings("keyStoreType")//"PKCS12"
+  val encryptionAlgorithm: String = getSettings("encryptionAlgorithm")//"RSA"
+  val messageHashAlgorithm: String = getSettings("messageHashAlgorithm")//"SHA-256"
+  val sender_keystore_path: String = getSettings("senderKeyStorePath")
+  val senderKeyPairName: String = getSettings("senderKeyPairName")
+  val senderKeyStorePwd: String = getSettings("senderKeyStorePwd")
   val senderKeyStorePwdCharArray = senderKeyStorePwd.toCharArray()
   val senderKeyStore: KeyStore = getSenderKeyStore()
   val privateKey: PrivateKey = getPrivateKey()
@@ -2504,16 +2504,18 @@ class CbsEngine @Inject()
   val receiverKeyStorePwd: String = getSettings("receiverKeyStorePwd")
   val receiverKeyStorePwdCharArray = receiverKeyStorePwd.toCharArray()
   //
-  val transport_keystore_path: String =  getSettings("transportKeyStorePath")
-  val cachain_cert_path: String =  getSettings("caChainCertPath")
-  val transportKeyStorePwd: String =  getSettings("transportKeyStorePwd")
+  val transport_keystore_path: String = getSettings("transportKeyStorePath")
+  val cachain_cert_path: String = getSettings("caChainCertPath")
+  //val transportKeyStorePwd: String = getSettings("transportKeyStorePwd")
+  val encodedTransportKeyStorePwd: String = getSettings("transportKeyStorePwd")
+  val transportKeyStorePwd: String = aesObj.decrypt(encodedTransportKeyStorePwd)
   val clientContext = getClientConnectionContext()
   //
-  val account_to_account: String =  getSettings("accountToAccountTxntype")//"A2A"
-  val account_to_phone: String =  getSettings("accountToPhoneTxntype")//"A2P"
-  val account_to_wallet: String =  getSettings("accountToWalletTxntype")//"A2P"
-  val reversalTxnType: String =  getSettings("reversalTxntype")//"KITSREV"
-  val localCurrencyCode: String =  getSettings("localcurrencycode")//"404"
+  val account_to_account: String = getSettings("accountToAccountTxntype")//"A2A"
+  val account_to_phone: String = getSettings("accountToPhoneTxntype")//"A2P"
+  val account_to_wallet: String = getSettings("accountToWalletTxntype")//"A2P"
+  val reversalTxnType: String = getSettings("reversalTxntype")//"KITSREV"
+  val localCurrencyCode: String = getSettings("localcurrencycode")//"404"
   //
   val publicKey: PublicKey = getPublicKey()
   val strOutgoingAccountVerificationUrlIpsl: String = getSettings("outgoingAccountVerificationUrlIpsl")

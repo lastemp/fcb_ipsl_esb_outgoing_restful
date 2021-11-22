@@ -70,8 +70,12 @@ class AES {
   }
   //def encrypt(input: String, key: SecretKey, iv: IvParameterSpec) : String = {
   def encrypt(input: String) : String = {
+	//var input should have its value as raw/plain text  
 	if (key == null) return ""
 	if (iv == null) return ""
+	if (input == null) return ""
+	if (input.replace(" ","").trim.length == 0) return ""
+	
     try {
        val cipher: Cipher = Cipher.getInstance(algorithm)
 	   cipher.init(Cipher.ENCRYPT_MODE, key, iv)
@@ -88,8 +92,12 @@ class AES {
   }
   //def decrypt(cipherText: String, key: SecretKey, iv: IvParameterSpec) : String = {
   def decrypt(cipherText: String) : String = {
+	//var cipherText should have its value in base64 format  
 	if (key == null) return ""
-	if (iv == null) return ""  
+	if (iv == null) return ""
+	if (cipherText == null) return ""
+	if (cipherText.replace(" ","").trim.length == 0) return ""
+	
     try {
        val cipher: Cipher = Cipher.getInstance(algorithm)
 	   cipher.init(Cipher.DECRYPT_MODE, key, iv)
@@ -106,20 +114,27 @@ class AES {
 	return ""
   }
   def isMatch(inputText: String, encodedEncryptedText: String) : Boolean = {
-	var isMatching: Boolean = false 
 	//inputText - raw/plain text
 	//encodedEncryptedText - this is encrypted text(generated using known key) that is base64 format
 	
-	if (inputText == null) return isMatching
-	if (encodedEncryptedText == null) return isMatching
-	if (inputText.length == 0) return isMatching
-	if (encodedEncryptedText.length == 0) return isMatching
+	if (inputText == null) return false
+	if (encodedEncryptedText == null) return false
+	if (inputText.replace(" ","").trim.length == 0) return false
+	if (encodedEncryptedText.replace(" ","").trim.length == 0) return false
 	
     try {
+	   var isMatching: Boolean = false		
+	   var isValidData: Boolean = false	
 	   val encodedInputText = encrypt(inputText)
 	   
-	   if (encodedInputText.equals(encodedEncryptedText)){
-		isMatching = true  
+	   if (encodedInputText != null){
+	     if (encodedInputText.replace(" ","").trim.length > 0){
+			 isValidData = true
+		 }   
+	   }
+	   
+	   if (isValidData){
+		isMatching = {encodedInputText.equals(encodedEncryptedText)}  
 	   }
 	   
 	   return isMatching
