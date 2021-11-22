@@ -2526,6 +2526,7 @@ class CbsEngine @Inject()
   val fac: XMLSignatureFactory = XMLSignatureFactory.getInstance("DOM")//private static final
   val C14N: String = "http://www.w3.org/TR/2001/REC-xml-c14n-20010315"
   
+  val aesObj = new AES
   val kafkaProducer = createKafkaProducer()
 
   def addSingleCreditTransferPaymentDetails = Action.async { request =>
@@ -6815,9 +6816,11 @@ class CbsEngine @Inject()
                         strPassword = strPassword.replace(" ","")//Remove spaces
 
                         isCredentialsFound = true
+						//Commented out on 22-11-2021: Emmanuel
+						
                         //Lets encrypt the password using base64
-                        val strEncryptedPassword: String = Base64.getEncoder.encodeToString(strPassword.getBytes)
-                        strPassword = strEncryptedPassword
+                        //val strEncryptedPassword: String = Base64.getEncoder.encodeToString(strPassword.getBytes)
+                        //strPassword = strEncryptedPassword
                       }
                     }
                   }
@@ -19887,9 +19890,10 @@ class CbsEngine @Inject()
       }  
     }
   }
-  def validateClientApi(strChannelType: String, strUserName: String, strPassword: String, strClientIP: String, myApifunction: String, strOrigin: String): ClientApiResponseDetails = {
+  def validateClientApi(strChannelType: String, strUserName: String, strPlainPassword: String, strClientIP: String, myApifunction: String, strOrigin: String): ClientApiResponseDetails = {
     val strApifunction: String = "validateClientApi"
     var myID: Int = 0
+	var strEncryptedPassword: String = ""
     var responseCode: Int = 1
     var responseMessage: String = "Error occured during processing, please try again."
 
@@ -19900,16 +19904,17 @@ class CbsEngine @Inject()
           val mystmt: CallableStatement = myconn.prepareCall(strSQL)
           mystmt.setString(1,strChannelType)
           mystmt.setString(2,strUserName)
-          mystmt.setString(3,strPassword)
-          mystmt.setString(4,strClientIP)
-          mystmt.setString(5,myApifunction)
-		  mystmt.setString(6,strOrigin)
+          mystmt.setString(3,strClientIP)
+          mystmt.setString(4,myApifunction)
+		  mystmt.setString(5,strOrigin)
 
           mystmt.registerOutParameter("myID", java.sql.Types.INTEGER)
+		  mystmt.registerOutParameter("myPassword", java.sql.Types.VARCHAR)
           mystmt.registerOutParameter("responseCode", java.sql.Types.INTEGER)
           mystmt.registerOutParameter("responseMessage", java.sql.Types.VARCHAR)
           mystmt.execute()
           val EntryId = mystmt.getInt("myID")
+		  strEncryptedPassword = mystmt.getString("myPassword")
           val respCode = mystmt.getInt("responseCode")
           responseMessage = mystmt.getString("responseMessage")
 
@@ -19933,6 +19938,28 @@ class CbsEngine @Inject()
         }
       }
     }catch {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured." + " clientip - " + strClientIP)
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " clientip - " + strClientIP)
+    }
+	
+	try{
+		if (myID > 0 && responseCode == 0 && strPlainPassword.trim.length > 0 && strEncryptedPassword.trim.length > 0){
+		  val isMatching = aesObj.isMatch(strPlainPassword, strEncryptedPassword)
+		  log_errors("myID - " + myID + " , isMatching - " + isMatching + " , strPlainPassword - " + strPlainPassword.length)
+		  if (!isMatching){
+			myID = 0  
+			responseCode = 1
+			responseMessage = "Unauthorised Access"
+		  }
+		}
+		else{
+			myID = 0  
+			responseCode = 1
+			responseMessage = "Unauthorised Access"
+		}
+	}catch {
       case ex: Exception =>
         log_errors(strApifunction + " : " + ex.getMessage + " exception error occured." + " clientip - " + strClientIP)
       case t: Throwable =>
