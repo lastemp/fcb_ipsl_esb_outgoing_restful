@@ -2494,14 +2494,16 @@ class CbsEngine @Inject()
   val messageHashAlgorithm: String = getSettings("messageHashAlgorithm")//"SHA-256"
   val sender_keystore_path: String = getSettings("senderKeyStorePath")
   val senderKeyPairName: String = getSettings("senderKeyPairName")
-  val senderKeyStorePwd: String = getSettings("senderKeyStorePwd")
+  val encodedSenderKeyStorePwd: String = getSettings("senderKeyStorePwd")
+  val senderKeyStorePwd: String = aesObj.decrypt(encodedSenderKeyStorePwd)
   val senderKeyStorePwdCharArray = senderKeyStorePwd.toCharArray()
   val senderKeyStore: KeyStore = getSenderKeyStore()
   val privateKey: PrivateKey = getPrivateKey()
 
   val receiver_keystore_path: String = getSettings("receiverKeyStorePath")
   val receiverKeyPairName: String = getSettings("receiverKeyPairName")
-  val receiverKeyStorePwd: String = getSettings("receiverKeyStorePwd")
+  val encodedReceiverKeyStorePwd: String = getSettings("receiverKeyStorePwd")
+  val receiverKeyStorePwd: String = aesObj.decrypt(encodedReceiverKeyStorePwd)
   val receiverKeyStorePwdCharArray = receiverKeyStorePwd.toCharArray()
   //
   val transport_keystore_path: String = getSettings("transportKeyStorePath")
