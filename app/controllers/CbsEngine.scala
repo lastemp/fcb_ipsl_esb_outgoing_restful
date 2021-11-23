@@ -2477,6 +2477,7 @@ class CbsEngine @Inject()
   val strNumbersOnlyRegex: String = "[0-9]+" //validate numbers only
   val strAlphaNumericRegex: String = "^[a-zA-Z0-9]*$" //"^[a-zA-Z0-9]*$"//validate alphanumeric
   val strAlphaNumericHyphenRegex: String = "^[a-zA-Z0-9-]*$" //validate alphanumeric and hyphen
+  val aesObj = new AES
   //
   val firstAgentIdentification: String = getSettings("assignerAgentCode")//"0074" //Request creator
   val assignerAgentIdentification: String = firstAgentIdentification //party that deliveres request to IPSL
@@ -2530,7 +2531,6 @@ class CbsEngine @Inject()
   val fac: XMLSignatureFactory = XMLSignatureFactory.getInstance("DOM")//private static final
   val C14N: String = "http://www.w3.org/TR/2001/REC-xml-c14n-20010315"
   
-  val aesObj = new AES
   val kafkaProducer = createKafkaProducer()
 
   def addSingleCreditTransferPaymentDetails = Action.async { request =>
@@ -6919,7 +6919,7 @@ class CbsEngine @Inject()
     val jsonResponse = Json.toJson(myAccessTokenDetailsResponse)
 
     try{
-      log_data(strApifunction + " : " + "response - " + jsonResponse.toString() + " , remoteAddress - " + strClientIP)
+      log_data(strApifunction + " : " + "response - " + jsonResponse.toString().length + " , remoteAddress - " + strClientIP)
     }
     catch{
       case ex: Exception =>
