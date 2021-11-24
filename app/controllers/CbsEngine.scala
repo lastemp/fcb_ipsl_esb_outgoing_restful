@@ -93,7 +93,7 @@ import org.apache.kafka.common.serialization.StringSerializer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.Producer
 import java.util.Properties
-
+/*
 trait MyExecutionContext extends ExecutionContext
 
 class MyExecutionContextImpl @Inject()(system: ActorSystem)
@@ -107,10 +107,11 @@ class MyExecutionContextModule extends AbstractModule {
 
   }
 }
-
+*/
 class CbsEngine @Inject()
  //(myExecutionContext: MyExecutionContext,cc: ControllerComponents, @NamedDatabase("ebusiness") myDB : Database, @NamedDatabase("cbsdb") myCbsDB : Database)
-(myExecutionContext: MyExecutionContext,cc: ControllerComponents, @NamedDatabase("ebusiness") myDB : Database)
+ //(myExecutionContext: MyExecutionContext,cc: ControllerComponents, @NamedDatabase("ebusiness") myDB : Database)
+(implicit myExecutionContext: ExecutionContext, cc: ControllerComponents, @NamedDatabase("ebusiness") myDB : Database)
   extends AbstractController(cc) {
 
   //case class PolicyDetails_Request(custnum : Int, dataformattype: Option[Int])
@@ -2455,8 +2456,12 @@ class CbsEngine @Inject()
   implicit val system = ActorSystem("CbsEngine")
   implicit val materializer = ActorMaterializer()
 
-  implicit val blockingDispatcher = system.dispatchers.lookup("my-dispatcher")
+  //implicit val blockingDispatcher = system.dispatchers.lookup("my-dispatcher")
   //implicit val timeout = Timeout(15 seconds)
+  //we are creating diff threadpools to be used in specific operations
+  val myExecutionContextFileWrite: ExecutionContext = system.dispatchers.lookup("file-write-io-operations-dispatcher")
+  val myExecutionContextDatabaseInsertupdate: ExecutionContext = system.dispatchers.lookup("database-insertupdate-io-operations-dispatcher")
+  val myExecutionContextKafkaSend: ExecutionContext = system.dispatchers.lookup("kafka-send-operations-dispatcher")
 
   val myCodeESBmemberDetails: Int = 1
   val myCodeESBbeneficiaryDetails: Int = 2
@@ -2468,8 +2473,20 @@ class CbsEngine @Inject()
 
   val strApplication_path : String = System.getProperty("user.dir")
   var strFileDate  = new SimpleDateFormat("dd-MM-yyyy").format(new java.util.Date)
+  var strFile_separator: String = "\\"
+  if (strApplication_path != null){
+    if (strApplication_path.trim.length > 0){
+      if (strApplication_path.contains("/") == true) {
+        strFile_separator = "//"
+      }
+    }
+  }
+  /*
   val strpath_file: String = strApplication_path + "\\Logs\\" + strFileDate + "\\Logs.txt"
   val strpath_file2: String = strApplication_path + "\\Logs\\" + strFileDate + "\\Errors.txt"
+  */
+  val strpath_file: String = strApplication_path + strFile_separator + "Logs" + strFile_separator + strFileDate + strFile_separator + "Logs.txt"
+  val strpath_file2: String = strApplication_path + strFile_separator + "Logs" + strFile_separator + strFileDate + strFile_separator + "Errors.txt"
   var is_Successful: Boolean = create_Folderpaths(strApplication_path)
   var writer_data = new PrintWriter(new BufferedWriter(new FileWriter(strpath_file,true)))
   var writer_errors = new PrintWriter(new BufferedWriter(new FileWriter(strpath_file2,true)))
@@ -3858,7 +3875,7 @@ class CbsEngine @Inject()
                               val myData: String = myJsonData.toString()
                               //We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
                               sendDebitPostingRequestKafka(myData)
-                            }(myExecutionContext)
+                            }(myExecutionContextKafkaSend)
                           }
                           catch{
                             case ex: Exception =>
@@ -5648,7 +5665,7 @@ class CbsEngine @Inject()
                             val myData: String = myJsonData.toString()
                             //We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
                             sendDebitPostingRequestKafka(myData)
-                          }(myExecutionContext)
+                          }(myExecutionContextKafkaSend)
                         }
                         catch{
                           case ex: Exception =>
@@ -6820,7 +6837,7 @@ class CbsEngine @Inject()
                         strPassword = strPassword.replace(" ","")//Remove spaces
 
                         isCredentialsFound = true
-						//Commented out on 22-11-2021: Emmanuel
+						            //Commented out on 22-11-2021: Emmanuel
 						
                         //Lets encrypt the password using base64
                         //val strEncryptedPassword: String = Base64.getEncoder.encodeToString(strPassword.getBytes)
@@ -7575,11 +7592,11 @@ class CbsEngine @Inject()
       catch
 	  {
 	    case ex: Exception =>
-		  responseMessage = "Error occured during processing, please try again."
-		  log_errors(strApifunction + " : " + ex.getMessage())
+        responseMessage = "Error occured during processing, please try again."
+        log_errors(strApifunction + " : " + ex.getMessage())
 	   case tr: Throwable =>
-		  responseMessage = "Error occured during processing, please try again."
-		  log_errors(strApifunction + " : " + tr.getMessage())
+        responseMessage = "Error occured during processing, please try again."
+        log_errors(strApifunction + " : " + tr.getMessage())
 	  }
       
     implicit val  AccountVerificationDetailsResponse_Writes = Json.writes[AccountVerificationDetailsResponse]
@@ -12174,7 +12191,7 @@ class CbsEngine @Inject()
       val myBulkPaymentInfo: Future[Seq[BulkPaymentInfo]] = Future(bulkPaymentInfo)
       val myChannelType: Future[String] = Future(strChannelType)
       val myCallBackApiURL: Future[String] = Future(strCallBackApiURL)
-	  val debitReversalTransactionRequestEsbCbs: Future[DebitReversalTransactionRequest_EsbCbs] = Future(myDebitReversalTransactionRequest)
+	    val debitReversalTransactionRequestEsbCbs: Future[DebitReversalTransactionRequest_EsbCbs] = Future(myDebitReversalTransactionRequest)
       //val myHttpResponse = Await.result(responseFuture, timeout.duration)
       //
       val entityFut: Future[Login_EsbCbs] =
@@ -12190,7 +12207,7 @@ class CbsEngine @Inject()
           //var myAccountVerificationRequestIpsl: AccountVerification = null
           //var mySingleCreditTransferRequestIpsl: SingleCreditTransfer = null
           var myDebitTransactionRequest: DebitTransactionRequest_EsbCbs = DebitTransactionRequest_EsbCbs("", "", "", 0, "", "", "", "", "", "")
-		  var myDebitReversalTransactionRequest = DebitReversalTransactionRequest_EsbCbs("", "", "", 0, "", "", "", "", "", "", "", "")
+		      var myDebitReversalTransactionRequest = DebitReversalTransactionRequest_EsbCbs("", "", "", 0, "", "", "", "", "", "", "", "")
           var strChannelType: String = ""
           var strCallBackApiURL: String = ""
 
@@ -12282,7 +12299,7 @@ class CbsEngine @Inject()
             }
           }
 		  
-		  if (debitReversalTransactionRequestEsbCbs.value.isEmpty != true){
+		      if (debitReversalTransactionRequestEsbCbs.value.isEmpty != true){
             if (debitReversalTransactionRequestEsbCbs.value.get != None){
               val myVal = debitReversalTransactionRequestEsbCbs.value.get
               if (myVal.get != None){
@@ -12331,7 +12348,7 @@ class CbsEngine @Inject()
               sendOutgoingCreditTransferRequestEsbCbs(myID, strToken, myDebitTransactionRequest, myRequestData, strApiURL2, strApiURL3, strChannelType, strCallBackApiURL, myDebitReversalTransactionRequest)
             }
             else if (requestType == 2){//Bulk CreditTransaction
-				var bulkPaymentInfo: Seq[BulkPaymentInfo] = null
+				        var bulkPaymentInfo: Seq[BulkPaymentInfo] = null
                 var strMessageReference: String = ""
 
                 if (myMessageReference.value.isEmpty != true) {
@@ -12392,7 +12409,7 @@ class CbsEngine @Inject()
 						val myData: String = myJsonData.toString()
 						//We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
 						sendEchannelsResponseKafka(myData)
-					}(myExecutionContext)
+					}(myExecutionContextKafkaSend)
 				}
 				catch{
 					case ex: Exception =>
@@ -12461,7 +12478,7 @@ class CbsEngine @Inject()
 						val myData: String = myJsonData.toString()
 						//We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
 						sendEchannelsResponseKafka(myData)
-					}(myExecutionContext)
+					}(myExecutionContextKafkaSend)
 				}
 				catch{
 					case ex: Exception =>
@@ -12590,7 +12607,7 @@ class CbsEngine @Inject()
 						val myData: String = myJsonData.toString()
 						//We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
 						sendEchannelsResponseKafka(myData)
-					}(myExecutionContext)
+					}(myExecutionContextKafkaSend)
 				}
 				catch{
 					case ex: Exception =>
@@ -12659,7 +12676,7 @@ class CbsEngine @Inject()
 						val myData: String = myJsonData.toString()
 						//We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
 						sendEchannelsResponseKafka(myData)
-					}(myExecutionContext)
+					}(myExecutionContextKafkaSend)
 				}
 				catch{
 					case ex: Exception =>
@@ -13199,7 +13216,7 @@ class CbsEngine @Inject()
 						val myData: String = myJsonData.toString()
 						//We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
 						sendEchannelsResponseKafka(myData)
-					}(myExecutionContext)
+					}(myExecutionContextKafkaSend)
 				}
 				catch{
 					case ex: Exception =>
@@ -13322,7 +13339,7 @@ class CbsEngine @Inject()
 						val myData: String = myJsonData.toString()
 						//We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
 						sendEchannelsResponseKafka(myData)
-					}(myExecutionContext)
+					}(myExecutionContextKafkaSend)
 				}
 				catch{
 					case ex: Exception =>
@@ -13907,7 +13924,7 @@ class CbsEngine @Inject()
 						val myData: String = myJsonData.toString()
 						//We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
 						sendEchannelsResponseKafka(myData)
-					}(myExecutionContext)  
+					}(myExecutionContextKafkaSend)  
 			  }
 			}
 			catch{
@@ -14008,7 +14025,7 @@ class CbsEngine @Inject()
 					val myData: String = myJsonData.toString()
 					//We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
 					sendEchannelsResponseKafka(myData)
-				}(myExecutionContext)
+				}(myExecutionContextKafkaSend)
 			}
 			catch{
 				case ex: Exception =>
@@ -14308,7 +14325,7 @@ class CbsEngine @Inject()
                           val myData: String = myJsonData.toString()
                           //We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
                           sendEchannelsResponseKafka(myData)
-                        }(myExecutionContext)
+                        }(myExecutionContextKafkaSend)
                       }
                       catch{
                         case ex: Exception =>
@@ -14447,7 +14464,7 @@ class CbsEngine @Inject()
                     val myData: String = myJsonData.toString()
                     //We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
                     sendEchannelsResponseKafka(myData)
-                  }(myExecutionContext)
+                  }(myExecutionContextKafkaSend)
                 }
                 catch{
                   case ex: Exception =>
@@ -14568,7 +14585,7 @@ class CbsEngine @Inject()
                     val myData: String = myJsonData.toString()
                     //We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
                     sendEchannelsResponseKafka(myData)
-                  }(myExecutionContext)
+                  }(myExecutionContextKafkaSend)
                 }
                 catch{
                   case ex: Exception =>
@@ -16149,7 +16166,7 @@ class CbsEngine @Inject()
 							val myData: String = myJsonData.toString()
 							//We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
 							sendEchannelsResponseKafka(myData)
-						}(myExecutionContext) 
+						}(myExecutionContextKafkaSend) 
 					}
 					catch{
 						case ex: Exception =>
@@ -16275,7 +16292,7 @@ class CbsEngine @Inject()
 						val myData: String = myJsonData.toString()
 						//We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
 						sendDebitReversalPostingRequestKafka(myData)
-					}(myExecutionContext)
+					}(myExecutionContextKafkaSend)
 				}
 				catch{
 					case ex: Exception =>
@@ -16310,7 +16327,7 @@ class CbsEngine @Inject()
 						val myData: String = myJsonData.toString()
 						//We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
 						sendEchannelsResponseKafka(myData)
-					}(myExecutionContext)  
+					}(myExecutionContextKafkaSend)  
 				}
 				catch{
 					case ex: Exception =>
@@ -16565,26 +16582,26 @@ class CbsEngine @Inject()
 					
 					//Send response to echannels where the request failed to be sent to IPSL
                     try{
-						val bulkCreditTransferPaymentInformation = getBulkCreditTransferDetailsResponse_eChannels(strMessageReference, bulkPaymentInfo, mystatuscode, strstatusdescription)
-						val f = Future {
-							val responseType: String = "accountbulktransfer"
-							
-							implicit val BulkCreditTransferDetailsResponse_Batch_eChannels_Writes = Json.writes[BulkCreditTransferDetailsResponse_Batch_eChannels]
-							implicit val BulkCreditTransferDetailsResponse_BatchData_eChannels_Writes = Json.writes[BulkCreditTransferDetailsResponse_BatchData_eChannels]
+                      val bulkCreditTransferPaymentInformation = getBulkCreditTransferDetailsResponse_eChannels(strMessageReference, bulkPaymentInfo, mystatuscode, strstatusdescription)
+                      val f = Future {
+                        val responseType: String = "accountbulktransfer"
+                        
+                        implicit val BulkCreditTransferDetailsResponse_Batch_eChannels_Writes = Json.writes[BulkCreditTransferDetailsResponse_Batch_eChannels]
+                        implicit val BulkCreditTransferDetailsResponse_BatchData_eChannels_Writes = Json.writes[BulkCreditTransferDetailsResponse_BatchData_eChannels]
 
-							val myJsonBulkCreditTransferData = Json.toJson(bulkCreditTransferPaymentInformation)
-							val myBulkCreditTransferData: String = myJsonBulkCreditTransferData.toString()
+                        val myJsonBulkCreditTransferData = Json.toJson(bulkCreditTransferPaymentInformation)
+                        val myBulkCreditTransferData: String = myJsonBulkCreditTransferData.toString()
 
-							val responseMessage: String = new String(Base64.getEncoder().encode(myBulkCreditTransferData.getBytes(StandardCharsets.UTF_8)))
-							val echannelsResponse = EchannelsResponse_Kafka(myID, responseType, responseMessage, strChannelType, strCallBackApiURL)
+                        val responseMessage: String = new String(Base64.getEncoder().encode(myBulkCreditTransferData.getBytes(StandardCharsets.UTF_8)))
+                        val echannelsResponse = EchannelsResponse_Kafka(myID, responseType, responseMessage, strChannelType, strCallBackApiURL)
 
-							implicit val EchannelsResponse_Kafka_Writes = Json.writes[EchannelsResponse_Kafka]
+                        implicit val EchannelsResponse_Kafka_Writes = Json.writes[EchannelsResponse_Kafka]
 
-							val myJsonData = Json.toJson(echannelsResponse)
-							val myData: String = myJsonData.toString()
-							//We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
-							sendEchannelsResponseKafka(myData)
-						}(myExecutionContext)
+                        val myJsonData = Json.toJson(echannelsResponse)
+                        val myData: String = myJsonData.toString()
+                        //We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
+                        sendEchannelsResponseKafka(myData)
+                    }(myExecutionContextKafkaSend)
 				    }
 					catch{
 						case ex: Exception =>
@@ -16724,7 +16741,7 @@ class CbsEngine @Inject()
 						val myData: String = myJsonData.toString()
 						//We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
 						sendDebitReversalPostingRequestKafka(myData)
-					}(myExecutionContext)
+					}(myExecutionContextKafkaSend)
 				}
 				catch{
 					case ex: Exception =>
@@ -16738,26 +16755,26 @@ class CbsEngine @Inject()
 					
                 //Send response to echannels where the request failed to be sent to IPSL
                 try{
-					val bulkCreditTransferPaymentInformation = getBulkCreditTransferDetailsResponse_eChannels(strMessageReference, bulkPaymentInfo, mystatuscode, strstatusdescription)
-					val f = Future {
-						val responseType: String = "accountbulktransfer"
-						
-						implicit val BulkCreditTransferDetailsResponse_Batch_eChannels_Writes = Json.writes[BulkCreditTransferDetailsResponse_Batch_eChannels]
-						implicit val BulkCreditTransferDetailsResponse_BatchData_eChannels_Writes = Json.writes[BulkCreditTransferDetailsResponse_BatchData_eChannels]
+                  val bulkCreditTransferPaymentInformation = getBulkCreditTransferDetailsResponse_eChannels(strMessageReference, bulkPaymentInfo, mystatuscode, strstatusdescription)
+                  val f = Future {
+                    val responseType: String = "accountbulktransfer"
+                    
+                    implicit val BulkCreditTransferDetailsResponse_Batch_eChannels_Writes = Json.writes[BulkCreditTransferDetailsResponse_Batch_eChannels]
+                    implicit val BulkCreditTransferDetailsResponse_BatchData_eChannels_Writes = Json.writes[BulkCreditTransferDetailsResponse_BatchData_eChannels]
 
-						val myJsonBulkCreditTransferData = Json.toJson(bulkCreditTransferPaymentInformation)
-						val myBulkCreditTransferData: String = myJsonBulkCreditTransferData.toString()
+                    val myJsonBulkCreditTransferData = Json.toJson(bulkCreditTransferPaymentInformation)
+                    val myBulkCreditTransferData: String = myJsonBulkCreditTransferData.toString()
 
-						val responseMessage: String = new String(Base64.getEncoder().encode(myBulkCreditTransferData.getBytes(StandardCharsets.UTF_8)))
-						val echannelsResponse = EchannelsResponse_Kafka(myID, responseType, responseMessage, strChannelType, strCallBackApiURL)
+                    val responseMessage: String = new String(Base64.getEncoder().encode(myBulkCreditTransferData.getBytes(StandardCharsets.UTF_8)))
+                    val echannelsResponse = EchannelsResponse_Kafka(myID, responseType, responseMessage, strChannelType, strCallBackApiURL)
 
-						implicit val EchannelsResponse_Kafka_Writes = Json.writes[EchannelsResponse_Kafka]
+                    implicit val EchannelsResponse_Kafka_Writes = Json.writes[EchannelsResponse_Kafka]
 
-						val myJsonData = Json.toJson(echannelsResponse)
-						val myData: String = myJsonData.toString()
-						//We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
-						sendEchannelsResponseKafka(myData)
-					}(myExecutionContext)
+                    val myJsonData = Json.toJson(echannelsResponse)
+                    val myData: String = myJsonData.toString()
+                    //We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
+                    sendEchannelsResponseKafka(myData)
+                }(myExecutionContextKafkaSend)
 				
 			    }
 				catch{
@@ -16989,9 +17006,9 @@ class CbsEngine @Inject()
     
     val myuri: Uri = strApiURL
 
-    var isValidData : Boolean = false
-    var isSuccessful : Boolean = false
-    var myXmlData : String = ""
+    var isValidData: Boolean = false
+    var isSuccessful: Boolean = false
+    var myXmlData: String = ""
 
     try {
       isValidData = true//TESTS ONLY
@@ -17043,8 +17060,8 @@ class CbsEngine @Inject()
         val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data), connectionContext = clientContext)
         val myEntryID: Future[java.math.BigDecimal] = Future(myID)
         val myMessageReference: Future[String] = Future(strMessageReference)
-		val myTransactionReference: Future[String] = Future(strTransactionReference)
-		val myChannelType: Future[String] = Future(strChannelType)
+		    val myTransactionReference: Future[String] = Future(strTransactionReference)
+		    val myChannelType: Future[String] = Future(strChannelType)
 
         responseFuture
           .onComplete {
@@ -17055,58 +17072,70 @@ class CbsEngine @Inject()
               var mystatuscode: Int = 1
               var strStatusMessage: String = "Failed processing"
               var strResponseData: String = ""
-			  var isValidResponse: Boolean = false
+			        var isValidResponse: Boolean = false
 			  
 			  try{
 				  if (res != null) {
-					if (res.status.intValue() == 202) {
-					  isValidResponse = true
-					  
-					  val myData = res.entity
-					  if (myData != null){
-						val x = myData.asInstanceOf[HttpEntity.Strict].getData().decodeString(StandardCharsets.UTF_8)
-						strResponseData = x.toString
-						//println("res.entity x - " + x.toString)
-						//println("mySingleCreditTransfer - " + x.toString)
-					  }
-					  mystatuscode = 0
-					  strStatusMessage = "successful"
-					}
-					else {
-					  //Lets log the status code returned by CBS webservice
-					  strStatusMessage = "Failed processing"
-					}
+            if (res.status.intValue() == 202) {
+              try {
+                isValidResponse = true
+                
+                val myData = res.entity
+                if (myData != null){
+                  val x = myData.asInstanceOf[HttpEntity.Strict].getData().decodeString(StandardCharsets.UTF_8)
+                  strResponseData = x.toString
+                }
+                mystatuscode = 0
+                strStatusMessage = "successful"
+              }
+              catch{
+                case ex: Exception =>
+                  log_errors(strApifunction + " a : " + ex.getMessage())
+                case tr: Throwable =>
+                  log_errors(strApifunction + " c : " + tr.getMessage())
+              } 
+            }
+            else {
+              //Lets log the status code returned by CBS webservice
+              strStatusMessage = "Failed processing"
+            }
 
-					myHttpStatusCode = res.status.intValue()
+            try {
+              myHttpStatusCode = res.status.intValue()
 
-					if (myEntryID.value.isEmpty != true) {
-					  if (myEntryID.value.get != None) {
-						val myVal = myEntryID.value.get
-						if (myVal.get != None) {
-						  myID = myVal.get
-						}
-					  }
-					}
+              if (myEntryID.value.isEmpty != true) {
+                if (myEntryID.value.get != None) {
+                  val myVal = myEntryID.value.get
+                  if (myVal.get != None) {
+                    myID = myVal.get
+                  }
+                }
+              }
 
-					val strSQL: String = "update [dbo].[OutgoingPaymentStatusDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
-					", [StatusCode_IpslApi] = " + mystatuscode + ", [StatusMessage_IpslApi] = '" + strStatusMessage +
-					"', [ResponseMessage_IpslApi] = '" + strResponseData + 
-					"', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
-					insertUpdateRecord(strSQL)
+              val strSQL: String = "update [dbo].[OutgoingPaymentStatusDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
+              ", [StatusCode_IpslApi] = " + mystatuscode + ", [StatusMessage_IpslApi] = '" + strStatusMessage +
+              "', [ResponseMessage_IpslApi] = '" + strResponseData + 
+              "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
+              insertUpdateRecord(strSQL)
 
-					log_data(strApifunction + " : " + " channeltype - IPSL"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode)
+              log_data(strApifunction + " : " + " channeltype - IPSL"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode)
+            }
+            catch{
+              case ex: Exception =>
+                log_errors(strApifunction + " a : " + ex.getMessage())
+              case tr: Throwable =>
+                log_errors(strApifunction + " c : " + tr.getMessage())
+            }
 				  }
 				  else{
-					strStatusMessage = "Timeout at the Beneficary Bank"
+					  strStatusMessage = "Timeout at the Beneficary Bank"
 				  }
-		      }
+		    }
 			  catch{
-				case ex: Exception =>
-					log_errors(strApifunction + " a : " + ex.getMessage())
-				case io: IOException =>
-					log_errors(strApifunction + " b : " + io.getMessage())
-				case tr: Throwable =>
-					log_errors(strApifunction + " c : " + tr.getMessage())
+          case ex: Exception =>
+            log_errors(strApifunction + " a : " + ex.getMessage())
+          case tr: Throwable =>
+            log_errors(strApifunction + " c : " + tr.getMessage())
 			  }
 			  
 			  try{
@@ -17122,28 +17151,28 @@ class CbsEngine @Inject()
 					try{
 						if (myMessageReference.value.isEmpty != true) {
 						  if (myMessageReference.value.get != None) {
-							val myVal = myMessageReference.value.get
-							if (myVal.get != None) {
-							  strMessageReference = myVal.get
-							}
+                val myVal = myMessageReference.value.get
+                if (myVal.get != None) {
+                  strMessageReference = myVal.get
+                }
 						  }
 						}
 						
 						if (myTransactionReference.value.isEmpty != true) {
 						  if (myTransactionReference.value.get != None) {
-							val myVal = myTransactionReference.value.get
-							if (myVal.get != None) {
-							  strTransactionReference = myVal.get
-							}
+                val myVal = myTransactionReference.value.get
+                if (myVal.get != None) {
+                  strTransactionReference = myVal.get
+                }
 						  }
 						}
 						
 						if (myChannelType.value.isEmpty != true) {
 						  if (myChannelType.value.get != None) {
-							val myVal = myChannelType.value.get
-							if (myVal.get != None) {
-							  strChannelType = myVal.get
-							}
+                val myVal = myChannelType.value.get
+                if (myVal.get != None) {
+                  strChannelType = myVal.get
+                }
 						  }
 						}
 						
@@ -17155,7 +17184,7 @@ class CbsEngine @Inject()
 						if (strCallBackApiURL.trim.length == 0){
 						   strCallBackApiURL = getOutgoingBulkCreditTransferChannelCallBackUrl(strMessageReference)
 						   if (strCallBackApiURL == null){
-							 strCallBackApiURL = ""
+							  strCallBackApiURL = ""
 						   }
 						}
 						
@@ -17198,7 +17227,7 @@ class CbsEngine @Inject()
 								val myData: String = myJsonData.toString()
 								//We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
 								sendEchannelsResponseKafka(myData)
-							}(myExecutionContext) 
+							}(myExecutionContextKafkaSend) 
 						}
 						catch{
 							case ex: Exception =>
@@ -17229,12 +17258,12 @@ class CbsEngine @Inject()
 
 			  try{
 				  if (myEntryID.value.isEmpty != true) {
-					if (myEntryID.value.get != None) {
-					  val myVal = myEntryID.value.get
-					  if (myVal.get != None) {
-						myID = myVal.get
-					  }
-					}
+            if (myEntryID.value.get != None) {
+              val myVal = myEntryID.value.get
+              if (myVal.get != None) {
+                myID = myVal.get
+              }
+            }
 				  }
 
 				  val strSQL: String = "update [dbo].[OutgoingPaymentStatusDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
@@ -17247,8 +17276,6 @@ class CbsEngine @Inject()
 			catch{
 				case ex: Exception =>
 					log_errors(strApifunction + " a : " + ex.getMessage())
-				case io: IOException =>
-					log_errors(strApifunction + " b : " + io.getMessage())
 				case tr: Throwable =>
 					log_errors(strApifunction + " c : " + tr.getMessage())
 			}
@@ -17339,7 +17366,7 @@ class CbsEngine @Inject()
 						val myData: String = myJsonData.toString()
 						//We'll now send the message to Kafka where it will be picked for processing by another service which is listening to incoming messages
 						sendEchannelsResponseKafka(myData)
-					}(myExecutionContext)  
+					}(myExecutionContextKafkaSend)  
 				}
 				catch{
 					case ex: Exception =>
@@ -18001,16 +18028,16 @@ class CbsEngine @Inject()
   def sendEchannelsResponseKafka(myRecordData: String) : Unit = {
     val strApifunction: String = "sendEchannelsResponseKafka"
     try{
-	  val topic = "topic-echannelsresponse"
-	  //val key = "key"
-	  //The records with the same key will always end up in the same partition
-	  //If the key is null or unique, a producer will choose a partition in a round-robin fashion
-	  //Lets generate a unique key for each record
-	  val K: String = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
-	  val key = "key_" + K
+      val topic = "topic-echannelsresponse"
+      //val key = "key"
+      //The records with the same key will always end up in the same partition
+      //If the key is null or unique, a producer will choose a partition in a round-robin fashion
+      //Lets generate a unique key for each record
+      val K: String = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
+      val key = "key_" + K
       val value = myRecordData
-	  val message = new ProducerRecord(topic, key, value)
-	  kafkaProducer.send(message)
+      val message = new ProducerRecord(topic, key, value)
+      kafkaProducer.send(message)
     }
     catch
     {
@@ -18023,16 +18050,16 @@ class CbsEngine @Inject()
   def sendDebitPostingRequestKafka(myRecordData: String) : Unit = {
     val strApifunction: String = "sendDebitPostingRequestKafka"
     try{
-	  val topic = "topic-debitposting"
-	  //val key = "key"
-	  //The records with the same key will always end up in the same partition
-	  //If the key is null or unique, a producer will choose a partition in a round-robin fashion
-	  //Lets generate a unique key for each record
-	  val K: String = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
-	  val key = "key_" + K
+      val topic = "topic-debitposting"
+      //val key = "key"
+      //The records with the same key will always end up in the same partition
+      //If the key is null or unique, a producer will choose a partition in a round-robin fashion
+      //Lets generate a unique key for each record
+      val K: String = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
+      val key = "key_" + K
       val value = myRecordData
-	  val message = new ProducerRecord(topic, key, value)
-	  kafkaProducer.send(message)
+      val message = new ProducerRecord(topic, key, value)
+      kafkaProducer.send(message)
     }
     catch
     {
@@ -18045,16 +18072,16 @@ class CbsEngine @Inject()
   def sendDebitReversalPostingRequestKafka(myRecordData: String) : Unit = {
     val strApifunction: String = "sendDebitReversalPostingRequestKafka"
     try{
-	  val topic = "topic-debitreversalposting"
-	  //val key = "key"
-	  //The records with the same key will always end up in the same partition
-	  //If the key is null or unique, a producer will choose a partition in a round-robin fashion
-	  //Lets generate a unique key for each record
-	  val K: String = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
-	  val key = "key_" + K
+      val topic = "topic-debitreversalposting"
+      //val key = "key"
+      //The records with the same key will always end up in the same partition
+      //If the key is null or unique, a producer will choose a partition in a round-robin fashion
+      //Lets generate a unique key for each record
+      val K: String = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
+      val key = "key_" + K
       val value = myRecordData
-	  val message = new ProducerRecord(topic, key, value)
-	  kafkaProducer.send(message)
+      val message = new ProducerRecord(topic, key, value)
+      kafkaProducer.send(message)
     }
     catch
     {
@@ -18068,14 +18095,14 @@ class CbsEngine @Inject()
 	val strApifunction: String = "createKafkaProducer"  
     try{
       // Zookeeper connection properties
-	  val properties: Properties  = new Properties()
-	  properties.put("bootstrap.servers", "localhost:9092")
-	  properties.put("acks", "all")
-	  properties.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
-	  properties.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
-	  val kafkaProducer: Producer[String,String]  = new KafkaProducer[String,String](properties)
-	  
-	  return kafkaProducer
+      val properties: Properties  = new Properties()
+      properties.put("bootstrap.servers", "localhost:9092")
+      properties.put("acks", "all")
+      properties.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+      properties.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+      val kafkaProducer: Producer[String,String]  = new KafkaProducer[String,String](properties)
+      
+      return kafkaProducer
 	}
 	catch {
 	  case ex: Exception =>
@@ -18085,6 +18112,7 @@ class CbsEngine @Inject()
 	}
 	  
 	null
+
   }
   def getOutgoingSingleCreditTransferChannelCallBackUrl(strMessageReference: String, strTransactionReference: String) : String = {
     var strChannelCallBackUrl: String = ""
@@ -19859,7 +19887,7 @@ class CbsEngine @Inject()
         case t: Throwable =>
           log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " clientip - " + strClientIP)
       }
-    }
+    }(myExecutionContextDatabaseInsertupdate) 
   }
   def insertUpdateRecord(strSQL: String): Unit = {
     Future {
@@ -19892,12 +19920,12 @@ class CbsEngine @Inject()
         case t: Throwable =>
           log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " strSQL - " + strSQL)
       }  
-    }
+    }(myExecutionContextDatabaseInsertupdate) 
   }
   def validateClientApi(strChannelType: String, strUserName: String, strPlainPassword: String, strClientIP: String, myApifunction: String, strOrigin: String): ClientApiResponseDetails = {
     val strApifunction: String = "validateClientApi"
     var myID: Int = 0
-	var strEncryptedPassword: String = ""
+	  var strEncryptedPassword: String = ""
     var responseCode: Int = 1
     var responseMessage: String = "Error occured during processing, please try again."
 
@@ -19910,15 +19938,15 @@ class CbsEngine @Inject()
           mystmt.setString(2,strUserName)
           mystmt.setString(3,strClientIP)
           mystmt.setString(4,myApifunction)
-		  mystmt.setString(5,strOrigin)
+		      mystmt.setString(5,strOrigin)
 
           mystmt.registerOutParameter("myID", java.sql.Types.INTEGER)
-		  mystmt.registerOutParameter("myPassword", java.sql.Types.VARCHAR)
+		      mystmt.registerOutParameter("myPassword", java.sql.Types.VARCHAR)
           mystmt.registerOutParameter("responseCode", java.sql.Types.INTEGER)
           mystmt.registerOutParameter("responseMessage", java.sql.Types.VARCHAR)
           mystmt.execute()
           val EntryId = mystmt.getInt("myID")
-		  strEncryptedPassword = mystmt.getString("myPassword")
+		      strEncryptedPassword = mystmt.getString("myPassword")
           val respCode = mystmt.getInt("responseCode")
           responseMessage = mystmt.getString("responseMessage")
 
@@ -20038,7 +20066,7 @@ class CbsEngine @Inject()
           mystmt.setString(2,strChannelType)
           mystmt.setString(3,strClientIP)
           mystmt.setString(4,myApifunction)
-		  mystmt.setString(5,strOrigin)
+		      mystmt.setString(5,strOrigin)
 
           mystmt.registerOutParameter("responseCode", java.sql.Types.INTEGER)
           mystmt.registerOutParameter("responseMessage", java.sql.Types.VARCHAR)
@@ -20322,7 +20350,7 @@ class CbsEngine @Inject()
   }
   def loadX509Certificate(resourceName: String): Certificate =
     CertificateFactory.getInstance("X.509").generateCertificate(getResourceStream(resourceName))
-  def log_data(mydetail : String) : Unit = {
+  def log_data(mydetail: String) : Unit = {
     Future {
       try{
         var strdetail = ""//println(new java.util.Date)
@@ -20364,9 +20392,9 @@ class CbsEngine @Inject()
           ex.printStackTrace()
         //strErrorMsg = ex.toString
       }  
-    }
+    }(myExecutionContextFileWrite)
   }
-  def log_errors(mydetail : String) : Unit = {
+  def log_errors(mydetail: String) : Unit = {
     Future {
       try{
         var strdetail = ""//println(new java.util.Date)
@@ -20402,12 +20430,16 @@ class CbsEngine @Inject()
           ex.printStackTrace()
         //strErrorMsg = ex.toString
       }
-    }
+    }(myExecutionContextFileWrite)
   }
   def create_Folderpaths(strApplication_path : String): Boolean = {
     var is_Successful : Boolean = false
+    /*
     var strpath_file : String = strApplication_path + "\\Logs"+ "\\Logs.txt"
     var strpath_file2 : String = strApplication_path + "\\Logs" + "\\Errors.txt"
+    */
+    var strpath_file: String = strApplication_path + strFile_separator + "Logs" + strFile_separator + "Logs.txt"
+	  var strpath_file2: String = strApplication_path + strFile_separator + "Logs" + strFile_separator + "Errors.txt"
     try{
       val str_Date  = new SimpleDateFormat("dd-MM-yyyy").format(new java.util.Date)
       var m : Int = 0
@@ -20416,10 +20448,10 @@ class CbsEngine @Inject()
       //if directory exists?
       //F:\my_Systems_2\Scala\Email\Doc\Logs.txt
       //we use "lastIndexOf" to remove "Logs.txt" get path as "F:\my_Systems_2\Scala\Email\Doc\"
-      m = strpath_file.lastIndexOf("\\")
+      m = strpath_file.lastIndexOf(strFile_separator)
       n = m + 1
       strFileName =  strpath_file.substring(n)
-      strpath_file = strpath_file.substring(0,m) + "\\" + str_Date
+      strpath_file = strpath_file.substring(0,m) + strFile_separator + str_Date
 
       if (!Files.exists(Paths.get(strpath_file))) {
         Files.createDirectories(Paths.get(strpath_file))
@@ -20428,16 +20460,16 @@ class CbsEngine @Inject()
       else {
         is_Successful = true
       }
-      strpath_file = strpath_file + "\\" + strFileName
+      strpath_file = strpath_file + strFile_separator + strFileName
       //F:\my_Systems_2\Scala\Email\Doc\Errors.txt
       //we use "lastIndexOf" to remove "Errors.txt" and get path as "F:\my_Systems_2\Scala\Email\Doc\"
       m = 0
       n = 0
       strFileName = ""
-      m = strpath_file2.lastIndexOf("\\")
+      m = strpath_file2.lastIndexOf(strFile_separator)
       n = m + 1
       strFileName =  strpath_file2.substring(n)
-      strpath_file2 = strpath_file2.substring(0,m) + "\\" + str_Date
+      strpath_file2 = strpath_file2.substring(0,m) + strFile_separator + str_Date
 
       if (!Files.exists(Paths.get(strpath_file2))) {
         Files.createDirectories(Paths.get(strpath_file2))
@@ -20446,7 +20478,7 @@ class CbsEngine @Inject()
       else {
         is_Successful = true
       }
-      strpath_file2 = strpath_file2 + "\\" + strFileName
+      strpath_file2 = strpath_file2 + strFile_separator + strFileName
 
       if (writer_data != null){
         writer_data = new PrintWriter(new BufferedWriter(new FileWriter(strpath_file,true)))
@@ -20465,6 +20497,6 @@ class CbsEngine @Inject()
       //ex.printStackTrace()
     }
     
-    return  is_Successful
+    is_Successful
   }
 }

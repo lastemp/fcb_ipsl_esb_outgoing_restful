@@ -44,7 +44,7 @@ import scala.util.control.Breaks
 import scala.util.control.Breaks.break
 import scala.util.{Failure, Success}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-
+/*
 trait MyExecutionContext2 extends ExecutionContext
 
 class MyExecutionContextImpl2 @Inject()(system: ActorSystem)
@@ -58,9 +58,11 @@ class MyExecutionContextModule2 extends AbstractModule {
 
   }
 }
+*/
 //, @NamedDatabase("cbsdb") myCbsDB : Database
+//(myExecutionContext: MyExecutionContext2,cc: ControllerComponents, @NamedDatabase("ebusiness") myDB : Database)
 class IpslEngine @Inject()
-(myExecutionContext: MyExecutionContext2,cc: ControllerComponents, @NamedDatabase("ebusiness") myDB : Database)
+(implicit myExecutionContext: ExecutionContext, cc: ControllerComponents, @NamedDatabase("ebusiness") myDB : Database)
   extends AbstractController(cc) {
 
   //case class MpesaTransactionStatus_Request(mobileno: String, transactioncode: String, amount: Float)
@@ -500,7 +502,7 @@ class IpslEngine @Inject()
   implicit val system = ActorSystem("IpslEngine")
   implicit val materializer = ActorMaterializer()
 
-  implicit val blockingDispatcher = system.dispatchers.lookup("my-dispatcher")
+  //implicit val blockingDispatcher = system.dispatchers.lookup("my-dispatcher")
   implicit val timeout = Timeout(15 seconds)
 
   val strApplication_path : String = System.getProperty("user.dir")
