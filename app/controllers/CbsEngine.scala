@@ -93,24 +93,8 @@ import org.apache.kafka.common.serialization.StringSerializer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.Producer
 import java.util.Properties
-/*
-trait MyExecutionContext extends ExecutionContext
 
-class MyExecutionContextImpl @Inject()(system: ActorSystem)
-  extends CustomExecutionContext(system, "my-dispatcher") with MyExecutionContext
-
-class MyExecutionContextModule extends AbstractModule {
-
-  override def configure(): Unit = {
-    bind(classOf[MyExecutionContext])
-      .to(classOf[MyExecutionContextImpl])
-
-  }
-}
-*/
 class CbsEngine @Inject()
- //(myExecutionContext: MyExecutionContext,cc: ControllerComponents, @NamedDatabase("ebusiness") myDB : Database, @NamedDatabase("cbsdb") myCbsDB : Database)
- //(myExecutionContext: MyExecutionContext,cc: ControllerComponents, @NamedDatabase("ebusiness") myDB : Database)
 (implicit myExecutionContext: ExecutionContext, cc: ControllerComponents, @NamedDatabase("ebusiness") myDB : Database)
   extends AbstractController(cc) {
 
@@ -233,6 +217,10 @@ class CbsEngine @Inject()
   //The request is initiated from ESB-CBS/Other CHannels
   case class AccountVerificationDetails_Request(transactionreference: Option[JsValue], accountnumber: Option[JsValue], schemename: Option[JsValue], bankcode: Option[JsValue])
   case class AccountVerificationDetails_BatchRequest(messagereference: Option[JsValue], accountdata: AccountVerificationDetails_Request)
+  //
+  case class RegisterCustomer_Request(account: Option[JsValue], defaultrecord: Option[JsValue], document: Option[JsValue], documentnumber: Option[JsValue], email: Option[JsValue], exp: Option[JsValue], msisdn: Option[JsValue], name: Option[JsValue], pan: Option[JsValue])
+  case class CustomerBankList_Request(msisdn: Option[JsValue], sortcode: Option[JsValue])
+  case class DeleteCustomer_Request(msisdn: Option[JsValue], account: Option[JsValue], sortcode: Option[JsValue])
   /*
   case class AccountVerificationDetailsResponse_Batch(transactionreference: String, accountnumber: String, accountname: String, bankcode: String)
   case class AccountVerificationDetailsResponse_BatchData(messagereference: String, statuscode: Int, statusdescription: String, accountdata: AccountVerificationDetailsResponse_Batch)
@@ -417,10 +405,78 @@ class CbsEngine @Inject()
     }
 
   }
-  //getCustomerBankList
-  class getCustomerBankList(val login: String, val password: String, val msisdn: String) {
+  //RegisterCustomer
+  class RegisterCustomer(val login: String, val password: String, val account: String, val defaultrecord: String, val document: String, val documentnumber: String, val email: String, val msisdn: String, val name: String, val lang: String, val sortcode: String) {
 
-    // (a) convert getCustomerBankList fields to XML
+    // (a) convert RegisterCustomer fields to XML
+    def toXml = {
+      val prettyPrinter = new scala.xml.PrettyPrinter(80, 4)//value 80 represents max length of "<Document>" header
+      val a = toXmlRequestInformation
+      val requestInfo: String = a.toString
+      
+      val b = {
+        "<Envelope xmlns=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+        "<Body>" +
+        "<registerCustomer xmlns=\"http://ws.lookupdb.mgw.cwt.ru/\">" +
+        requestInfo +
+        "</registerCustomer>" +
+        "</Body>" +
+        "</Envelope>"
+      }
+
+      val xmlData1: scala.xml.Node = scala.xml.XML.loadString(b)
+      val requestData: String = prettyPrinter.format(xmlData1)
+      
+      requestData
+    }
+    def toXmlRequestInformation = {
+        <req xmlns="">
+          <account>{account}</account>
+          <defaultRecord>{defaultrecord}</defaultRecord>
+          <document>{document}</document>
+          <documentNumber>{documentnumber}</documentNumber>
+          <email>{email}</email>
+          <exp></exp>
+          <lang>{lang}</lang>
+          <login>{login}</login>
+          <msisdn>{msisdn}</msisdn>
+          <name>{name}</name>
+          <pan></pan>
+          <password>{password}</password>
+          <sortCode>{sortcode}</sortCode>
+        </req>
+    }
+        
+    override def toString =
+      s"login: $login, password: $password, account: $account, defaultrecord: $defaultrecord, document: $document, documentnumber: $documentnumber, email: $email, msisdn: $msisdn, name: $name, lang: $lang, sortcode: $sortcode"
+  }
+
+  object RegisterCustomer {
+
+    // (b) convert XML to a RegisterCustomer
+    def fromXml(node: scala.xml.Node): RegisterCustomer = {
+      
+      val login: String = "" 
+      val password: String = ""
+      val account: String = ""
+      val defaultrecord: String = "" 
+      val document: String = ""
+      val documentnumber: String = "" 
+      val email: String = "" 
+      val msisdn: String = "" 
+      val name: String = "" 
+      val lang: String = ""
+      val sortcode: String = ""
+      
+      new RegisterCustomer(login, password, account, defaultrecord, document, documentnumber, email, msisdn, name, lang, sortcode)
+    }
+
+  }
+  //
+  //GetCustomerBankList
+  class GetCustomerBankList(val login: String, val password: String, val msisdn: String) {
+
+    // (a) convert GetCustomerBankList fields to XML
     def toXml = {
       val prettyPrinter = new scala.xml.PrettyPrinter(80, 4)//value 80 represents max length of "<Document>" header
       val a = toXmlBodyInformation
@@ -428,9 +484,9 @@ class CbsEngine @Inject()
       
       val b = {
         "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:ws=\"http://ws.lookupdb.mgw.cwt.ru/\">" +
-          "<soapenv:Header/>" +
-          bodyInfo +
-          "</soapenv:Envelope>"
+        "<soapenv:Header/>" +
+        bodyInfo +
+        "</soapenv:Envelope>"
       }
 
       val xmlData1: scala.xml.Node = scala.xml.XML.loadString(b)
@@ -454,31 +510,31 @@ class CbsEngine @Inject()
       s"login: $login, password: $password, msisdn: $msisdn"
   }
 
-  object getCustomerBankList {
+  object GetCustomerBankList {
 
-    // (b) convert XML to a getCustomerBankList
-    def fromXml(node: scala.xml.Node): getCustomerBankList = {
+    // (b) convert XML to a GetCustomerBankList
+    def fromXml(node: scala.xml.Node): GetCustomerBankList = {
       
       val login: String = ""
       val password: String = "" 
       val msisdn: String = ""
       
-      new getCustomerBankList(login, password, msisdn)
+      new GetCustomerBankList(login, password, msisdn)
     }
 
   }
-  //getCustomerBankListResponse
-  class getCustomerBankListResponse(val destinationName: String, val customerBankInformationBatch: Seq[CustomerBankInformation]) {
+  //GetCustomerBankListResponse
+  class GetCustomerBankListResponse(val destinationName: String, val customerBankInformationBatch: Seq[CustomerBankInformation]) {
         
     override def toString =
       s"destinationName: $destinationName, customerBankInformationBatch: $customerBankInformationBatch"
   }
 
-  object getCustomerBankListResponse {
+  object GetCustomerBankListResponse {
 
-    // (b) convert XML to a getCustomerBankListResponse
-    def fromXml(node: scala.xml.Node): getCustomerBankListResponse = {
-      val strApifunction: String = "getCustomerBankListResponse: fromXml"
+    // (b) convert XML to a GetCustomerBankListResponse
+    def fromXml(node: scala.xml.Node): GetCustomerBankListResponse = {
+      val strApifunction: String = "GetCustomerBankListResponse: fromXml"
       var destinationName: String = ""
 
       try {
@@ -492,59 +548,125 @@ class CbsEngine @Inject()
       }
 
       if (destinationName == null){destinationName = ""}
+      
+      if (destinationName.length > 0){
+        destinationName = destinationName.replace("'","")//Remove apostrophe
+        destinationName = destinationName.replace("  "," ")//Remove double spaces
+        destinationName = destinationName.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+        destinationName = destinationName.trim
+      }
 
       var customerBankInformationBatch = Seq[CustomerBankInformation]()
-      try{
-        (node \ "Body" \ "getCustomerBankListResponse" \ "return" \ "bankList" \ "bank").foreach { bankDetails =>
-          //customer Bank Information
 
-          var bankName: String = ""
-          var strDefaultAccount: String = ""
-          var isDefaultAccount: Boolean = false
-          var lookupBankName: String = ""
-          var sortCode: String = ""
+      if (destinationName.length > 0){
+        try{
+          (node \ "Body" \ "getCustomerBankListResponse" \ "return" \ "bankList" \ "bank").foreach { bankDetails =>
+            //customer Bank Information
 
-          try {
-            bankName = (bankDetails \ "bankName").text
-            strDefaultAccount = (bankDetails \ "def").text
-            isDefaultAccount = {
-              var isDefault: Boolean = false
-              if (strDefaultAccount != null){
-                if (strDefaultAccount.length > 0){
-                  if (strDefaultAccount.equalsIgnoreCase("true")){isDefault = true}
+            var bankName: String = ""
+            var strDefaultAccount: String = ""
+            var isDefaultAccount: Boolean = false
+            var lookupBankName: String = ""
+            var sortCode: String = ""
+
+            try {
+              bankName = (bankDetails \ "bankName").text
+              strDefaultAccount = (bankDetails \ "def").text
+              isDefaultAccount = {
+                var isDefault: Boolean = false
+                if (strDefaultAccount != null){
+                  if (strDefaultAccount.length > 0){
+                    if (strDefaultAccount.equalsIgnoreCase("true")){isDefault = true}
+                  }
                 }
+                isDefault
               }
-              isDefault
+              lookupBankName = (bankDetails \ "lookupBankName").text
+              sortCode = (bankDetails \ "sortCode").text
             }
-            lookupBankName = (bankDetails \ "lookupBankName").text
-            sortCode = (bankDetails \ "sortCode").text
-          }
-          catch{
-            case ex: Exception =>
-              log_errors(strApifunction + " a : " + ex.getMessage())
-            case tr: Throwable =>
-              log_errors(strApifunction + " c : " + tr.getMessage())
-          }
+            catch{
+              case ex: Exception =>
+                log_errors(strApifunction + " a : " + ex.getMessage())
+              case tr: Throwable =>
+                log_errors(strApifunction + " c : " + tr.getMessage())
+            }
 
-          if (bankName == null){bankName = ""}
-          if (lookupBankName == null){lookupBankName = ""}
-          if (sortCode == null){sortCode = ""}
-          
-          val customerBankInformation: CustomerBankInformation = CustomerBankInformation(bankName, isDefaultAccount,
-          lookupBankName, sortCode)
+            if (bankName == null){bankName = ""}
+            if (lookupBankName == null){lookupBankName = ""}
+            if (sortCode == null){sortCode = ""}
+            
+            if (sortCode.length > 0 && bankName.length > 0 && lookupBankName.length > 0){
+              val customerBankInformation: CustomerBankInformation = CustomerBankInformation(bankName, isDefaultAccount,
+              lookupBankName, sortCode)
 
-          customerBankInformationBatch = customerBankInformationBatch :+ customerBankInformation
+              customerBankInformationBatch = customerBankInformationBatch :+ customerBankInformation
+            }
+          }
+        }
+        catch
+        {
+          case ex: Exception =>
+            log_errors(strApifunction + " : " + ex.getMessage())
+          case tr: Throwable =>
+            log_errors(strApifunction + " : " + tr.getMessage())
         }
       }
-      catch
-      {
-        case ex: Exception =>
-          log_errors(strApifunction + " : " + ex.getMessage())
-        case tr: Throwable =>
-          log_errors(strApifunction + " : " + tr.getMessage())
+
+      new GetCustomerBankListResponse(destinationName, customerBankInformationBatch)
+    }
+
+  }
+  //
+  //DeleteCustomer
+  class DeleteCustomer(val login: String, val password: String, val msisdn: String, val account: String, val sortcode: String) {
+
+    // (a) convert DeleteCustomer fields to XML
+    def toXml = {
+      val prettyPrinter = new scala.xml.PrettyPrinter(80, 4)//value 80 represents max length of "<Document>" header
+      val a = toXmlRequestInformation
+      val requestInfo: String = a.toString
+      
+      val b = {
+        "<Envelope xmlns=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+        "<Body>" +
+        "<deleteCustomer xmlns=\"http://ws.lookupdb.mgw.cwt.ru/\">" +
+        requestInfo +
+        "</deleteCustomer>" +
+        "</Body>" +
+        "</Envelope>"
       }
 
-      new getCustomerBankListResponse(destinationName, customerBankInformationBatch)
+      val xmlData1: scala.xml.Node = scala.xml.XML.loadString(b)
+      val requestData: String = prettyPrinter.format(xmlData1)
+      
+      requestData
+    }
+    def toXmlRequestInformation = {
+        <req xmlns="">
+          <msisdn>{msisdn}</msisdn>
+          <account>{account}</account>
+          <login>{login}</login>
+          <password>{password}</password>
+          <sortCode>{sortcode}</sortCode>
+        </req>
+    }
+        
+    override def toString =
+      s"login: $login, password: $password, msisdn: $msisdn, account: $account, sortcode: $sortcode"
+  }
+
+  object DeleteCustomer {
+
+    // (b) convert XML to a DeleteCustomer
+    def fromXml(node: scala.xml.Node): DeleteCustomer = {
+      
+      val login: String = ""
+      val password: String = "" 
+      val msisdn: String = ""
+      val account: String = ""
+      val sortcode: String = ""
+      
+      new DeleteCustomer(login, password, msisdn, account, sortcode)
     }
 
   }
@@ -2592,8 +2714,6 @@ class CbsEngine @Inject()
   implicit val system = ActorSystem("CbsEngine")
   implicit val materializer = ActorMaterializer()
 
-  //implicit val blockingDispatcher = system.dispatchers.lookup("my-dispatcher")
-  //implicit val timeout = Timeout(15 seconds)
   //we are creating diff threadpools to be used in specific operations
   val myExecutionContextFileWrite: ExecutionContext = system.dispatchers.lookup("file-write-io-operations-dispatcher")
   val myExecutionContextDatabaseInsertupdate: ExecutionContext = system.dispatchers.lookup("database-insertupdate-io-operations-dispatcher")
@@ -7776,26 +7896,12 @@ class CbsEngine @Inject()
 
       if (isSendRequest){
         val accountVerificationDetails = AccountVerificationDetails(strMessageReference, creationDateTime, firstAgentIdentification, assignerAgentIdentification, assigneeAgentIdentification, strTransactionReference, strAccountNumber, schemeName, strBankCode)
-        /*
+        
         val f = Future {
           val myRespData: String = getAccountVerificationDetails(accountVerificationDetails, isAccSchemeName)
           sendAccountVerificationRequestsIpsl(myID, myRespData, strMessageReference, strTransactionReference, strOutgoingAccountVerificationUrlIpsl, strChannelType, strChannelCallBackUrl)
         }(myExecutionContext)
-        */
-        val f = Future {
-          if (isValidPhneSchemeName){//There are phonelookup requests
-            val login: String = "FCB"
-            val password: String = "123456" 
-            val msisdn: String = "254721553137"
-            val myRespData: String = getCustomerBankListDetails(login, password, msisdn)
-            sendPhoneVerificationRequestsIpsl(myID, msisdn, myRespData, strMessageReference, strTransactionReference, strOutgoingAccountVerificationUrlIpsl, strChannelType, strChannelCallBackUrl)
-          }
-          else{//There are account verification requests
-            val myRespData: String = getAccountVerificationDetails(accountVerificationDetails, isAccSchemeName)
-            sendAccountVerificationRequestsIpsl(myID, myRespData, strMessageReference, strTransactionReference, strOutgoingAccountVerificationUrlIpsl, strChannelType, strChannelCallBackUrl)
-          }
-        }(myExecutionContext)
-
+        
         val dateToCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
         val myCode: Int = {
           myHttpStatusCode match {
@@ -10272,6 +10378,2339 @@ class CbsEngine @Inject()
         log_errors(strApifunction + " : " + tr.getMessage())
     }
 
+    val r: Result = {
+      myHttpStatusCode match {
+        case HttpStatusCode.Accepted =>
+          Accepted(jsonResponse)
+        case HttpStatusCode.BadRequest =>
+          BadRequest(jsonResponse)
+        case HttpStatusCode.Unauthorized =>
+          Unauthorized(jsonResponse)
+        case _ =>
+          BadRequest(jsonResponse)
+      }
+    }
+
+    r
+    }(myExecutionContext)
+  }
+  def registerCustomerDetails = Action.async { request =>
+    Future {
+      val dateFromCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+      val startDate: String =  new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new java.util.Date)
+      var responseCode: Int = 1
+      var responseMessage: String = "Error occured during processing, please try again."
+      var myHttpStatusCode = HttpStatusCode.BadRequest
+      val strApifunction: String = "registercustomerdetails"
+
+      var myBankCode: Int = 0
+      var strMessageReference: String = ""
+      var strTransactionReference: String = ""
+      var strAccountNumber: String = ""
+      var strDefaultRecord: String = "" 
+      var strDocument: String = ""
+      var strDocumentnumber: String = "" 
+      var strEmail: String = ""
+      var strExp: String = ""
+      var strMsisdn: String = ""
+      var strName: String = "" 
+      var strPan: String = ""
+      var strSchemeName: String = ""
+      var strBankCode: String = ""
+      var isValidMessageReference: Boolean = false
+      var isValidTransactionReference: Boolean = false
+      var isMatchingReference: Boolean = false
+      var isValidSchemeName: Boolean = false
+      var isValidPhneSchemeName: Boolean = false
+      var isValidAccountNumber: Boolean = false
+      var isValidDefaultRecord: Boolean = false 
+      var isValidDocument: Boolean = false
+      var isValidDocumentnumber: Boolean = false 
+      var isValidEmail: Boolean = false
+      var isValidExp: Boolean = false
+      var isValidMsisdn: Boolean = false
+      var isValidName: Boolean = false 
+      var isValidPan: Boolean = false
+      var isValidBankCode: Boolean = false
+	    val accSchemeName: String = SchemeName.ACCOUNT.toString.toUpperCase
+      val phneSchemeName: String = SchemeName.PHONE.toString.toUpperCase
+      var myID: BigDecimal = 0
+      var strClientIP: String = ""
+      var strChannelType: String = ""
+	    var strOrigin: String = ""
+      var strChannelCallBackUrl: String = ""
+      var strRequest: String = ""
+
+      try
+      {
+        //var strRequest: String = ""
+        var strRequestHeader: String = ""
+        var strAuthToken: String = ""
+        var isDataFound: Boolean = false
+        var isAuthTokenFound: Boolean = false
+        var isCredentialsFound: Boolean = false
+        var isValidUrl: Boolean = false
+        //var strChannelType: String = ""
+        var strUserName: String = ""
+        var strPassword: String = ""
+        //var strClientIP: String = ""
+
+        if (!request.body.asJson.isEmpty) {
+          isDataFound = true
+          strRequest = request.body.asJson.get.toString()
+          /*
+          if (request.remoteAddress != null){
+            strClientIP = request.remoteAddress
+            strClientIP = strClientIP.trim
+          }
+          */
+          
+          //Because we are using a proxy-server we'll use "X-Real-IP" and not request.remoteAddress
+          if (request.headers.get("X-Real-IP") != None){
+            val myheaderClientIP = request.headers.get("X-Real-IP")
+            if (myheaderClientIP.get != None){
+              strClientIP = myheaderClientIP.get.toString
+              if (strClientIP != null){
+                strClientIP = strClientIP.trim
+              }
+              else{
+                strClientIP = ""
+              }
+            }
+          }
+
+          if (request.headers.get("Authorization") != None){
+            val myheader = request.headers.get("Authorization")
+            if (myheader.get != None){
+              strRequestHeader = myheader.get.toString
+              if (strRequestHeader != null){
+                strRequestHeader = strRequestHeader.trim
+                if (strRequestHeader.length > 0){
+                  if (strRequestHeader.toLowerCase.contains("bearer")){
+                    val myArray = strRequestHeader.split(" ")
+
+                    if (myArray.length == 2){
+                      strAuthToken = myArray{1}
+                      if (strAuthToken != null){
+                        strAuthToken = strAuthToken.trim
+                        if (strAuthToken.length > 0){
+                          isAuthTokenFound = true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          if (request.headers.get("ChannelType") != None){
+            val myheaderChannelType = request.headers.get("ChannelType")
+            if (myheaderChannelType.get != None){
+              strChannelType = myheaderChannelType.get.toString
+              if (strChannelType != null){
+                strChannelType = strChannelType.trim
+              }
+              else{
+                strChannelType = ""
+              }
+            }
+          }
+		  
+          if (request.headers.get("Origin") != None){
+            val myheaderOrigin = request.headers.get("Origin")
+            if (myheaderOrigin.get != None){
+              strOrigin = myheaderOrigin.get.toString
+              if (strOrigin != null){
+                strOrigin = strOrigin.trim
+              }
+              else{
+                strOrigin = ""
+              }
+            }
+          }
+
+          if (request.headers.get("ChannelCallBackUrl") != None){
+            val myheaderChannelType = request.headers.get("ChannelCallBackUrl")
+            if (myheaderChannelType.get != None){
+              strChannelCallBackUrl = myheaderChannelType.get.toString
+              if (strChannelCallBackUrl != null){
+                strChannelCallBackUrl = strChannelCallBackUrl.trim
+                if (strChannelCallBackUrl.length > 0){
+                  isValidUrl = validateUrl(strChannelCallBackUrl)
+                }
+              }
+              else{
+                strChannelCallBackUrl = ""
+              }
+            }
+          }
+
+        }
+        else {
+          strRequest = "Invalid Request Data"
+        }
+
+        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , Origin - " + strOrigin + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + strClientIP)
+
+        if (isDataFound && isAuthTokenFound && isValidUrl){
+          var strAccessToken: String = ""
+          try{
+            var myByteAuthToken = Base64.getDecoder.decode(strAuthToken)
+            var myAuthToken: String = new String(myByteAuthToken, StandardCharsets.UTF_8)
+
+            //log_data(strApifunction + " : myAuthToken - " + "**********" + " , strAuthToken - " + strAuthToken)
+
+            if (myAuthToken != null){
+              myAuthToken = myAuthToken.trim
+
+              if (myAuthToken.length > 0){
+                isCredentialsFound = true
+                strAccessToken = myAuthToken
+              }
+            }
+          }
+          catch
+          {
+            case ex: Exception =>
+              log_errors(strApifunction + " : " + ex.getMessage())
+            case tr: Throwable =>
+              log_errors(strApifunction + " : " + tr.getMessage())
+          }
+
+          try{
+            if (!isCredentialsFound){strPassword = ""}
+            val myOutput = validateApiAccessToken(strAccessToken, strChannelType, strClientIP, strApifunction, strOrigin)
+            if (myOutput.responsecode != null){
+              responseCode = myOutput.responsecode
+            }
+
+            if (myOutput.responsemessage != null){
+              responseMessage = myOutput.responsemessage
+            }
+            else{
+              responseMessage = "Error occured during processing, please try again."
+            }
+          }
+          catch
+          {
+            case ex: Exception =>
+              log_errors(strApifunction + " : " + ex.getMessage())
+            case tr: Throwable =>
+              log_errors(strApifunction + " : " + tr.getMessage())
+          }
+
+          if (isCredentialsFound && responseCode == 0){
+
+            val myjson = request.body.asJson.get
+
+            //Initialise responseCode
+            responseCode = 1
+            responseMessage  = "Error occured during processing, please try again."
+
+            implicit val RegisterCustomer_Request_Reads: Reads[RegisterCustomer_Request] = (
+              (JsPath \ "account").readNullable[JsValue] and
+                (JsPath \ "defaultrecord").readNullable[JsValue] and
+                (JsPath \ "document").readNullable[JsValue] and
+                (JsPath \ "documentnumber").readNullable[JsValue] and
+                (JsPath \ "email").readNullable[JsValue] and
+                (JsPath \ "exp").readNullable[JsValue] and
+                (JsPath \ "msisdn").readNullable[JsValue] and
+                (JsPath \ "name").readNullable[JsValue] and
+                (JsPath \ "pan").readNullable[JsValue]
+              )(RegisterCustomer_Request.apply _)
+
+            myjson.validate[RegisterCustomer_Request] match {
+              case JsSuccess(myPaymentDetails, _) => {
+
+                var isValidInputData : Boolean = false
+                //val myBatchSize : Integer = 1
+                //var strBatchReference : String = ""
+                var strRequestData : String = ""
+
+                try
+                {
+
+                  try{
+                    
+                    if (strRequest != null && strRequest != None){
+                      strRequest = strRequest.trim
+                      if (strRequest.length > 0){
+                        strRequestData = strRequest.replace("'","")//Remove apostrophe
+                        strRequestData = strRequestData.trim
+                      }
+                    }
+
+
+                    myBankCode = 0
+                    strMessageReference = ""
+                    strTransactionReference = ""
+                    strAccountNumber = ""
+                    strAccountNumber = ""
+                    strDefaultRecord = "" 
+                    strDocument = ""
+                    strDocumentnumber = "" 
+                    strEmail = ""
+                    strExp = ""
+                    strMsisdn = ""
+                    strName = "" 
+                    strPan = ""
+                    strSchemeName = ""
+                    strBankCode = ""
+                    isValidMessageReference = false
+                    isValidTransactionReference = false
+                    isMatchingReference = false
+                    isValidSchemeName = false
+                    isValidPhneSchemeName = false
+                    isValidAccountNumber = false
+                    isValidDefaultRecord = false 
+                    isValidDocument = false
+                    isValidDocumentnumber = false 
+                    isValidEmail = false
+                    isValidExp = false
+                    isValidMsisdn = false
+                    isValidName = false 
+                    isValidPan = false
+                    isValidBankCode = false
+
+                    try{
+                      /*
+                      //strMessageReference
+                      if (myPaymentDetails.messagereference != None) {
+                        if (myPaymentDetails.messagereference.get != None) {
+                          val myData = myPaymentDetails.messagereference.get
+                          strMessageReference = myData.toString()
+                          if (strMessageReference != null && strMessageReference != None){
+                            strMessageReference = strMessageReference.trim
+                            if (strMessageReference.length > 0){
+                              strMessageReference = strMessageReference.replace("'","")//Remove apostrophe
+                              strMessageReference = strMessageReference.replace(" ","")//Remove spaces
+                              strMessageReference = strMessageReference.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strMessageReference = strMessageReference.trim
+                            }
+                          }
+                        }
+                      }
+
+                      //strTransactionReference
+                      if (myPaymentDetails.accountdata.transactionreference != None) {
+                        if (myPaymentDetails.accountdata.transactionreference.get != None) {
+                          val myData = myPaymentDetails.accountdata.transactionreference.get
+                          strTransactionReference = myData.toString()
+                          if (strTransactionReference != null && strTransactionReference != None){
+                            strTransactionReference = strTransactionReference.trim
+                            if (strTransactionReference.length > 0){
+                              strTransactionReference = strTransactionReference.replace("'","")//Remove apostrophe
+                              strTransactionReference = strTransactionReference.replace(" ","")//Remove spaces
+                              strTransactionReference = strTransactionReference.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strTransactionReference = strTransactionReference.trim
+                            }
+                          }
+                        }
+                      }
+                      */
+                      //strMsisdn
+                      if (myPaymentDetails.msisdn != None) {
+                        if (myPaymentDetails.msisdn.get != None) {
+                          val myData = myPaymentDetails.msisdn.get
+                          strMsisdn = myData.toString()
+                          if (strMsisdn != null && strMsisdn != None){
+                            strMsisdn = strMsisdn.trim
+                            if (strMsisdn.length > 0){
+                              strMsisdn = strMsisdn.replace("'","")//Remove apostrophe
+                              strMsisdn = strMsisdn.replace(" ","")//Remove spaces
+                              strMsisdn = strMsisdn.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strMsisdn = strMsisdn.trim
+                            }
+                          }
+                        }
+                      }
+
+                      //strAccountNumber
+                      if (myPaymentDetails.account != None) {
+                        if (myPaymentDetails.account.get != None) {
+                          val myData = myPaymentDetails.account.get
+                          strAccountNumber = myData.toString()
+                          if (strAccountNumber != null && strAccountNumber != None){
+                            strAccountNumber = strAccountNumber.trim
+                            if (strAccountNumber.length > 0){
+                              strAccountNumber = strAccountNumber.replace("'","")//Remove apostrophe
+                              strAccountNumber = strAccountNumber.replace(" ","")//Remove spaces
+                              strAccountNumber = strAccountNumber.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strAccountNumber = strAccountNumber.trim
+                            }
+                          }
+                        }
+                      }
+
+                      //strDefaultRecord
+                      if (myPaymentDetails.defaultrecord != None) {
+                        if (myPaymentDetails.defaultrecord.get != None) {
+                          val myData = myPaymentDetails.defaultrecord.get
+                          strDefaultRecord = myData.toString()
+                          if (strDefaultRecord != null && strDefaultRecord != None){
+                            strDefaultRecord = strDefaultRecord.trim
+                            if (strDefaultRecord.length > 0){
+                              strDefaultRecord = strDefaultRecord.replace("'","")//Remove apostrophe
+                              strDefaultRecord = strDefaultRecord.replace(" ","")//Remove spaces
+                              strDefaultRecord = strDefaultRecord.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strDefaultRecord = strDefaultRecord.trim
+                            }
+                          }
+                        }
+                      }
+
+                      //strDocument
+                      if (myPaymentDetails.document != None) {
+                        if (myPaymentDetails.document.get != None) {
+                          val myData = myPaymentDetails.document.get
+                          strDocument = myData.toString()
+                          if (strDocument != null && strDocument != None){
+                            strDocument = strDocument.trim
+                            if (strDocument.length > 0){
+                              strDocument = strDocument.replace("'","")//Remove apostrophe
+                              strDocument = strDocument.replace(" ","")//Remove spaces
+                              strDocument = strDocument.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strDocument = strDocument.trim
+                            }
+                          }
+                        }
+                      }
+
+                      //strDocumentnumber
+                      if (myPaymentDetails.documentnumber != None) {
+                        if (myPaymentDetails.documentnumber.get != None) {
+                          val myData = myPaymentDetails.documentnumber.get
+                          strDocumentnumber = myData.toString()
+                          if (strDocumentnumber != null && strDocumentnumber != None){
+                            strDocumentnumber = strDocumentnumber.trim
+                            if (strDocumentnumber.length > 0){
+                              strDocumentnumber = strDocumentnumber.replace("'","")//Remove apostrophe
+                              strDocumentnumber = strDocumentnumber.replace(" ","")//Remove spaces
+                              strDocumentnumber = strDocumentnumber.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strDocumentnumber = strDocumentnumber.trim
+                            }
+                          }
+                        }
+                      }
+
+                      //strEmail
+                      if (myPaymentDetails.email != None) {
+                        if (myPaymentDetails.email.get != None) {
+                          val myData = myPaymentDetails.email.get
+                          strEmail = myData.toString()
+                          if (strEmail != null && strEmail != None){
+                            strEmail = strEmail.trim
+                            if (strEmail.length > 0){
+                              strEmail = strEmail.replace("'","")//Remove apostrophe
+                              strEmail = strEmail.replace(" ","")//Remove spaces
+                              strEmail = strEmail.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strEmail = strEmail.trim
+                            }
+                          }
+                        }
+                      }
+                      /*
+                      //strExp
+                      if (myPaymentDetails.exp != None) {
+                        if (myPaymentDetails.exp.get != None) {
+                          val myData = myPaymentDetails.exp.get
+                          strExp = myData.toString()
+                          if (strExp != null && strExp != None){
+                            strExp = strExp.trim
+                            if (strExp.length > 0){
+                              strExp = strExp.replace("'","")//Remove apostrophe
+                              strExp = strExp.replace(" ","")//Remove spaces
+                              strExp = strExp.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strExp = strExp.trim
+                            }
+                          }
+                        }
+                      }
+                      */
+                      //strName
+                      if (myPaymentDetails.name != None) {
+                        if (myPaymentDetails.name.get != None) {
+                          val myData = myPaymentDetails.name.get
+                          strName = myData.toString()
+                          if (strName != null && strName != None){
+                            strName = strName.trim
+                            if (strName.length > 0){
+                              strName = strName.replace("'","")//Remove apostrophe
+                              strName = strName.replace("  "," ")//Remove double spaces
+                              strName = strName.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strName = strName.trim
+                              strName = strName.toUpperCase
+                            }
+                          }
+                        }
+                      }
+                      /*
+                      //strPan
+                      if (myPaymentDetails.pan != None) {
+                        if (myPaymentDetails.pan.get != None) {
+                          val myData = myPaymentDetails.pan.get
+                          strPan = myData.toString()
+                          if (strPan != null && strPan != None){
+                            strPan = strPan.trim
+                            if (strPan.length > 0){
+                              strPan = strPan.replace("'","")//Remove apostrophe
+                              strPan = strPan.replace(" ","")//Remove spaces
+                              strPan = strPan.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strPan = strPan.trim
+                            }
+                          }
+                        }
+                      }
+                      */
+                      /*
+                      //strSchemeName 
+                      if (myPaymentDetails.accountdata.schemename != None) {
+                        if (myPaymentDetails.accountdata.schemename.get != None) {
+                          val myData = myPaymentDetails.accountdata.schemename.get
+                          strSchemeName = myData.toString()
+                          if (strSchemeName != null && strSchemeName != None){
+                            strSchemeName = strSchemeName.trim
+                            if (strSchemeName.length > 0){
+                              strSchemeName = strSchemeName.replace("'","")//Remove apostrophe
+                              strSchemeName = strSchemeName.replace(" ","")//Remove spaces
+                              strSchemeName = strSchemeName.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strSchemeName = strSchemeName.trim
+                            }
+                          }
+                        }
+                      }
+                      
+                      //strBankCode
+                      if (myPaymentDetails.sortcode != None) {
+                        if (myPaymentDetails.sortcode.get != None) {
+                          val myData = myPaymentDetails.sortcode.get
+                          strBankCode = myData.toString()
+                          if (strBankCode != null && strBankCode != None){
+                            strBankCode = strBankCode.trim
+                            if (strBankCode.length > 0){
+                              strBankCode = strBankCode.replace("'","")//Remove apostrophe
+                              strBankCode = strBankCode.replace(" ","")//Remove spaces
+                              strBankCode = strBankCode.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strBankCode = strBankCode.trim
+                              if (strBankCode.length > 0){
+                                val isNumeric: Boolean = strBankCode.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
+                                if (isNumeric){
+                                  myBankCode = strBankCode.toInt
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                      */
+                    }
+                    catch {
+                      case io: Throwable =>
+                        log_errors(strApifunction + " : " + io.getMessage())
+                      case ex: Exception =>
+                        log_errors(strApifunction + " : " + ex.getMessage())
+                    }
+                    /*
+					          isValidSchemeName = {
+                      var isValid: Boolean = false
+                      if (strSchemeName.length == 0 || accSchemeName.length == 0){
+                        isValid = false
+                      }
+                      else if (strSchemeName.equalsIgnoreCase(accSchemeName)){
+                        isValid = true
+                      }
+                      else if (strSchemeName.equalsIgnoreCase(phneSchemeName)){
+                        isValidPhneSchemeName = true
+                        isValid = true
+                      }
+                      else {
+                        isValid = false
+                      }
+                      isValid
+                    }
+
+                    isValidMessageReference = {
+                      var isValid: Boolean = false
+                      if (strMessageReference.length > 0 && strMessageReference.length <= 35){
+                        val isNumeric: Boolean = strMessageReference.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
+                        if (isNumeric){
+                          val myMessageReference = BigDecimal(strMessageReference)
+                          if (myMessageReference > 0){isValid = true}
+                        }
+                        else{
+                          isValid = strMessageReference.matches(strAlphaNumericHyphenRegex) //validate alphanumeric, Hyphen
+                        }
+                      }
+                      isValid
+                    }
+
+                    isValidTransactionReference = {
+                      var isValid: Boolean = false
+                      if (strTransactionReference.length > 0 && strTransactionReference.length <= 35){
+                        val isNumeric: Boolean = strTransactionReference.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
+                        if (isNumeric){
+                          val myTransactionReference = BigDecimal(strTransactionReference)
+                          if (myTransactionReference > 0){isValid = true}
+                        }
+                        else{
+                          isValid = strTransactionReference.matches(strAlphaNumericHyphenRegex) //validate alphanumeric, Hyphen
+                        }
+                      }
+                      isValid
+                    }
+
+                    isMatchingReference = {
+                      var isValid: Boolean = false
+                      if (isValidMessageReference && isValidTransactionReference) {
+                        if (strMessageReference.equalsIgnoreCase(strTransactionReference)){
+                          isValid = true  
+                        }  
+                      }
+                      isValid
+                    }
+                    */
+                    isValidMsisdn = {
+                      var isValid: Boolean = false
+                      if (strMsisdn.length >= 12 && strMsisdn.length <= 20){
+                        isValid = true
+                      }
+                      isValid
+                    }
+
+                    isValidAccountNumber = {
+                      var isValid: Boolean = false
+                      if (strAccountNumber.length > 0 && strAccountNumber.length <= 35){
+                        isValid = true
+                      }
+                      isValid
+                    }
+
+                    isValidDefaultRecord = {
+                      var isValid: Boolean = false
+                      if (strDefaultRecord.length > 0 && strDefaultRecord.length <= 5){
+                        isValid = true
+                      }
+                      isValid
+                    }
+
+                    isValidDocument = {
+                      var isValid: Boolean = false
+                      if (strDocument.length > 0 && strDocument.length <= 20){
+                        isValid = true
+                      }
+                      isValid
+                    }
+
+                    isValidDocumentnumber = {
+                      var isValid: Boolean = false
+                      if (strDocumentnumber.length > 0 && strDocumentnumber.length <= 20){
+                        isValid = true
+                      }
+                      isValid
+                    }
+
+                    isValidEmail = {
+                      var isValid: Boolean = false
+                      if (strEmail.length > 0 && strEmail.length <= 100){
+                        isValid = true
+                      }
+                      isValid
+                    }
+
+                    isValidName = {
+                      var isValid: Boolean = false
+                      if (strName.length > 0 && strName.length <= 200){
+                        isValid = true
+                      }
+                      isValid
+                    }
+                    
+                    /*
+                    isValidBankCode = {
+                      var isValid: Boolean = false
+                      if (strBankCode.length > 0 && strBankCode.length <= 35){
+                        val isNumeric: Boolean = strBankCode.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
+                        if (isNumeric){
+                          val myBankCode = BigDecimal(strBankCode)
+                          if (myBankCode > 0){isValid = true}
+                        }
+                        else{
+                          isValid = true
+                        }
+                      }
+                      isValid
+                    }
+                    
+                    //We should not send any requests to FCB as beneficiary Bank, hence validate BankCode
+                    val isclientBankCode_creditor: Boolean = {
+                      if (!isValidBankCode){false}
+                      else if (strBankCode.equalsIgnoreCase(firstAgentIdentification)){true}
+                      else {false}
+                    }
+                    */
+                    /* Lets set var isValidInputData to true if valid data is received from e-Channels/ESB-CBS System */
+                    //if (isValidMessageReference && isValidTransactionReference && isValidAccountNumber && isValidSchemeName && isValidBankCode && !isMatchingReference){
+                    //if (isValidMessageReference && isValidTransactionReference && isValidAccountNumber && isValidSchemeName && isValidBankCode && !isMatchingReference && !isclientBankCode_creditor){  
+                    if (isValidMsisdn && isValidAccountNumber && isValidDefaultRecord && isValidDocument && isValidDocumentnumber && isValidEmail && isValidName){
+                      /*
+                      isValidInputData = true
+                      myHttpStatusCode = HttpStatusCode.Accepted //TESTS ONLY
+                      responseCode = 0
+                      responseMessage = "Message accepted for processing."
+                      */
+                      isValidInputData = true
+                    }
+                    
+                    try{
+                      if (isValidInputData){
+                        val myBatchSize: Integer = 1
+                        //val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
+                        val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
+                        val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
+                        val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+                        
+                        val myAccountVerificationTableResponseDetails = addOutgoingAccountVerificationDetails(myAccountVerificationTableDetails, strChannelType, strChannelCallBackUrl)
+                        
+                        if (myAccountVerificationTableResponseDetails != null){
+                          if (myAccountVerificationTableResponseDetails.id != null){
+                            myID = myAccountVerificationTableResponseDetails.id
+                          }
+
+                          if (myAccountVerificationTableResponseDetails.responsecode != null){
+                            responseCode = myAccountVerificationTableResponseDetails.responsecode
+                          }
+
+                          if (myAccountVerificationTableResponseDetails.responsemessage != null){
+                            responseMessage = myAccountVerificationTableResponseDetails.responsemessage
+                          }
+                        }
+
+                        if (responseCode == 0){
+                          myHttpStatusCode = HttpStatusCode.Accepted
+                          responseMessage = "Message accepted for processing."
+                        }
+
+                        //tests only
+                        myHttpStatusCode = HttpStatusCode.Accepted
+                        responseMessage = "Message accepted for processing."
+                      }
+                      else{
+                        responseMessage = "Invalid Input Data length"
+                        if (!isValidMsisdn){
+                          responseMessage = "Invalid Input Data. msisdn"
+                        }
+                        else if (!isValidAccountNumber){
+                          responseMessage = "Invalid Input Data. accountnumber"
+                        }
+                        else if (!isValidDefaultRecord){
+                          responseMessage = "Invalid Input Data. defaultrecord"
+                        }
+                        else if (!isValidDocument){
+                          responseMessage = "Invalid Input Data. document"
+                        }
+                        else if (!isValidDocumentnumber){
+                          responseMessage = "Invalid Input Data. documentnumber"
+                        }
+                        else if (!isValidEmail){
+                          responseMessage = "Invalid Input Data. email"
+                        }
+                        else if (!isValidName){
+                          responseMessage = "Invalid Input Data. name"
+                        }
+                        /*
+                        if (!isValidMessageReference){
+                          responseMessage = "Invalid Input Data. messagereference"
+                        }
+                        else if (!isValidTransactionReference){
+                          responseMessage = "Invalid Input Data. transactionreference"
+                        }
+                        else if (!isValidAccountNumber){
+                          responseMessage = "Invalid Input Data. accountnumber"
+                        }
+                        
+                        else if (!isValidSchemeName){
+                          responseMessage = "Invalid Input Data. schemename"
+                        }
+                        else if (!isValidBankCode){
+                          responseMessage = "Invalid Input Data. bankcode"
+                        }
+                        else if (isMatchingReference){
+                          responseMessage = "Invalid Input Data. messagereference and transactionreference should have different values"
+                        }
+                        else if (isclientBankCode_creditor){
+                          responseMessage = "Invalid Input Data. FCB cannot be beneficiary Bank"
+                        }
+                        */
+                      }
+                    }
+                    catch {
+                      case io: IOException =>
+                        responseMessage = "Error occured during processing, please try again."
+                        log_errors(strApifunction + " : " + io.getMessage())
+                      case ex: Exception =>
+                        responseMessage = "Error occured during processing, please try again."
+                        log_errors(strApifunction + " : " + ex.getMessage())
+                    }
+
+                  }
+                  catch {
+                    case io: IOException =>
+                      responseMessage = "Error occured during processing, please try again."
+                      log_errors(strApifunction + " : " + io.getMessage())
+                    case ex: Exception =>
+                      responseMessage = "Error occured during processing, please try again."
+                      log_errors(strApifunction + " : " + ex.getMessage())
+                  }
+                }
+                catch
+                  {
+                    case ex: Exception =>
+                      log_errors(strApifunction + " : " + ex.getMessage())
+                    case tr: Throwable =>
+                      log_errors(strApifunction + " : " + tr.getMessage())
+                  }
+
+              }
+              case JsError(e) => {
+                responseMessage = "Error occured when unpacking Json values"
+                log_errors(strApifunction + " : " + e.toString())
+              }
+            }
+          }
+          else{
+            myHttpStatusCode = HttpStatusCode.Unauthorized
+          }
+        }
+        else {
+          if (!isDataFound) {
+            responseMessage = "Invalid Request Data"
+          }
+          else if (!isAuthTokenFound) {
+            responseMessage = "Invalid Access Token"
+          }
+          else if (!isValidUrl) {
+            responseMessage = "Invalid Channel CallBackUrl"
+          }
+          else {
+            responseMessage = "Invalid Request Data"
+          }
+          insertApiValidationRequests(strChannelType, strUserName, strPassword, strClientIP, strApifunction, responseCode, responseMessage)
+        }
+
+      }
+      catch
+	  {
+	    case ex: Exception =>
+        responseMessage = "Error occured during processing, please try again."
+        log_errors(strApifunction + " : " + ex.getMessage())
+	   case tr: Throwable =>
+        responseMessage = "Error occured during processing, please try again."
+        log_errors(strApifunction + " : " + tr.getMessage())
+	  }
+      
+    implicit val  AccountVerificationDetailsResponse_Writes = Json.writes[AccountVerificationDetailsResponse]
+
+    val myAccountVerificationResponse =  AccountVerificationDetailsResponse(responseCode, responseMessage)
+    val jsonResponse = Json.toJson(myAccountVerificationResponse)
+
+    try{      
+      val t1: String =  new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
+      val t2: String =  new SimpleDateFormat("HH:mm:ss.SSS").format(new java.util.Date)
+      val creationDateTime: String = t1 + "T" + t2+ "Z"
+            
+      val isSendRequest = {
+        myHttpStatusCode match {
+          case HttpStatusCode.Accepted =>
+            true
+          case _ =>
+            false
+        }
+      }
+
+      if (isSendRequest){        
+        val f = Future {
+          val login: String = "FCB"
+          val password: String = "123456"
+          val sortcode: String = "40474000"
+          val account: String = strAccountNumber
+          val defaultrecord: String = strDefaultRecord 
+          val document: String = strDocument
+          val documentnumber: String = strDocumentnumber
+          val email: String = strEmail
+          val msisdn: String = strMsisdn 
+          val name: String = strName 
+          val lang: String = "EN"
+          val myRespData: String = getCustomerRegisterDetails(login, password, account, defaultrecord, document, documentnumber, email, msisdn, name, lang, sortcode)
+          sendPhoneVerificationRequestsIpsl(myID, msisdn, myRespData, strMessageReference, strTransactionReference, strOutgoingAccountVerificationUrlIpsl, strChannelType, strChannelCallBackUrl)
+        }(myExecutionContext)
+        
+        val dateToCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+        val myCode: Int = {
+          myHttpStatusCode match {
+          case HttpStatusCode.Accepted =>
+            202
+          case HttpStatusCode.BadRequest =>
+            400
+          case HttpStatusCode.Unauthorized =>
+            401
+          case _ =>
+            400
+          }
+        }
+        val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [HttpStatusCode_CbsApi_In] = " + myCode + ", [ResponseMessage_CbsApi_In] = '" + jsonResponse.toString() + "', [Date_to_CbsApi_In] = '" + dateToCbsApi + "' where [ID] = " + myID + ";"
+        insertUpdateRecord(strSQL)
+      }
+      else{
+        try{
+          val myBatchSize: Integer = 1
+          val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
+          val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
+          var strRequestData: String = ""
+
+          if (strRequest != null && strRequest != None){
+            strRequest = strRequest.trim
+            if (strRequest.length > 0){
+              strRequestData = strRequest.replace("'","")//Remove apostrophe
+              strRequestData = strRequestData.trim
+            }
+          }
+
+          val f = Future {
+            val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+                  
+            addOutgoingAccountVerificationDetailsArchive(responseCode, responseMessage, jsonResponse.toString(), myAccountVerificationTableDetails, strChannelType, strChannelCallBackUrl)
+          }(myExecutionContext)
+        }
+        catch{
+          case ex: Exception =>
+            log_errors(strApifunction + " : " + ex.getMessage())
+          case io: IOException =>
+            log_errors(strApifunction + " : " + io.getMessage())
+          case tr: Throwable =>
+            log_errors(strApifunction + " : " + tr.getMessage())
+        }
+      }
+
+      log_data(strApifunction + " : " + "response - " + jsonResponse.toString() + " , remoteAddress - " + strClientIP)
+    }
+    catch{
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage())
+      case io: IOException =>
+        log_errors(strApifunction + " : " + io.getMessage())
+      case tr: Throwable =>
+        log_errors(strApifunction + " : " + tr.getMessage())
+    }
+    
+    val r: Result = {
+      myHttpStatusCode match {
+        case HttpStatusCode.Accepted =>
+          Accepted(jsonResponse)
+        case HttpStatusCode.BadRequest =>
+          BadRequest(jsonResponse)
+        case HttpStatusCode.Unauthorized =>
+          Unauthorized(jsonResponse)
+        case _ =>
+          BadRequest(jsonResponse)
+      }
+    }
+
+    r
+    }(myExecutionContext)
+  }
+  def getCustomerBankListDetails = Action.async { request =>
+    Future {
+      val dateFromCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+      val startDate: String =  new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new java.util.Date)
+      var responseCode: Int = 1
+      var responseMessage: String = "Error occured during processing, please try again."
+      var myHttpStatusCode = HttpStatusCode.BadRequest
+      val strApifunction: String = "getcustomerbanklistdetails"
+
+      var myBankCode: Int = 0
+      var strMessageReference: String = ""
+      var strTransactionReference: String = ""
+      var strAccountNumber: String = ""
+      var strMsisdn: String = ""
+      var strSchemeName: String = ""
+      var strBankCode: String = ""
+      var isValidMessageReference: Boolean = false
+      var isValidTransactionReference: Boolean = false
+      var isMatchingReference: Boolean = false
+      var isValidSchemeName: Boolean = false
+      var isValidPhneSchemeName: Boolean = false
+      var isValidAccountNumber: Boolean = false
+      var isValidMsisdn: Boolean = false
+      var isValidBankCode: Boolean = false
+	    val accSchemeName: String = SchemeName.ACCOUNT.toString.toUpperCase
+      val phneSchemeName: String = SchemeName.PHONE.toString.toUpperCase
+      var myID: BigDecimal = 0
+      var strClientIP: String = ""
+      var strChannelType: String = ""
+	    var strOrigin: String = ""
+      var strChannelCallBackUrl: String = ""
+      var strRequest: String = ""
+
+      try
+      {
+        //var strRequest: String = ""
+        var strRequestHeader: String = ""
+        var strAuthToken: String = ""
+        var isDataFound: Boolean = false
+        var isAuthTokenFound: Boolean = false
+        var isCredentialsFound: Boolean = false
+        var isValidUrl: Boolean = false
+        //var strChannelType: String = ""
+        var strUserName: String = ""
+        var strPassword: String = ""
+        //var strClientIP: String = ""
+
+        if (!request.body.asJson.isEmpty) {
+          isDataFound = true
+          strRequest = request.body.asJson.get.toString()
+          /*
+          if (request.remoteAddress != null){
+            strClientIP = request.remoteAddress
+            strClientIP = strClientIP.trim
+          }
+          */
+          
+          //Because we are using a proxy-server we'll use "X-Real-IP" and not request.remoteAddress
+          if (request.headers.get("X-Real-IP") != None){
+            val myheaderClientIP = request.headers.get("X-Real-IP")
+            if (myheaderClientIP.get != None){
+              strClientIP = myheaderClientIP.get.toString
+              if (strClientIP != null){
+                strClientIP = strClientIP.trim
+              }
+              else{
+                strClientIP = ""
+              }
+            }
+          }
+
+          if (request.headers.get("Authorization") != None){
+            val myheader = request.headers.get("Authorization")
+            if (myheader.get != None){
+              strRequestHeader = myheader.get.toString
+              if (strRequestHeader != null){
+                strRequestHeader = strRequestHeader.trim
+                if (strRequestHeader.length > 0){
+                  if (strRequestHeader.toLowerCase.contains("bearer")){
+                    val myArray = strRequestHeader.split(" ")
+
+                    if (myArray.length == 2){
+                      strAuthToken = myArray{1}
+                      if (strAuthToken != null){
+                        strAuthToken = strAuthToken.trim
+                        if (strAuthToken.length > 0){
+                          isAuthTokenFound = true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          if (request.headers.get("ChannelType") != None){
+            val myheaderChannelType = request.headers.get("ChannelType")
+            if (myheaderChannelType.get != None){
+              strChannelType = myheaderChannelType.get.toString
+              if (strChannelType != null){
+                strChannelType = strChannelType.trim
+              }
+              else{
+                strChannelType = ""
+              }
+            }
+          }
+		  
+          if (request.headers.get("Origin") != None){
+            val myheaderOrigin = request.headers.get("Origin")
+            if (myheaderOrigin.get != None){
+              strOrigin = myheaderOrigin.get.toString
+              if (strOrigin != null){
+                strOrigin = strOrigin.trim
+              }
+              else{
+                strOrigin = ""
+              }
+            }
+          }
+
+          if (request.headers.get("ChannelCallBackUrl") != None){
+            val myheaderChannelType = request.headers.get("ChannelCallBackUrl")
+            if (myheaderChannelType.get != None){
+              strChannelCallBackUrl = myheaderChannelType.get.toString
+              if (strChannelCallBackUrl != null){
+                strChannelCallBackUrl = strChannelCallBackUrl.trim
+                if (strChannelCallBackUrl.length > 0){
+                  isValidUrl = validateUrl(strChannelCallBackUrl)
+                }
+              }
+              else{
+                strChannelCallBackUrl = ""
+              }
+            }
+          }
+
+        }
+        else {
+          strRequest = "Invalid Request Data"
+        }
+
+        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , Origin - " + strOrigin + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + strClientIP)
+
+        if (isDataFound && isAuthTokenFound && isValidUrl){
+          var strAccessToken: String = ""
+          try{
+            var myByteAuthToken = Base64.getDecoder.decode(strAuthToken)
+            var myAuthToken: String = new String(myByteAuthToken, StandardCharsets.UTF_8)
+
+            //log_data(strApifunction + " : myAuthToken - " + "**********" + " , strAuthToken - " + strAuthToken)
+
+            if (myAuthToken != null){
+              myAuthToken = myAuthToken.trim
+
+              if (myAuthToken.length > 0){
+                isCredentialsFound = true
+                strAccessToken = myAuthToken
+              }
+            }
+          }
+          catch
+          {
+            case ex: Exception =>
+              log_errors(strApifunction + " : " + ex.getMessage())
+            case tr: Throwable =>
+              log_errors(strApifunction + " : " + tr.getMessage())
+          }
+
+          try{
+            if (!isCredentialsFound){strPassword = ""}
+            val myOutput = validateApiAccessToken(strAccessToken, strChannelType, strClientIP, strApifunction, strOrigin)
+            if (myOutput.responsecode != null){
+              responseCode = myOutput.responsecode
+            }
+
+            if (myOutput.responsemessage != null){
+              responseMessage = myOutput.responsemessage
+            }
+            else{
+              responseMessage = "Error occured during processing, please try again."
+            }
+          }
+          catch
+          {
+            case ex: Exception =>
+              log_errors(strApifunction + " : " + ex.getMessage())
+            case tr: Throwable =>
+              log_errors(strApifunction + " : " + tr.getMessage())
+          }
+
+          if (isCredentialsFound && responseCode == 0){
+
+            val myjson = request.body.asJson.get
+
+            //Initialise responseCode
+            responseCode = 1
+            responseMessage  = "Error occured during processing, please try again."
+
+            implicit val CustomerBankList_Request_Reads: Reads[CustomerBankList_Request] = (
+              (JsPath \ "msisdn").readNullable[JsValue] and
+                (JsPath \ "sortcode").readNullable[JsValue]
+              )(CustomerBankList_Request.apply _)
+
+            myjson.validate[CustomerBankList_Request] match {
+              case JsSuccess(myPaymentDetails, _) => {
+
+                var isValidInputData : Boolean = false
+                //val myBatchSize : Integer = 1
+                //var strBatchReference : String = ""
+                var strRequestData : String = ""
+
+                try
+                {
+
+                  try{
+                    
+                    if (strRequest != null && strRequest != None){
+                      strRequest = strRequest.trim
+                      if (strRequest.length > 0){
+                        strRequestData = strRequest.replace("'","")//Remove apostrophe
+                        strRequestData = strRequestData.trim
+                      }
+                    }
+
+
+                    myBankCode = 0
+                    strMessageReference = ""
+                    strTransactionReference = ""
+                    strAccountNumber = ""
+                    strMsisdn = ""
+                    strSchemeName = ""
+                    strBankCode = ""
+                    isValidMessageReference = false
+                    isValidTransactionReference = false
+                    isMatchingReference = false
+                    isValidSchemeName = false
+                    isValidPhneSchemeName = false
+                    isValidAccountNumber = false
+                    isValidMsisdn = false
+                    isValidBankCode = false
+
+                    try{
+                      /*
+                      //strMessageReference
+                      if (myPaymentDetails.messagereference != None) {
+                        if (myPaymentDetails.messagereference.get != None) {
+                          val myData = myPaymentDetails.messagereference.get
+                          strMessageReference = myData.toString()
+                          if (strMessageReference != null && strMessageReference != None){
+                            strMessageReference = strMessageReference.trim
+                            if (strMessageReference.length > 0){
+                              strMessageReference = strMessageReference.replace("'","")//Remove apostrophe
+                              strMessageReference = strMessageReference.replace(" ","")//Remove spaces
+                              strMessageReference = strMessageReference.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strMessageReference = strMessageReference.trim
+                            }
+                          }
+                        }
+                      }
+
+                      //strTransactionReference
+                      if (myPaymentDetails.accountdata.transactionreference != None) {
+                        if (myPaymentDetails.accountdata.transactionreference.get != None) {
+                          val myData = myPaymentDetails.accountdata.transactionreference.get
+                          strTransactionReference = myData.toString()
+                          if (strTransactionReference != null && strTransactionReference != None){
+                            strTransactionReference = strTransactionReference.trim
+                            if (strTransactionReference.length > 0){
+                              strTransactionReference = strTransactionReference.replace("'","")//Remove apostrophe
+                              strTransactionReference = strTransactionReference.replace(" ","")//Remove spaces
+                              strTransactionReference = strTransactionReference.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strTransactionReference = strTransactionReference.trim
+                            }
+                          }
+                        }
+                      }
+
+                      if (myPaymentDetails.msisdn != None) {
+                        if (myPaymentDetails.msisdn.get != None) {
+                          val myData = myPaymentDetails.msisdn.get
+                          strAccountNumber = myData.toString()
+                          if (strAccountNumber != null && strAccountNumber != None){
+                            strAccountNumber = strAccountNumber.trim
+                            if (strAccountNumber.length > 0){
+                              strAccountNumber = strAccountNumber.replace("'","")//Remove apostrophe
+                              strAccountNumber = strAccountNumber.replace(" ","")//Remove spaces
+                              strAccountNumber = strAccountNumber.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strAccountNumber = strAccountNumber.trim
+                            }
+                          }
+                        }
+                      }
+                      */
+                      //strMsisdn
+                      if (myPaymentDetails.msisdn != None) {
+                        if (myPaymentDetails.msisdn.get != None) {
+                          val myData = myPaymentDetails.msisdn.get
+                          strMsisdn = myData.toString()
+                          if (strMsisdn != null && strMsisdn != None){
+                            strMsisdn = strMsisdn.trim
+                            if (strMsisdn.length > 0){
+                              strMsisdn = strMsisdn.replace("'","")//Remove apostrophe
+                              strMsisdn = strMsisdn.replace(" ","")//Remove spaces
+                              strMsisdn = strMsisdn.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strMsisdn = strMsisdn.trim
+                            }
+                          }
+                        }
+                      }
+                      /*
+                      //strSchemeName
+                      if (myPaymentDetails.accountdata.schemename != None) {
+                        if (myPaymentDetails.accountdata.schemename.get != None) {
+                          val myData = myPaymentDetails.accountdata.schemename.get
+                          strSchemeName = myData.toString()
+                          if (strSchemeName != null && strSchemeName != None){
+                            strSchemeName = strSchemeName.trim
+                            if (strSchemeName.length > 0){
+                              strSchemeName = strSchemeName.replace("'","")//Remove apostrophe
+                              strSchemeName = strSchemeName.replace(" ","")//Remove spaces
+                              strSchemeName = strSchemeName.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strSchemeName = strSchemeName.trim
+                            }
+                          }
+                        }
+                      }
+
+                      //strBankCode
+                      if (myPaymentDetails.accountdata.bankcode != None) {
+                        if (myPaymentDetails.accountdata.bankcode.get != None) {
+                          val myData = myPaymentDetails.accountdata.bankcode.get
+                          strBankCode = myData.toString()
+                          if (strBankCode != null && strBankCode != None){
+                            strBankCode = strBankCode.trim
+                            if (strBankCode.length > 0){
+                              strBankCode = strBankCode.replace("'","")//Remove apostrophe
+                              strBankCode = strBankCode.replace(" ","")//Remove spaces
+                              strBankCode = strBankCode.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strBankCode = strBankCode.trim
+                              if (strBankCode.length > 0){
+                                val isNumeric: Boolean = strBankCode.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
+                                if (isNumeric){
+                                  myBankCode = strBankCode.toInt
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                      */
+
+                    }
+                    catch {
+                      case io: Throwable =>
+                        log_errors(strApifunction + " : " + io.getMessage())
+                      case ex: Exception =>
+                        log_errors(strApifunction + " : " + ex.getMessage())
+                    }
+                    /*
+					          isValidSchemeName = {
+                      var isValid: Boolean = false
+                      if (strSchemeName.length == 0 || accSchemeName.length == 0){
+                        isValid = false
+                      }
+                      else if (strSchemeName.equalsIgnoreCase(accSchemeName)){
+                        isValid = true
+                      }
+                      else if (strSchemeName.equalsIgnoreCase(phneSchemeName)){
+                        isValidPhneSchemeName = true
+                        isValid = true
+                      }
+                      else {
+                        isValid = false
+                      }
+                      isValid
+                    }
+
+                    isValidMessageReference = {
+                      var isValid: Boolean = false
+                      if (strMessageReference.length > 0 && strMessageReference.length <= 35){
+                        val isNumeric: Boolean = strMessageReference.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
+                        if (isNumeric){
+                          val myMessageReference = BigDecimal(strMessageReference)
+                          if (myMessageReference > 0){isValid = true}
+                        }
+                        else{
+                          isValid = strMessageReference.matches(strAlphaNumericHyphenRegex) //validate alphanumeric, Hyphen
+                        }
+                      }
+                      isValid
+                    }
+
+                    isValidTransactionReference = {
+                      var isValid: Boolean = false
+                      if (strTransactionReference.length > 0 && strTransactionReference.length <= 35){
+                        val isNumeric: Boolean = strTransactionReference.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
+                        if (isNumeric){
+                          val myTransactionReference = BigDecimal(strTransactionReference)
+                          if (myTransactionReference > 0){isValid = true}
+                        }
+                        else{
+                          isValid = strTransactionReference.matches(strAlphaNumericHyphenRegex) //validate alphanumeric, Hyphen
+                        }
+                      }
+                      isValid
+                    }
+
+                    isMatchingReference = {
+                      var isValid: Boolean = false
+                      if (isValidMessageReference && isValidTransactionReference) {
+                        if (strMessageReference.equalsIgnoreCase(strTransactionReference)){
+                          isValid = true  
+                        }  
+                      }
+                      isValid
+                    }
+
+                    isValidAccountNumber = {
+                      var isValid: Boolean = false
+                      if (strAccountNumber.length >= 12 && strAccountNumber.length <= 20){
+                        isValid = true
+                      }
+                      isValid
+                    }
+                    */
+                    isValidMsisdn = {
+                      var isValid: Boolean = false
+                      if (strMsisdn.length >= 12 && strMsisdn.length <= 20){
+                        isValid = true
+                      }
+                      isValid
+                    }
+                    /*
+                    isValidBankCode = {
+                      var isValid: Boolean = false
+                      if (strBankCode.length > 0 && strBankCode.length <= 35){
+                        val isNumeric: Boolean = strBankCode.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
+                        if (isNumeric){
+                          val myBankCode = BigDecimal(strBankCode)
+                          if (myBankCode > 0){isValid = true}
+                        }
+                        else{
+                          isValid = true
+                        }
+                      }
+                      isValid
+                    }
+
+                    //We should not send any requests to FCB as beneficiary Bank, hence validate BankCode
+                    val isclientBankCode_creditor: Boolean = {
+                      if (!isValidBankCode){false}
+                      else if (strBankCode.equalsIgnoreCase(firstAgentIdentification)){true}
+                      else {false}
+                    }
+                    */
+                    /* Lets set var isValidInputData to true if valid data is received from e-Channels/ESB-CBS System */
+                    //if (isValidMessageReference && isValidTransactionReference && isValidAccountNumber && isValidSchemeName && isValidBankCode && !isMatchingReference){
+                    //if (isValidMessageReference && isValidTransactionReference && isValidAccountNumber && isValidSchemeName && isValidBankCode && !isMatchingReference && !isclientBankCode_creditor){  
+                    if (isValidMsisdn){
+                      /*
+                      isValidInputData = true
+                      myHttpStatusCode = HttpStatusCode.Accepted //TESTS ONLY
+                      responseCode = 0
+                      responseMessage = "Message accepted for processing."
+                      */
+                      isValidInputData = true
+                    }
+                    
+                    try{
+                      if (isValidInputData){
+                        val myBatchSize: Integer = 1
+                        //val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
+                        val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
+                        val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
+                        val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+                        
+                        val myAccountVerificationTableResponseDetails = addOutgoingAccountVerificationDetails(myAccountVerificationTableDetails, strChannelType, strChannelCallBackUrl)
+                        
+                        if (myAccountVerificationTableResponseDetails != null){
+                          if (myAccountVerificationTableResponseDetails.id != null){
+                            myID = myAccountVerificationTableResponseDetails.id
+                          }
+
+                          if (myAccountVerificationTableResponseDetails.responsecode != null){
+                            responseCode = myAccountVerificationTableResponseDetails.responsecode
+                          }
+
+                          if (myAccountVerificationTableResponseDetails.responsemessage != null){
+                            responseMessage = myAccountVerificationTableResponseDetails.responsemessage
+                          }
+                        }
+
+                        if (responseCode == 0){
+                          myHttpStatusCode = HttpStatusCode.Accepted
+                          responseMessage = "Message accepted for processing."
+                        }
+
+                        //tests only
+                        myHttpStatusCode = HttpStatusCode.Accepted
+                        responseMessage = "Message accepted for processing."
+                      }
+                      else{
+                        responseMessage = "Invalid Input Data length"
+                        if (!isValidAccountNumber){
+                          responseMessage = "Invalid Input Data. msisdn"
+                        }
+                        /*
+                        if (!isValidMessageReference){
+                          responseMessage = "Invalid Input Data. messagereference"
+                        }
+                        else if (!isValidTransactionReference){
+                          responseMessage = "Invalid Input Data. transactionreference"
+                        }
+                        else if (!isValidAccountNumber){
+                          responseMessage = "Invalid Input Data. accountnumber"
+                        }
+                        
+                        else if (!isValidSchemeName){
+                          responseMessage = "Invalid Input Data. schemename"
+                        }
+                        else if (!isValidBankCode){
+                          responseMessage = "Invalid Input Data. bankcode"
+                        }
+                        else if (isMatchingReference){
+                          responseMessage = "Invalid Input Data. messagereference and transactionreference should have different values"
+                        }
+                        else if (isclientBankCode_creditor){
+                          responseMessage = "Invalid Input Data. FCB cannot be beneficiary Bank"
+                        }
+                        */
+                      }
+                    }
+                    catch {
+                      case io: IOException =>
+                        responseMessage = "Error occured during processing, please try again."
+                        log_errors(strApifunction + " : " + io.getMessage())
+                      case ex: Exception =>
+                        responseMessage = "Error occured during processing, please try again."
+                        log_errors(strApifunction + " : " + ex.getMessage())
+                    }
+
+                  }
+                  catch {
+                    case io: IOException =>
+                      responseMessage = "Error occured during processing, please try again."
+                      log_errors(strApifunction + " : " + io.getMessage())
+                    case ex: Exception =>
+                      responseMessage = "Error occured during processing, please try again."
+                      log_errors(strApifunction + " : " + ex.getMessage())
+                  }
+                }
+                catch
+                  {
+                    case ex: Exception =>
+                      log_errors(strApifunction + " : " + ex.getMessage())
+                    case tr: Throwable =>
+                      log_errors(strApifunction + " : " + tr.getMessage())
+                  }
+
+              }
+              case JsError(e) => {
+                responseMessage = "Error occured when unpacking Json values"
+                log_errors(strApifunction + " : " + e.toString())
+              }
+            }
+          }
+          else{
+            myHttpStatusCode = HttpStatusCode.Unauthorized
+          }
+        }
+        else {
+          if (!isDataFound) {
+            responseMessage = "Invalid Request Data"
+          }
+          else if (!isAuthTokenFound) {
+            responseMessage = "Invalid Access Token"
+          }
+          else if (!isValidUrl) {
+            responseMessage = "Invalid Channel CallBackUrl"
+          }
+          else {
+            responseMessage = "Invalid Request Data"
+          }
+          insertApiValidationRequests(strChannelType, strUserName, strPassword, strClientIP, strApifunction, responseCode, responseMessage)
+        }
+
+      }
+      catch
+	  {
+	    case ex: Exception =>
+        responseMessage = "Error occured during processing, please try again."
+        log_errors(strApifunction + " : " + ex.getMessage())
+	   case tr: Throwable =>
+        responseMessage = "Error occured during processing, please try again."
+        log_errors(strApifunction + " : " + tr.getMessage())
+	  }
+      
+    implicit val  AccountVerificationDetailsResponse_Writes = Json.writes[AccountVerificationDetailsResponse]
+
+    val myAccountVerificationResponse =  AccountVerificationDetailsResponse(responseCode, responseMessage)
+    val jsonResponse = Json.toJson(myAccountVerificationResponse)
+
+    try{      
+      val t1: String =  new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
+      val t2: String =  new SimpleDateFormat("HH:mm:ss.SSS").format(new java.util.Date)
+      val creationDateTime: String = t1 + "T" + t2+ "Z"
+            
+      val isSendRequest = {
+        myHttpStatusCode match {
+          case HttpStatusCode.Accepted =>
+            true
+          case _ =>
+            false
+        }
+      }
+
+      if (isSendRequest){        
+        val f = Future {
+          val login: String = "FCB"
+          val password: String = "123456" 
+          val msisdn: String = strMsisdn
+          val myRespData: String = getCustomerBankListInfoDetails(login, password, msisdn)
+          sendPhoneVerificationRequestsIpsl(myID, msisdn, myRespData, strMessageReference, strTransactionReference, strOutgoingAccountVerificationUrlIpsl, strChannelType, strChannelCallBackUrl)
+        }(myExecutionContext)
+        
+        val dateToCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+        val myCode: Int = {
+          myHttpStatusCode match {
+          case HttpStatusCode.Accepted =>
+            202
+          case HttpStatusCode.BadRequest =>
+            400
+          case HttpStatusCode.Unauthorized =>
+            401
+          case _ =>
+            400
+          }
+        }
+        val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [HttpStatusCode_CbsApi_In] = " + myCode + ", [ResponseMessage_CbsApi_In] = '" + jsonResponse.toString() + "', [Date_to_CbsApi_In] = '" + dateToCbsApi + "' where [ID] = " + myID + ";"
+        insertUpdateRecord(strSQL)
+      }
+      else{
+        try{
+          val myBatchSize: Integer = 1
+          val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
+          val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
+          var strRequestData: String = ""
+
+          if (strRequest != null && strRequest != None){
+            strRequest = strRequest.trim
+            if (strRequest.length > 0){
+              strRequestData = strRequest.replace("'","")//Remove apostrophe
+              strRequestData = strRequestData.trim
+            }
+          }
+
+          val f = Future {
+            val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+                  
+            addOutgoingAccountVerificationDetailsArchive(responseCode, responseMessage, jsonResponse.toString(), myAccountVerificationTableDetails, strChannelType, strChannelCallBackUrl)
+          }(myExecutionContext)
+        }
+        catch{
+          case ex: Exception =>
+            log_errors(strApifunction + " : " + ex.getMessage())
+          case io: IOException =>
+            log_errors(strApifunction + " : " + io.getMessage())
+          case tr: Throwable =>
+            log_errors(strApifunction + " : " + tr.getMessage())
+        }
+      }
+
+      log_data(strApifunction + " : " + "response - " + jsonResponse.toString() + " , remoteAddress - " + strClientIP)
+    }
+    catch{
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage())
+      case io: IOException =>
+        log_errors(strApifunction + " : " + io.getMessage())
+      case tr: Throwable =>
+        log_errors(strApifunction + " : " + tr.getMessage())
+    }
+    
+    val r: Result = {
+      myHttpStatusCode match {
+        case HttpStatusCode.Accepted =>
+          Accepted(jsonResponse)
+        case HttpStatusCode.BadRequest =>
+          BadRequest(jsonResponse)
+        case HttpStatusCode.Unauthorized =>
+          Unauthorized(jsonResponse)
+        case _ =>
+          BadRequest(jsonResponse)
+      }
+    }
+
+    r
+    }(myExecutionContext)
+  }
+  def deleteCustomerDetails = Action.async { request =>
+    Future {
+      val dateFromCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+      val startDate: String =  new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS").format(new java.util.Date)
+      var responseCode: Int = 1
+      var responseMessage: String = "Error occured during processing, please try again."
+      var myHttpStatusCode = HttpStatusCode.BadRequest
+      val strApifunction: String = "deletecustomerdetails"
+
+      var myBankCode: Int = 0
+      var strMessageReference: String = ""
+      var strTransactionReference: String = ""
+      var strAccountNumber: String = ""
+      var strMsisdn: String = ""
+      var strSchemeName: String = ""
+      var strBankCode: String = ""
+      var isValidMessageReference: Boolean = false
+      var isValidTransactionReference: Boolean = false
+      var isMatchingReference: Boolean = false
+      var isValidSchemeName: Boolean = false
+      var isValidPhneSchemeName: Boolean = false
+      var isValidAccountNumber: Boolean = false
+      var isValidMsisdn: Boolean = false
+      var isValidBankCode: Boolean = false
+	    val accSchemeName: String = SchemeName.ACCOUNT.toString.toUpperCase
+      val phneSchemeName: String = SchemeName.PHONE.toString.toUpperCase
+      var myID: BigDecimal = 0
+      var strClientIP: String = ""
+      var strChannelType: String = ""
+	    var strOrigin: String = ""
+      var strChannelCallBackUrl: String = ""
+      var strRequest: String = ""
+
+      try
+      {
+        //var strRequest: String = ""
+        var strRequestHeader: String = ""
+        var strAuthToken: String = ""
+        var isDataFound: Boolean = false
+        var isAuthTokenFound: Boolean = false
+        var isCredentialsFound: Boolean = false
+        var isValidUrl: Boolean = false
+        //var strChannelType: String = ""
+        var strUserName: String = ""
+        var strPassword: String = ""
+        //var strClientIP: String = ""
+
+        if (!request.body.asJson.isEmpty) {
+          isDataFound = true
+          strRequest = request.body.asJson.get.toString()
+          /*
+          if (request.remoteAddress != null){
+            strClientIP = request.remoteAddress
+            strClientIP = strClientIP.trim
+          }
+          */
+          
+          //Because we are using a proxy-server we'll use "X-Real-IP" and not request.remoteAddress
+          if (request.headers.get("X-Real-IP") != None){
+            val myheaderClientIP = request.headers.get("X-Real-IP")
+            if (myheaderClientIP.get != None){
+              strClientIP = myheaderClientIP.get.toString
+              if (strClientIP != null){
+                strClientIP = strClientIP.trim
+              }
+              else{
+                strClientIP = ""
+              }
+            }
+          }
+
+          if (request.headers.get("Authorization") != None){
+            val myheader = request.headers.get("Authorization")
+            if (myheader.get != None){
+              strRequestHeader = myheader.get.toString
+              if (strRequestHeader != null){
+                strRequestHeader = strRequestHeader.trim
+                if (strRequestHeader.length > 0){
+                  if (strRequestHeader.toLowerCase.contains("bearer")){
+                    val myArray = strRequestHeader.split(" ")
+
+                    if (myArray.length == 2){
+                      strAuthToken = myArray{1}
+                      if (strAuthToken != null){
+                        strAuthToken = strAuthToken.trim
+                        if (strAuthToken.length > 0){
+                          isAuthTokenFound = true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          if (request.headers.get("ChannelType") != None){
+            val myheaderChannelType = request.headers.get("ChannelType")
+            if (myheaderChannelType.get != None){
+              strChannelType = myheaderChannelType.get.toString
+              if (strChannelType != null){
+                strChannelType = strChannelType.trim
+              }
+              else{
+                strChannelType = ""
+              }
+            }
+          }
+		  
+          if (request.headers.get("Origin") != None){
+            val myheaderOrigin = request.headers.get("Origin")
+            if (myheaderOrigin.get != None){
+              strOrigin = myheaderOrigin.get.toString
+              if (strOrigin != null){
+                strOrigin = strOrigin.trim
+              }
+              else{
+                strOrigin = ""
+              }
+            }
+          }
+
+          if (request.headers.get("ChannelCallBackUrl") != None){
+            val myheaderChannelType = request.headers.get("ChannelCallBackUrl")
+            if (myheaderChannelType.get != None){
+              strChannelCallBackUrl = myheaderChannelType.get.toString
+              if (strChannelCallBackUrl != null){
+                strChannelCallBackUrl = strChannelCallBackUrl.trim
+                if (strChannelCallBackUrl.length > 0){
+                  isValidUrl = validateUrl(strChannelCallBackUrl)
+                }
+              }
+              else{
+                strChannelCallBackUrl = ""
+              }
+            }
+          }
+
+        }
+        else {
+          strRequest = "Invalid Request Data"
+        }
+
+        log_data(strApifunction + " : " + " channeltype - " + strChannelType + " , Origin - " + strOrigin + " , request - " + strRequest  + " , startdate - " + startDate + " , header - " + strRequestHeader + " , remoteAddress - " + strClientIP)
+
+        if (isDataFound && isAuthTokenFound && isValidUrl){
+          var strAccessToken: String = ""
+          try{
+            var myByteAuthToken = Base64.getDecoder.decode(strAuthToken)
+            var myAuthToken: String = new String(myByteAuthToken, StandardCharsets.UTF_8)
+
+            //log_data(strApifunction + " : myAuthToken - " + "**********" + " , strAuthToken - " + strAuthToken)
+
+            if (myAuthToken != null){
+              myAuthToken = myAuthToken.trim
+
+              if (myAuthToken.length > 0){
+                isCredentialsFound = true
+                strAccessToken = myAuthToken
+              }
+            }
+          }
+          catch
+          {
+            case ex: Exception =>
+              log_errors(strApifunction + " : " + ex.getMessage())
+            case tr: Throwable =>
+              log_errors(strApifunction + " : " + tr.getMessage())
+          }
+
+          try{
+            if (!isCredentialsFound){strPassword = ""}
+            val myOutput = validateApiAccessToken(strAccessToken, strChannelType, strClientIP, strApifunction, strOrigin)
+            if (myOutput.responsecode != null){
+              responseCode = myOutput.responsecode
+            }
+
+            if (myOutput.responsemessage != null){
+              responseMessage = myOutput.responsemessage
+            }
+            else{
+              responseMessage = "Error occured during processing, please try again."
+            }
+          }
+          catch
+          {
+            case ex: Exception =>
+              log_errors(strApifunction + " : " + ex.getMessage())
+            case tr: Throwable =>
+              log_errors(strApifunction + " : " + tr.getMessage())
+          }
+
+          if (isCredentialsFound && responseCode == 0){
+
+            val myjson = request.body.asJson.get
+
+            //Initialise responseCode
+            responseCode = 1
+            responseMessage  = "Error occured during processing, please try again."
+
+            implicit val DeleteCustomer_Request_Reads: Reads[DeleteCustomer_Request] = (
+              (JsPath \ "msisdn").readNullable[JsValue] and
+                (JsPath \ "account").readNullable[JsValue] and
+                (JsPath \ "sortcode").readNullable[JsValue]
+              )(DeleteCustomer_Request.apply _)
+
+            myjson.validate[DeleteCustomer_Request] match {
+              case JsSuccess(myPaymentDetails, _) => {
+
+                var isValidInputData : Boolean = false
+                //val myBatchSize : Integer = 1
+                //var strBatchReference : String = ""
+                var strRequestData : String = ""
+
+                try
+                {
+
+                  try{
+                    
+                    if (strRequest != null && strRequest != None){
+                      strRequest = strRequest.trim
+                      if (strRequest.length > 0){
+                        strRequestData = strRequest.replace("'","")//Remove apostrophe
+                        strRequestData = strRequestData.trim
+                      }
+                    }
+
+
+                    myBankCode = 0
+                    strMessageReference = ""
+                    strTransactionReference = ""
+                    strAccountNumber = ""
+                    strMsisdn = ""
+                    strSchemeName = ""
+                    strBankCode = ""
+                    isValidMessageReference = false
+                    isValidTransactionReference = false
+                    isMatchingReference = false
+                    isValidSchemeName = false
+                    isValidPhneSchemeName = false
+                    isValidAccountNumber = false
+                    isValidMsisdn = false 
+                    isValidBankCode = false
+
+                    try{
+                      /*
+                      //strMessageReference
+                      if (myPaymentDetails.messagereference != None) {
+                        if (myPaymentDetails.messagereference.get != None) {
+                          val myData = myPaymentDetails.messagereference.get
+                          strMessageReference = myData.toString()
+                          if (strMessageReference != null && strMessageReference != None){
+                            strMessageReference = strMessageReference.trim
+                            if (strMessageReference.length > 0){
+                              strMessageReference = strMessageReference.replace("'","")//Remove apostrophe
+                              strMessageReference = strMessageReference.replace(" ","")//Remove spaces
+                              strMessageReference = strMessageReference.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strMessageReference = strMessageReference.trim
+                            }
+                          }
+                        }
+                      }
+
+                      //strTransactionReference
+                      if (myPaymentDetails.accountdata.transactionreference != None) {
+                        if (myPaymentDetails.accountdata.transactionreference.get != None) {
+                          val myData = myPaymentDetails.accountdata.transactionreference.get
+                          strTransactionReference = myData.toString()
+                          if (strTransactionReference != null && strTransactionReference != None){
+                            strTransactionReference = strTransactionReference.trim
+                            if (strTransactionReference.length > 0){
+                              strTransactionReference = strTransactionReference.replace("'","")//Remove apostrophe
+                              strTransactionReference = strTransactionReference.replace(" ","")//Remove spaces
+                              strTransactionReference = strTransactionReference.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strTransactionReference = strTransactionReference.trim
+                            }
+                          }
+                        }
+                      }
+                      */
+                      //strMsisdn
+                      if (myPaymentDetails.msisdn != None) {
+                        if (myPaymentDetails.msisdn.get != None) {
+                          val myData = myPaymentDetails.msisdn.get
+                          strMsisdn = myData.toString()
+                          if (strMsisdn != null && strMsisdn != None){
+                            strMsisdn = strMsisdn.trim
+                            if (strMsisdn.length > 0){
+                              strMsisdn = strMsisdn.replace("'","")//Remove apostrophe
+                              strMsisdn = strMsisdn.replace(" ","")//Remove spaces
+                              strMsisdn = strMsisdn.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strMsisdn = strMsisdn.trim
+                            }
+                          }
+                        }
+                      }
+
+                      //strAccountNumber
+                      if (myPaymentDetails.account != None) {
+                        if (myPaymentDetails.account.get != None) {
+                          val myData = myPaymentDetails.account.get
+                          strAccountNumber = myData.toString()
+                          if (strAccountNumber != null && strAccountNumber != None){
+                            strAccountNumber = strAccountNumber.trim
+                            if (strAccountNumber.length > 0){
+                              strAccountNumber = strAccountNumber.replace("'","")//Remove apostrophe
+                              strAccountNumber = strAccountNumber.replace(" ","")//Remove spaces
+                              strAccountNumber = strAccountNumber.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strAccountNumber = strAccountNumber.trim
+                            }
+                          }
+                        }
+                      }
+                      /*
+                      //strSchemeName 
+                      if (myPaymentDetails.accountdata.schemename != None) {
+                        if (myPaymentDetails.accountdata.schemename.get != None) {
+                          val myData = myPaymentDetails.accountdata.schemename.get
+                          strSchemeName = myData.toString()
+                          if (strSchemeName != null && strSchemeName != None){
+                            strSchemeName = strSchemeName.trim
+                            if (strSchemeName.length > 0){
+                              strSchemeName = strSchemeName.replace("'","")//Remove apostrophe
+                              strSchemeName = strSchemeName.replace(" ","")//Remove spaces
+                              strSchemeName = strSchemeName.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strSchemeName = strSchemeName.trim
+                            }
+                          }
+                        }
+                      }
+                      
+                      //strBankCode
+                      if (myPaymentDetails.sortcode != None) {
+                        if (myPaymentDetails.sortcode.get != None) {
+                          val myData = myPaymentDetails.sortcode.get
+                          strBankCode = myData.toString()
+                          if (strBankCode != null && strBankCode != None){
+                            strBankCode = strBankCode.trim
+                            if (strBankCode.length > 0){
+                              strBankCode = strBankCode.replace("'","")//Remove apostrophe
+                              strBankCode = strBankCode.replace(" ","")//Remove spaces
+                              strBankCode = strBankCode.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                              strBankCode = strBankCode.trim
+                              if (strBankCode.length > 0){
+                                val isNumeric: Boolean = strBankCode.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
+                                if (isNumeric){
+                                  myBankCode = strBankCode.toInt
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                      */
+                    }
+                    catch {
+                      case io: Throwable =>
+                        log_errors(strApifunction + " : " + io.getMessage())
+                      case ex: Exception =>
+                        log_errors(strApifunction + " : " + ex.getMessage())
+                    }
+                    /*
+					          isValidSchemeName = {
+                      var isValid: Boolean = false
+                      if (strSchemeName.length == 0 || accSchemeName.length == 0){
+                        isValid = false
+                      }
+                      else if (strSchemeName.equalsIgnoreCase(accSchemeName)){
+                        isValid = true
+                      }
+                      else if (strSchemeName.equalsIgnoreCase(phneSchemeName)){
+                        isValidPhneSchemeName = true
+                        isValid = true
+                      }
+                      else {
+                        isValid = false
+                      }
+                      isValid
+                    }
+
+                    isValidMessageReference = {
+                      var isValid: Boolean = false
+                      if (strMessageReference.length > 0 && strMessageReference.length <= 35){
+                        val isNumeric: Boolean = strMessageReference.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
+                        if (isNumeric){
+                          val myMessageReference = BigDecimal(strMessageReference)
+                          if (myMessageReference > 0){isValid = true}
+                        }
+                        else{
+                          isValid = strMessageReference.matches(strAlphaNumericHyphenRegex) //validate alphanumeric, Hyphen
+                        }
+                      }
+                      isValid
+                    }
+
+                    isValidTransactionReference = {
+                      var isValid: Boolean = false
+                      if (strTransactionReference.length > 0 && strTransactionReference.length <= 35){
+                        val isNumeric: Boolean = strTransactionReference.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
+                        if (isNumeric){
+                          val myTransactionReference = BigDecimal(strTransactionReference)
+                          if (myTransactionReference > 0){isValid = true}
+                        }
+                        else{
+                          isValid = strTransactionReference.matches(strAlphaNumericHyphenRegex) //validate alphanumeric, Hyphen
+                        }
+                      }
+                      isValid
+                    }
+
+                    isMatchingReference = {
+                      var isValid: Boolean = false
+                      if (isValidMessageReference && isValidTransactionReference) {
+                        if (strMessageReference.equalsIgnoreCase(strTransactionReference)){
+                          isValid = true  
+                        }  
+                      }
+                      isValid
+                    }
+                    */
+                    isValidMsisdn = {
+                      var isValid: Boolean = false
+                      if (strMsisdn.length >= 12 && strMsisdn.length <= 20){
+                        isValid = true
+                      }
+                      isValid
+                    }
+
+                    isValidAccountNumber = {
+                      var isValid: Boolean = false
+                      if (strAccountNumber.length > 0 && strAccountNumber.length <= 35){
+                        isValid = true
+                      }
+                      isValid
+                    }
+                    /*
+                    isValidBankCode = {
+                      var isValid: Boolean = false
+                      if (strBankCode.length > 0 && strBankCode.length <= 35){
+                        val isNumeric: Boolean = strBankCode.matches(strNumbersOnlyRegex) //validate numbers only i.e "[0-9]+"
+                        if (isNumeric){
+                          val myBankCode = BigDecimal(strBankCode)
+                          if (myBankCode > 0){isValid = true}
+                        }
+                        else{
+                          isValid = true
+                        }
+                      }
+                      isValid
+                    }
+                    
+                    //We should not send any requests to FCB as beneficiary Bank, hence validate BankCode
+                    val isclientBankCode_creditor: Boolean = {
+                      if (!isValidBankCode){false}
+                      else if (strBankCode.equalsIgnoreCase(firstAgentIdentification)){true}
+                      else {false}
+                    }
+                    */
+                    /* Lets set var isValidInputData to true if valid data is received from e-Channels/ESB-CBS System */
+                    //if (isValidMessageReference && isValidTransactionReference && isValidAccountNumber && isValidSchemeName && isValidBankCode && !isMatchingReference){
+                    //if (isValidMessageReference && isValidTransactionReference && isValidAccountNumber && isValidSchemeName && isValidBankCode && !isMatchingReference && !isclientBankCode_creditor){  
+                    if (isValidMsisdn && isValidAccountNumber){
+                      /*
+                      isValidInputData = true
+                      myHttpStatusCode = HttpStatusCode.Accepted //TESTS ONLY
+                      responseCode = 0
+                      responseMessage = "Message accepted for processing."
+                      */
+                      isValidInputData = true
+                    }
+                    
+                    try{
+                      if (isValidInputData){
+                        val myBatchSize: Integer = 1
+                        //val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
+                        val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
+                        val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
+                        val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+                        
+                        val myAccountVerificationTableResponseDetails = addOutgoingAccountVerificationDetails(myAccountVerificationTableDetails, strChannelType, strChannelCallBackUrl)
+                        
+                        if (myAccountVerificationTableResponseDetails != null){
+                          if (myAccountVerificationTableResponseDetails.id != null){
+                            myID = myAccountVerificationTableResponseDetails.id
+                          }
+
+                          if (myAccountVerificationTableResponseDetails.responsecode != null){
+                            responseCode = myAccountVerificationTableResponseDetails.responsecode
+                          }
+
+                          if (myAccountVerificationTableResponseDetails.responsemessage != null){
+                            responseMessage = myAccountVerificationTableResponseDetails.responsemessage
+                          }
+                        }
+
+                        if (responseCode == 0){
+                          myHttpStatusCode = HttpStatusCode.Accepted
+                          responseMessage = "Message accepted for processing."
+                        }
+
+                        //tests only
+                        myHttpStatusCode = HttpStatusCode.Accepted
+                        responseMessage = "Message accepted for processing."
+                      }
+                      else{
+                        responseMessage = "Invalid Input Data length"
+                        if (!isValidMsisdn){
+                          responseMessage = "Invalid Input Data. msisdn"
+                        }
+                        else if (!isValidAccountNumber){
+                          responseMessage = "Invalid Input Data. accountnumber"
+                        }
+                        /*
+                        if (!isValidMessageReference){
+                          responseMessage = "Invalid Input Data. messagereference"
+                        }
+                        else if (!isValidTransactionReference){
+                          responseMessage = "Invalid Input Data. transactionreference"
+                        }
+                        else if (!isValidAccountNumber){
+                          responseMessage = "Invalid Input Data. accountnumber"
+                        }
+                        
+                        else if (!isValidSchemeName){
+                          responseMessage = "Invalid Input Data. schemename"
+                        }
+                        else if (!isValidBankCode){
+                          responseMessage = "Invalid Input Data. bankcode"
+                        }
+                        else if (isMatchingReference){
+                          responseMessage = "Invalid Input Data. messagereference and transactionreference should have different values"
+                        }
+                        else if (isclientBankCode_creditor){
+                          responseMessage = "Invalid Input Data. FCB cannot be beneficiary Bank"
+                        }
+                        */
+                      }
+                    }
+                    catch {
+                      case io: IOException =>
+                        responseMessage = "Error occured during processing, please try again."
+                        log_errors(strApifunction + " : " + io.getMessage())
+                      case ex: Exception =>
+                        responseMessage = "Error occured during processing, please try again."
+                        log_errors(strApifunction + " : " + ex.getMessage())
+                    }
+
+                  }
+                  catch {
+                    case io: IOException =>
+                      responseMessage = "Error occured during processing, please try again."
+                      log_errors(strApifunction + " : " + io.getMessage())
+                    case ex: Exception =>
+                      responseMessage = "Error occured during processing, please try again."
+                      log_errors(strApifunction + " : " + ex.getMessage())
+                  }
+                }
+                catch
+                  {
+                    case ex: Exception =>
+                      log_errors(strApifunction + " : " + ex.getMessage())
+                    case tr: Throwable =>
+                      log_errors(strApifunction + " : " + tr.getMessage())
+                  }
+
+              }
+              case JsError(e) => {
+                responseMessage = "Error occured when unpacking Json values"
+                log_errors(strApifunction + " : " + e.toString())
+              }
+            }
+          }
+          else{
+            myHttpStatusCode = HttpStatusCode.Unauthorized
+          }
+        }
+        else {
+          if (!isDataFound) {
+            responseMessage = "Invalid Request Data"
+          }
+          else if (!isAuthTokenFound) {
+            responseMessage = "Invalid Access Token"
+          }
+          else if (!isValidUrl) {
+            responseMessage = "Invalid Channel CallBackUrl"
+          }
+          else {
+            responseMessage = "Invalid Request Data"
+          }
+          insertApiValidationRequests(strChannelType, strUserName, strPassword, strClientIP, strApifunction, responseCode, responseMessage)
+        }
+
+      }
+      catch
+	  {
+	    case ex: Exception =>
+        responseMessage = "Error occured during processing, please try again."
+        log_errors(strApifunction + " : " + ex.getMessage())
+	   case tr: Throwable =>
+        responseMessage = "Error occured during processing, please try again."
+        log_errors(strApifunction + " : " + tr.getMessage())
+	  }
+      
+    implicit val  AccountVerificationDetailsResponse_Writes = Json.writes[AccountVerificationDetailsResponse]
+
+    val myAccountVerificationResponse =  AccountVerificationDetailsResponse(responseCode, responseMessage)
+    val jsonResponse = Json.toJson(myAccountVerificationResponse)
+
+    try{      
+      val t1: String =  new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
+      val t2: String =  new SimpleDateFormat("HH:mm:ss.SSS").format(new java.util.Date)
+      val creationDateTime: String = t1 + "T" + t2+ "Z"
+            
+      val isSendRequest = {
+        myHttpStatusCode match {
+          case HttpStatusCode.Accepted =>
+            true
+          case _ =>
+            false
+        }
+      }
+
+      if (isSendRequest){        
+        val f = Future {
+          val login: String = "FCB"
+          val password: String = "123456" 
+          val sortcode: String = "40474000"
+          val msisdn: String = strMsisdn
+          val account: String = strAccountNumber
+          val myRespData: String = getCustomerDeleteDetails(login, password, msisdn, account, sortcode)
+          sendPhoneVerificationRequestsIpsl(myID, msisdn, myRespData, strMessageReference, strTransactionReference, strOutgoingAccountVerificationUrlIpsl, strChannelType, strChannelCallBackUrl)
+        }(myExecutionContext)
+        
+        val dateToCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
+        val myCode: Int = {
+          myHttpStatusCode match {
+          case HttpStatusCode.Accepted =>
+            202
+          case HttpStatusCode.BadRequest =>
+            400
+          case HttpStatusCode.Unauthorized =>
+            401
+          case _ =>
+            400
+          }
+        }
+        val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [HttpStatusCode_CbsApi_In] = " + myCode + ", [ResponseMessage_CbsApi_In] = '" + jsonResponse.toString() + "', [Date_to_CbsApi_In] = '" + dateToCbsApi + "' where [ID] = " + myID + ";"
+        insertUpdateRecord(strSQL)
+      }
+      else{
+        try{
+          val myBatchSize: Integer = 1
+          val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
+          val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
+          var strRequestData: String = ""
+
+          if (strRequest != null && strRequest != None){
+            strRequest = strRequest.trim
+            if (strRequest.length > 0){
+              strRequestData = strRequest.replace("'","")//Remove apostrophe
+              strRequestData = strRequestData.trim
+            }
+          }
+
+          val f = Future {
+            val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+                  
+            addOutgoingAccountVerificationDetailsArchive(responseCode, responseMessage, jsonResponse.toString(), myAccountVerificationTableDetails, strChannelType, strChannelCallBackUrl)
+          }(myExecutionContext)
+        }
+        catch{
+          case ex: Exception =>
+            log_errors(strApifunction + " : " + ex.getMessage())
+          case io: IOException =>
+            log_errors(strApifunction + " : " + io.getMessage())
+          case tr: Throwable =>
+            log_errors(strApifunction + " : " + tr.getMessage())
+        }
+      }
+
+      log_data(strApifunction + " : " + "response - " + jsonResponse.toString() + " , remoteAddress - " + strClientIP)
+    }
+    catch{
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage())
+      case io: IOException =>
+        log_errors(strApifunction + " : " + io.getMessage())
+      case tr: Throwable =>
+        log_errors(strApifunction + " : " + tr.getMessage())
+    }
+    
     val r: Result = {
       myHttpStatusCode match {
         case HttpStatusCode.Accepted =>
@@ -14857,8 +17296,7 @@ class CbsEngine @Inject()
               else {
                 Future {
                   log_errors(strApifunction + " : " + "myID - " + myID + " , resp.entity " + resp.entity.toString + " , resp.status.intValue() " + resp.status.intValue().toString)
-                  //val x: Login_EsbCbs = null
-                  //x
+
                   null
                 }
               }
@@ -14871,8 +17309,6 @@ class CbsEngine @Inject()
 
               log_errors(strApifunction + " : " + "myID - " + myID + " , InternalServerError (exception error occured)")
 
-              //val x: Login_EsbCbs = null
-              //x
               null
           }
 
@@ -14882,7 +17318,6 @@ class CbsEngine @Inject()
               val dateFromIpslApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
               var myID: BigDecimal = 0
               var myHttpStatusCode: Int = 0
-              //println("start 2: " + res.status.intValue())
               var isValidResponse: Boolean = false
               var strChannelType: String = ""
               var strCallBackApiURL: String = ""
@@ -14930,7 +17365,7 @@ class CbsEngine @Inject()
                 log_data(strApifunction + " : " + " channeltype - IPSL"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode)
                 ///*
                 val y: scala.xml.Node = scala.xml.XML.loadString(strResponseData)
-                val myCustomerBankList = getCustomerBankListResponse.fromXml(y)
+                val myCustomerBankList = GetCustomerBankListResponse.fromXml(y)
                 /*
                 println("myCustomerBankList - " + myCustomerBankList.toString)
                 println("myCustomerBankList.sortCode - " + myCustomerBankList.sortcode.toString)
@@ -14984,7 +17419,7 @@ class CbsEngine @Inject()
                       strdestinationName = myCustomerBankList.destinationName
                       if (strdestinationName.length > 0){
                         strdestinationName = strdestinationName.replace("'","")//Remove apostrophe
-                        strdestinationName = strdestinationName.replace(" ","")//Remove spaces
+                        strdestinationName = strdestinationName.replace("  "," ")//Remove double spaces
                         strdestinationName = strdestinationName.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                         strdestinationName = strdestinationName.trim
                       }
@@ -17907,18 +20342,50 @@ class CbsEngine @Inject()
 
     strOutput
   }
-  def getCustomerBankListDetails(login: String, password: String, msisdn: String) : String = {
+  def getCustomerRegisterDetails(login: String, password: String, account: String, defaultrecord: String, document: String, documentnumber: String, email: String, msisdn: String, name: String, lang: String, sortcode: String) : String = {
 
     var strOutput: String = ""
     try {
-      val getCustomerBankList = new getCustomerBankList(login, password, msisdn)
+      val registerCustomer = new RegisterCustomer(login, password, account, defaultrecord, document, documentnumber, email, msisdn, name, lang, sortcode)
+      val myData = registerCustomer.toXml
+      strOutput = myData.toString()
+    }catch {
+      case ex: Exception =>
+        log_errors("getCustomerRegisterDetails : " + ex.getMessage + " exception error occured.")
+      case t: Throwable =>
+        log_errors("getCustomerRegisterDetails : " + t.getMessage + " exception error occured.")
+    }
+
+    strOutput
+  }
+  def getCustomerBankListInfoDetails(login: String, password: String, msisdn: String) : String = {
+
+    var strOutput: String = ""
+    try {
+      val getCustomerBankList = new GetCustomerBankList(login, password, msisdn)
       val myData = getCustomerBankList.toXml
       strOutput = myData.toString()
     }catch {
       case ex: Exception =>
-        log_errors("getCustomerBankListDetails : " + ex.getMessage + " exception error occured.")
+        log_errors("getCustomerBankListInfoDetails : " + ex.getMessage + " exception error occured.")
       case t: Throwable =>
-        log_errors("getCustomerBankListDetails : " + t.getMessage + " exception error occured.")
+        log_errors("getCustomerBankListInfoDetails : " + t.getMessage + " exception error occured.")
+    }
+
+    strOutput
+  }
+  def getCustomerDeleteDetails(login: String, password: String, msisdn: String, account: String, sortcode: String) : String = {
+
+    var strOutput: String = ""
+    try {
+      val deleteCustomer = new DeleteCustomer(login, password, msisdn, account, sortcode)
+      val myData = deleteCustomer.toXml
+      strOutput = myData.toString()
+    }catch {
+      case ex: Exception =>
+        log_errors("getCustomerDeleteDetails : " + ex.getMessage + " exception error occured.")
+      case t: Throwable =>
+        log_errors("getCustomerDeleteDetails : " + t.getMessage + " exception error occured.")
     }
 
     strOutput
