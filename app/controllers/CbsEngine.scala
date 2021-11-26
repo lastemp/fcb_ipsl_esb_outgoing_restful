@@ -19271,7 +19271,7 @@ class CbsEngine @Inject()
                       responseCode = 1
 
                       //verificationReasonCode = "AC01"
-                      responseMessage = "register customer failed"
+                      responseMessage = "update customer failed"
                       /*
                       if (verificationReasonCode != null){
                         if (verificationReasonCode.length > 0){
@@ -19421,7 +19421,7 @@ class CbsEngine @Inject()
                 //val strBankCode: String = ""
                 //val strAccountname: String = ""
                 val responseCode: Int = 1
-                val responseMessage: String = "register customer failed"
+                val responseMessage: String = "update customer failed"
 
                 if (myChannelType.value.isEmpty != true) {
                   if (myChannelType.value.get != None) {
