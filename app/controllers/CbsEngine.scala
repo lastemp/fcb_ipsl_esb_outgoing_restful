@@ -2850,6 +2850,8 @@ class CbsEngine @Inject()
   case class AccountVerificationTableDetails(batchreference: java.math.BigDecimal, accountnumber: String, bankcode: String, messagereference: String, transactionreference: String, schemename: String, batchsize: Integer, requestmessagecbsapi: String, datefromcbsapi: String, remoteaddresscbsapi: String)
   case class AccountVerificationTableResponseDetails(id: BigDecimal, responsecode: Int, responsemessage: String)
   case class ClientApiResponseDetails(responsecode: Int, responsemessage: String, myid: Int)
+  case class RegisterCustomerTableDetails(batchreference: java.math.BigDecimal, account: String, defaultrecord: String, documenttype: String, documentnumber: String, email: String, expirydate: String, msisdn: String, customername: String, pan: String, batchsize: Integer, requestmessagecbsapi: String, datefromcbsapi: String, remoteaddresscbsapi: String)
+  case class RegisterCustomerTableResponseDetails(id: BigDecimal, responsecode: Int, responsemessage: String)
 
   case class SingleCreditTransferPaymentTableDetails(batchreference: java.math.BigDecimal, 
   debtoraccountnumber: String, debtoraccountname: String, debtorbankcode: String, 
@@ -4268,7 +4270,7 @@ class CbsEngine @Inject()
                           }
                         }
 
-                        if (responseCode == 0){
+                        if (myID > 0 && responseCode == 0){
                           myHttpStatusCode = HttpStatusCode.Accepted
                           responseMessage = "Message accepted for processing."
                          
@@ -7948,7 +7950,7 @@ class CbsEngine @Inject()
                           }
                         }
 
-                        if (responseCode == 0){
+                        if (myID > 0 && responseCode == 0){
                           myHttpStatusCode = HttpStatusCode.Accepted
                           responseMessage = "Message accepted for processing."
                         }
@@ -10358,7 +10360,7 @@ class CbsEngine @Inject()
                           responseMessage = "Message accepted for processing."
                         }
                         */
-                        if (responseCode == 0 && isValidmyPaymentStatusDetails){
+                        if (myID.signum > 0 && responseCode == 0 && isValidmyPaymentStatusDetails){
                           myHttpStatusCode = HttpStatusCode.Accepted
                           responseMessage = "Message accepted for processing."
 
@@ -11261,32 +11263,30 @@ class CbsEngine @Inject()
                         //val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date)
                         val strBatchReference  = new SimpleDateFormat("yyyyMMddHHmmssSSS").format(new java.util.Date)
                         val myBatchReference: java.math.BigDecimal =  new java.math.BigDecimal(strBatchReference)
-                        val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
                         
-                        val myAccountVerificationTableResponseDetails = addOutgoingAccountVerificationDetails(myAccountVerificationTableDetails, strChannelType, strChannelCallBackUrl)
+                        val myRegisterCustomerTableDetails = RegisterCustomerTableDetails(myBatchReference, strAccountNumber, strDefaultRecord, strDocument, strDocumentnumber, strEmail, strExp, strMsisdn, strName, strPan, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
                         
-                        if (myAccountVerificationTableResponseDetails != null){
-                          if (myAccountVerificationTableResponseDetails.id != null){
-                            myID = myAccountVerificationTableResponseDetails.id
+                        val myRegisterCustomerTableResponseDetails = addOutgoingRegisterCustomerDetails(myRegisterCustomerTableDetails, strChannelType, strChannelCallBackUrl)
+                        
+                        if (myRegisterCustomerTableResponseDetails != null){
+                          if (myRegisterCustomerTableResponseDetails.id != null){
+                            myID = myRegisterCustomerTableResponseDetails.id
                           }
 
-                          if (myAccountVerificationTableResponseDetails.responsecode != null){
-                            responseCode = myAccountVerificationTableResponseDetails.responsecode
+                          if (myRegisterCustomerTableResponseDetails.responsecode != null){
+                            responseCode = myRegisterCustomerTableResponseDetails.responsecode
                           }
 
-                          if (myAccountVerificationTableResponseDetails.responsemessage != null){
-                            responseMessage = myAccountVerificationTableResponseDetails.responsemessage
+                          if (myRegisterCustomerTableResponseDetails.responsemessage != null){
+                            responseMessage = myRegisterCustomerTableResponseDetails.responsemessage
                           }
                         }
 
-                        if (responseCode == 0){
+                        if (myID > 0 && responseCode == 0){
                           myHttpStatusCode = HttpStatusCode.Accepted
                           responseMessage = "Message accepted for processing."
                         }
 
-                        //tests only
-                        myHttpStatusCode = HttpStatusCode.Accepted
-                        responseMessage = "Message accepted for processing."
                       }
                       else{
                         responseMessage = "Invalid Input Data length"
@@ -11470,9 +11470,9 @@ class CbsEngine @Inject()
           }
 
           val f = Future {
-            val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+            val myRegisterCustomerTableDetails = RegisterCustomerTableDetails(myBatchReference, strAccountNumber, strDefaultRecord, strDocument, strDocumentnumber, strEmail, strExp, strMsisdn, strName, strPan, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
                   
-            addOutgoingAccountVerificationDetailsArchive(responseCode, responseMessage, jsonResponse.toString(), myAccountVerificationTableDetails, strChannelType, strChannelCallBackUrl)
+            addOutgoingRegisterCustomerDetailsArchive(responseCode, responseMessage, jsonResponse.toString(), myRegisterCustomerTableDetails, strChannelType, strChannelCallBackUrl)
           }(myExecutionContext)
         }
         catch{
@@ -12204,14 +12204,11 @@ class CbsEngine @Inject()
                           }
                         }
 
-                        if (responseCode == 0){
+                        if (myID > 0 && responseCode == 0){
                           myHttpStatusCode = HttpStatusCode.Accepted
                           responseMessage = "Message accepted for processing."
                         }
 
-                        //tests only
-                        myHttpStatusCode = HttpStatusCode.Accepted
-                        responseMessage = "Message accepted for processing."
                       }
                       else{
                         responseMessage = "Invalid Input Data length"
@@ -12931,14 +12928,11 @@ class CbsEngine @Inject()
                           }
                         }
 
-                        if (responseCode == 0){
+                        if (myID > 0 && responseCode == 0){
                           myHttpStatusCode = HttpStatusCode.Accepted
                           responseMessage = "Message accepted for processing."
                         }
 
-                        //tests only
-                        myHttpStatusCode = HttpStatusCode.Accepted
-                        responseMessage = "Message accepted for processing."
                       }
                       else{
                         responseMessage = "Invalid Input Data length"
@@ -13634,14 +13628,11 @@ class CbsEngine @Inject()
                           }
                         }
 
-                        if (responseCode == 0){
+                        if (myID > 0 && responseCode == 0){
                           myHttpStatusCode = HttpStatusCode.Accepted
                           responseMessage = "Message accepted for processing."
                         }
 
-                        //tests only
-                        myHttpStatusCode = HttpStatusCode.Accepted
-                        responseMessage = "Message accepted for processing."
                       }
                       else{
                         responseMessage = "Invalid Input Data length"
@@ -18328,7 +18319,7 @@ class CbsEngine @Inject()
   def sendRegisterCustomerRequestsIpsl(myID: BigDecimal, strAccountNo: String, strPhoneNo: String, myRequestData: String, myMessageReference: String, myTransactionReference: String, strApiURL: String, strChannelType: String, strCallBackApiURL: String): Unit = {
     val strApifunction: String = "sendRegisterCustomerRequestsIpsl"
 
-    //if (myID == 0){return} tests only
+    if (myID == 0){return}
     if (myRequestData == null){return}
     if (myRequestData.length == 0){return}
     if (strCallBackApiURL == null){return}
@@ -18347,7 +18338,7 @@ class CbsEngine @Inject()
           val dateToIpslApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
           var strRequestData: String = ""
           
-          val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Posted_to_IpslApi] = 1, [Post_picked_IpslApi] = 1, [RequestMessage_IpslApi] = '" + strRequestData + "', [Date_to_IpslApi] = '" + dateToIpslApi + "' where [ID] = " + myID + ";"
+          val strSQL: String = "update [dbo].[OutgoingRegisterCustomerDetails] set [Posted_to_IpslApi] = 1, [Post_picked_IpslApi] = 1, [RequestMessage_IpslApi] = '" + strRequestData + "', [Date_to_IpslApi] = '" + dateToIpslApi + "' where [ID] = " + myID + ";"
           insertUpdateRecord(strSQL)
 
           log_data(strApifunction + " : " + " channeltype - IPSL"  + " , >> outgoing request >> - " + myRequestData + " , ID - " + myID)
@@ -18689,10 +18680,10 @@ class CbsEngine @Inject()
                   
                   val strStatusMessage: String = "Successful"
                   strResponseData = ""
-                  val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
+                  val strSQL: String = "update [dbo].[OutgoingRegisterCustomerDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
                   ", [StatusCode_IpslApi] = 0, [StatusMessage_IpslApi] = '" + strStatusMessage +
                   "', [isVerified] = '" + isVerified + "', [VerificationStatus] = '" + verificationStatus + 
-                  "', [VerificationReasonCode] = '" + verificationReasonCode + "', [AccountName] = '" + rrn + 
+                  "', [VerificationReasonCode] = '" + verificationReasonCode + "', [rrn] = '" + rrn + 
                   "', [ResponseMessage_IpslApi] = '" + strResponseData + 
                   "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
                   insertUpdateRecord(strSQL)
@@ -18724,7 +18715,7 @@ class CbsEngine @Inject()
                     }
                   }
 
-                  val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
+                  val strSQL: String = "update [dbo].[OutgoingRegisterCustomerDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
                   ", [StatusCode_IpslApi] = 1, [StatusMessage_IpslApi] = '" + strStatusMessage +
                   "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
                   insertUpdateRecord(strSQL)
@@ -18870,7 +18861,7 @@ class CbsEngine @Inject()
                   }
                 }
 
-                val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
+                val strSQL: String = "update [dbo].[OutgoingRegisterCustomerDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
                 ", [StatusCode_IpslApi] = 1, [StatusMessage_IpslApi] = '" + strStatusMessage +
                 "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
                 insertUpdateRecord(strSQL)
@@ -19002,7 +18993,7 @@ class CbsEngine @Inject()
   def sendUpdateCustomerRequestsIpsl(myID: BigDecimal, strAccountNo: String, strPhoneNo: String, myRequestData: String, myMessageReference: String, myTransactionReference: String, strApiURL: String, strChannelType: String, strCallBackApiURL: String): Unit = {
     val strApifunction: String = "sendUpdateCustomerRequestsIpsl"
 
-    //if (myID == 0){return} tests only
+    if (myID == 0){return}
     if (myRequestData == null){return}
     if (myRequestData.length == 0){return}
     if (strCallBackApiURL == null){return}
@@ -19665,7 +19656,7 @@ class CbsEngine @Inject()
   def sendPhoneVerificationRequestsIpsl(myID: BigDecimal, strPhoneNo: String, myRequestData: String, myMessageReference: String, myTransactionReference: String, strApiURL: String, strChannelType: String, strCallBackApiURL: String): Unit = {
     val strApifunction: String = "sendPhoneVerificationRequestsIpsl"
 
-    //if (myID == 0){return} tests only
+    if (myID == 0){return}
     if (myRequestData == null){return}
     if (myRequestData.length == 0){return}
     if (strCallBackApiURL == null){return}
@@ -20360,7 +20351,7 @@ class CbsEngine @Inject()
   def sendDeleteCustomerRequestsIpsl(myID: BigDecimal, strAccountNo: String, strPhoneNo: String, myRequestData: String, myMessageReference: String, myTransactionReference: String, strApiURL: String, strChannelType: String, strCallBackApiURL: String): Unit = {
     val strApifunction: String = "sendDeleteCustomerRequestsIpsl"
 
-    //if (myID == 0){return} tests only
+    if (myID == 0){return}
     if (myRequestData == null){return}
     if (myRequestData.length == 0){return}
     if (strCallBackApiURL == null){return}
@@ -24679,7 +24670,7 @@ class CbsEngine @Inject()
   def addOutgoingAccountVerificationDetails(myAccountVerificationTableDetails: AccountVerificationTableDetails, strChannelType: String, strChannelCallBackUrl: String): AccountVerificationTableResponseDetails = {
     val strApifunction: String = "addOutgoingAccountVerificationDetails"
     //var myID: java.math.BigDecimal = new java.math.BigDecimal(0)
-	var myID: BigDecimal = 0
+	  var myID: BigDecimal = 0
     var responseCode: Int = 1
     var responseMessage: String = ""
 
@@ -25034,6 +25025,104 @@ class CbsEngine @Inject()
     val myPaymentStatusTableResponseDetails = PaymentStatusTableResponseDetails(myID, responseCode, responseMessage, null)                            
 
     myPaymentStatusTableResponseDetails
+  }
+  def addOutgoingRegisterCustomerDetails(myRegisterCustomerTableDetails: RegisterCustomerTableDetails, strChannelType: String, strChannelCallBackUrl: String): RegisterCustomerTableResponseDetails = {
+    val strApifunction: String = "addOutgoingRegisterCustomerDetails"
+	  var myID: BigDecimal = 0
+    var responseCode: Int = 1
+    var responseMessage: String = ""
+
+    val strSQL: String = "{ call dbo.Add_OutgoingRegisterCustomerDetails(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) }"
+    try {
+      myDB.withConnection { implicit myconn =>
+        try{
+          val mystmt: CallableStatement = myconn.prepareCall(strSQL)
+          mystmt.registerOutParameter("myID", java.sql.Types.BIGINT)
+          mystmt.registerOutParameter("responseCode", java.sql.Types.INTEGER)
+          mystmt.registerOutParameter("responseMessage", java.sql.Types.VARCHAR)
+          mystmt.setBigDecimal(1, myRegisterCustomerTableDetails.batchreference)
+          mystmt.setString(2, myRegisterCustomerTableDetails.account)
+          mystmt.setString(3,myRegisterCustomerTableDetails.defaultrecord)
+          mystmt.setString(4,myRegisterCustomerTableDetails.documenttype)
+          mystmt.setString(5,myRegisterCustomerTableDetails.documentnumber)
+          mystmt.setString(6,myRegisterCustomerTableDetails.email)
+          mystmt.setString(7,myRegisterCustomerTableDetails.expirydate)
+          mystmt.setString(8,myRegisterCustomerTableDetails.msisdn)
+          mystmt.setString(9,myRegisterCustomerTableDetails.customername)
+          mystmt.setString(10,myRegisterCustomerTableDetails.pan)
+          mystmt.setInt(11,myRegisterCustomerTableDetails.batchsize)
+          mystmt.setString(12,myRegisterCustomerTableDetails.requestmessagecbsapi)
+          mystmt.setString(13,myRegisterCustomerTableDetails.datefromcbsapi)
+          mystmt.setString(14,myRegisterCustomerTableDetails.remoteaddresscbsapi)
+          mystmt.setString(15,strChannelType)
+          mystmt.setString(16,strChannelCallBackUrl)
+          mystmt.execute()
+          myID = mystmt.getBigDecimal("myID")
+          responseCode = mystmt.getInt("responseCode")
+          responseMessage = mystmt.getString("responseMessage")
+        }
+        catch{
+          case ex : Exception =>
+            log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured." + " accountnumber - " + myRegisterCustomerTableDetails.account)
+          case t: Throwable =>
+            log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " accountnumber - " + myRegisterCustomerTableDetails.account)
+        }
+
+      }
+    }catch {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured." + " accountnumber - " + myRegisterCustomerTableDetails.account)
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " accountnumber - " + myRegisterCustomerTableDetails.account)
+    }
+
+    val myRegisterCustomerTableResponseDetails = RegisterCustomerTableResponseDetails(myID, responseCode, responseMessage)
+    myRegisterCustomerTableResponseDetails
+  }
+  def addOutgoingRegisterCustomerDetailsArchive(responseCode: Int, responseMessage: String, responsemessagecbsapi: String, myRegisterCustomerTableDetails: RegisterCustomerTableDetails, strChannelType: String, strChannelCallBackUrl: String): Unit = {
+    Future {
+      val strApifunction: String = "addOutgoingRegisterCustomerDetailsArchive"
+      val strSQL: String = "{ call dbo.Add_OutgoingRegisterCustomerDetails_Archive(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) }"
+
+      try {
+        myDB.withConnection { implicit myconn =>
+          try{
+            val mystmt: CallableStatement = myconn.prepareCall(strSQL)
+            mystmt.setBigDecimal(1, myRegisterCustomerTableDetails.batchreference)
+            mystmt.setString(2, myRegisterCustomerTableDetails.account)
+            mystmt.setString(3,myRegisterCustomerTableDetails.defaultrecord)
+            mystmt.setString(4,myRegisterCustomerTableDetails.documenttype)
+            mystmt.setString(5,myRegisterCustomerTableDetails.documentnumber)
+            mystmt.setString(6,myRegisterCustomerTableDetails.email)
+            mystmt.setString(7,myRegisterCustomerTableDetails.expirydate)
+            mystmt.setString(8,myRegisterCustomerTableDetails.msisdn)
+            mystmt.setString(9,myRegisterCustomerTableDetails.customername)
+            mystmt.setString(10,myRegisterCustomerTableDetails.pan)
+            mystmt.setInt(11,myRegisterCustomerTableDetails.batchsize)
+            mystmt.setString(12,myRegisterCustomerTableDetails.requestmessagecbsapi)
+            mystmt.setString(13,myRegisterCustomerTableDetails.datefromcbsapi)
+            mystmt.setString(14,myRegisterCustomerTableDetails.remoteaddresscbsapi)
+            mystmt.setString(15,strChannelType)
+            mystmt.setString(16,strChannelCallBackUrl)
+            mystmt.setInt(17,responseCode)
+            mystmt.setString(18,responseMessage)
+            mystmt.setString(19,responsemessagecbsapi)
+            mystmt.execute()
+          }
+          catch{
+            case ex : Exception =>
+              log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured." + " account - " + myRegisterCustomerTableDetails.account)
+            case t: Throwable =>
+              log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " account - " + myRegisterCustomerTableDetails.account)
+          }
+        }
+      }catch {
+        case ex: Exception =>
+          log_errors(strApifunction + " : " + ex.getMessage + " exception error occured." + " account - " + myRegisterCustomerTableDetails.account)
+        case t: Throwable =>
+          log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " account - " + myRegisterCustomerTableDetails.account)
+      }
+    }
   }
   def insertApiValidationRequests(strChannelType: String, strUserName: String, strPassword: String, strClientIP: String, myApifunction: String, responseCode: Int, responseMessage: String): Unit = {
     Future {
