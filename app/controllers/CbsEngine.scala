@@ -48,7 +48,9 @@ import java.io.InputStream
 import java.security.{ KeyStore, SecureRandom }
 import java.security.cert.{ Certificate, CertificateFactory }
 import javax.net.ssl.{ KeyManagerFactory, SSLContext, TrustManagerFactory }
-import akka.http.scaladsl.ConnectionContext 
+import akka.http.scaladsl.ConnectionContext
+//
+import javax.net.ssl.{TrustManager, X509TrustManager}
 //import scala.util.control.Breaks
 //import scala.util.control.Breaks.break
 //import oracle.jdbc.OracleTypes
@@ -295,7 +297,8 @@ class CbsEngine @Inject()
   /* getCustomerBankListResponse */
   case class CustomerBankInformation(bankname: String, defaultaccount: Boolean, lookupbankname: String, sortcode: String)
   case class CustomerBankListResponse_Batch(bankname: String, defaultaccount: Boolean, lookupbankname: String, sortcode: String)
-  case class CustomerBankListResponse_BatchData(messagereference: String, transactionreference: String, phonenumber: String, statuscode: Int, statusdescription: String, banklist: Seq[CustomerBankListResponse_Batch])
+  //case class CustomerBankListResponse_BatchData(messagereference: String, transactionreference: String, phonenumber: String, statuscode: Int, statusdescription: String, banklist: Seq[CustomerBankListResponse_Batch])
+  case class CustomerBankListResponse_BatchData(msisdn: String, statuscode: Int, statusdescription: String, banklist: Seq[CustomerBankListResponse_Batch])
   /* AccountVerification */
   case class FirstAgentInformation(financialInstitutionIdentification: String)
   case class AssignerAgentInformation(financialInstitutionIdentification: String)
@@ -2786,6 +2789,7 @@ class CbsEngine @Inject()
   val encodedTransportKeyStorePwd: String = getSettings("transportKeyStorePwd")
   val transportKeyStorePwd: String = aesObj.decrypt(encodedTransportKeyStorePwd)
   val clientContext = getClientConnectionContext()
+  val clientContext_noCert = getClientConnectionContext_noCert()
   //
   val account_to_account: String = getSettings("accountToAccountTxntype")//"A2A"
   val account_to_phone: String = getSettings("accountToPhoneTxntype")//"A2P"
@@ -11943,6 +11947,7 @@ class CbsEngine @Inject()
           val password: String = "123456" 
           val msisdn: String = strMsisdn
           val myRespData: String = getCustomerBankListInfoDetails(login, password, msisdn)
+          
           sendPhoneVerificationRequestsIpsl(myID, msisdn, myRespData, strMessageReference, strTransactionReference, strOutgoingAccountVerificationUrlIpsl, strChannelType, strChannelCallBackUrl)
         }(myExecutionContext)
         
@@ -17209,7 +17214,7 @@ class CbsEngine @Inject()
   def sendPhoneVerificationRequestsIpsl(myID: BigDecimal, strPhoneNo: String, myRequestData: String, myMessageReference: String, myTransactionReference: String, strApiURL: String, strChannelType: String, strCallBackApiURL: String): Unit = {
     val strApifunction: String = "sendPhoneVerificationRequestsIpsl"
 
-    if (myID == 0){return}
+    //if (myID == 0){return} tests only
     if (myRequestData == null){return}
     if (myRequestData.length == 0){return}
     if (strCallBackApiURL == null){return}
@@ -17241,28 +17246,7 @@ class CbsEngine @Inject()
           case tr: Throwable =>
             log_errors(strApifunction + " : " + tr.getMessage())
         }
-        /*
-        val clientContext = {
-          val certStore = KeyStore.getInstance(keystore_type)//"PKCS12"
-          val myKeyStore: InputStream = getResourceStream(strCertPath)
-          val password: String = transportKeyStorePwd
-          val myPassword = password.toCharArray()
-          certStore.load(myKeyStore, myPassword)
-          // only do this if you want to accept a custom root CA. Understand what you are doing!
-          certStore.setCertificateEntry("ca", loadX509Certificate(strCaChainCertPath))
-
-          val certManagerFactory = TrustManagerFactory.getInstance("SunX509")
-          certManagerFactory.init(certStore)
-
-          val keyManagerFactory = KeyManagerFactory.getInstance("SunX509")
-          keyManagerFactory.init(certStore, myPassword)
-
-          val context = SSLContext.getInstance("TLS")//TLSv1.2, TLSv1.3
-          context.init(keyManagerFactory.getKeyManagers, certManagerFactory.getTrustManagers, new SecureRandom)
-          ConnectionContext.httpsClient(context)
-        }
-        */
-        import javax.net.ssl.{TrustManager, X509TrustManager}
+        /*        
         val clientContext = {
           val permissiveTrustManager: TrustManager = new X509TrustManager() {
             override def checkClientTrusted(chain: Array[X509Certificate], authType: String): Unit = {}
@@ -17273,11 +17257,11 @@ class CbsEngine @Inject()
           context.init(Array.empty, Array(permissiveTrustManager), new SecureRandom())
           ConnectionContext.httpsClient(context)
         }
-        
+        */
         myXmlData = myRequestData
         val data = HttpEntity(ContentType.WithCharset(MediaTypes.`application/xml`, HttpCharsets.`UTF-8`), myXmlData)
         
-        val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data), connectionContext = clientContext)
+        val responseFuture: Future[HttpResponse] = Http().singleRequest(HttpRequest(POST, uri = myuri, entity = data), connectionContext = clientContext_noCert)
         var start_time_DB: String = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
         val myStart_time: Future[String] = Future(start_time_DB)
         val myEntryID: Future[BigDecimal] = Future(myID)
@@ -17294,8 +17278,23 @@ class CbsEngine @Inject()
                 Unmarshal(resp.entity).to[String]
               }
               else {
+                var myHttpStatusCode: Int = 0
+                var strResp: String = ""
+                try{
+                  if (resp.entity != null){
+                    myHttpStatusCode = resp.status.intValue()
+                    strResp = resp.entity.toString
+                    resp.discardEntityBytes()
+                  }
+                }
+                catch{
+                  case ex: Exception =>
+                    log_errors(strApifunction + " : " + ex.getMessage())
+                  case tr: Throwable =>
+                    log_errors(strApifunction + " : " + tr.getMessage())
+                }
                 Future {
-                  log_errors(strApifunction + " : " + "myID - " + myID + " , resp.entity " + resp.entity.toString + " , resp.status.intValue() " + resp.status.intValue().toString)
+                  log_errors(strApifunction + " : " + "myID - " + myID + " , resp.entity " + strResp + " , resp.status.intValue() " + myHttpStatusCode)
 
                   null
                 }
@@ -17372,12 +17371,12 @@ class CbsEngine @Inject()
                 println("myCustomerBankList.lookupBankName - " + myCustomerBankList.lookupbankname.toString)
                 */
                 try{
-                  var strMessageReference: String = ""
-                  var strTransactionReference: String = ""
+                  //var strMessageReference: String = ""
+                  //var strTransactionReference: String = ""
                   var strPhoneNo: String = ""
-                  var strAccountNumber: String = ""
-                  var strBankCode: String = ""
-                  var strAccountname: String = ""
+                  //var strAccountNumber: String = ""
+                  //var strBankCode: String = ""
+                  //var strAccountname: String = ""
                   var strdestinationName: String = ""
                   var verificationStatus: String = ""
                   var verificationReasonCode: String = ""
@@ -17387,7 +17386,7 @@ class CbsEngine @Inject()
                   var myCustomerBankListResponse_BatchData = Seq[CustomerBankListResponse_Batch]()
 
                   try{
-
+                    /*
                     if (myMsgRef.value.isEmpty != true) {
                       if (myMsgRef.value.get != None) {
                         val myVal = myMsgRef.value.get
@@ -17405,7 +17404,7 @@ class CbsEngine @Inject()
                         }
                       }
                     }
-
+                    */
                     if (myPhoneNo.value.isEmpty != true) {
                       if (myPhoneNo.value.get != None) {
                         val myVal = myPhoneNo.value.get
@@ -17424,7 +17423,7 @@ class CbsEngine @Inject()
                         strdestinationName = strdestinationName.trim
                       }
                     }
-
+                    /*
                     if (strAccountNumber != null){
                       if (strAccountNumber.length > 0){
                         strAccountNumber = strAccountNumber.replace("'","")//Remove apostrophe
@@ -17451,7 +17450,7 @@ class CbsEngine @Inject()
                         strAccountname = strAccountname.trim
                       }
                     }
-
+                    
                     if (verificationStatus != null){
                       if (verificationStatus.length > 0){
                         verificationStatus = verificationStatus.replace("'","")//Remove apostrophe
@@ -17460,7 +17459,7 @@ class CbsEngine @Inject()
                         verificationStatus = verificationStatus.trim
                       }
                     }
-
+                    */
                     if (strdestinationName.length > 0){
                       try{
                         var myCount: Int = 0
@@ -17514,22 +17513,26 @@ class CbsEngine @Inject()
                     if (isVerified){
                       responseCode = 0
                       responseMessage = "successful"
-                      strAccountNumber = strPhoneNo
+                      /*
                       if (verificationStatus.length > 0){
                         strAccountname = strAccountname.replace("'","")//Remove apostrophe
                         strAccountname = strAccountname.replace("  "," ")//Remove double spaces
                         strAccountname = strAccountname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                         strAccountname = strAccountname.trim
                       }
+                      */
                     }
                     else{
+                      /*
                       strAccountNumber = ""
                       strAccountname = ""
                       strBankCode = ""
+                      */
+                      strdestinationName = "" 
                       responseCode = 1
 
                       verificationReasonCode = "AC01"
-
+                      /*
                       if (verificationReasonCode != null){
                         if (verificationReasonCode.length > 0){
                         verificationReasonCode = verificationReasonCode.replace("'","")//Remove apostrophe
@@ -17538,7 +17541,7 @@ class CbsEngine @Inject()
                         verificationReasonCode = verificationReasonCode.trim
                         }
                       }
-
+                      */
                       responseMessage = {
                         var msg: String = "Error occured during processing, try again later"
                         if (verificationReasonCode.length > 0){
@@ -17549,7 +17552,8 @@ class CbsEngine @Inject()
                             msg = "Timeout at the Beneficary Bank"
                           }
                           else if (verificationReasonCode.equalsIgnoreCase("AC01")){
-                            msg = "Account number is invalid or does not exist"
+                            //msg = "Account number is invalid or does not exist"
+                            msg = "msisdn number is invalid or does not exist"
                           }
                           else if (verificationReasonCode.equalsIgnoreCase("AC04")){
                             msg = "Account number is closed account"
@@ -17572,14 +17576,9 @@ class CbsEngine @Inject()
                     case tr: Throwable =>
                       log_errors(strApifunction + " : " + tr.getMessage())
                   }
-
-                  //val myAccountVerificationDetailsResponse_Batch = AccountVerificationDetailsResponse_Batch(strTransactionReference, strAccountNumber, strAccountname, strBankCode, responseCode, responseMessage)
-                  //val myAccountVerificationResponse = AccountVerificationDetailsResponse_BatchData(strMessageReference, myAccountVerificationDetailsResponse_Batch)
                   
-                  
-                  val myCustomerBankListResponse = CustomerBankListResponse_BatchData(strMessageReference, strTransactionReference, strAccountNumber, responseCode, responseMessage, myCustomerBankListResponse_BatchData)
+                  val myCustomerBankListResponse = CustomerBankListResponse_BatchData(strPhoneNo, responseCode, responseMessage, myCustomerBankListResponse_BatchData)
                 
-                  
                   try{
                     val f = Future {
                       val responseType: String = "accountverification"
@@ -17615,7 +17614,7 @@ class CbsEngine @Inject()
                   val strSQL: String = "update [dbo].[OutgoingAccountVerificationDetails] set [Response_Received_IpslApi] = 1, [HttpStatusCode_IpslApi] = " + myHttpStatusCode + 
                   ", [StatusCode_IpslApi] = 0, [StatusMessage_IpslApi] = '" + strStatusMessage +
                   "', [isVerified] = '" + isVerified + "', [VerificationStatus] = '" + verificationStatus + 
-                  "', [VerificationReasonCode] = '" + verificationReasonCode + "', [AccountName] = '" + strAccountname + 
+                  "', [VerificationReasonCode] = '" + verificationReasonCode + "', [AccountName] = '" + strdestinationName + 
                   "', [ResponseMessage_IpslApi] = '" + strResponseData + 
                   "', [Date_from_IpslApi] = '" + dateFromIpslApi + "' where [ID] = " + myID + ";"
                   insertUpdateRecord(strSQL)
@@ -17673,13 +17672,14 @@ class CbsEngine @Inject()
             if (!isValidResponse)
             {
               try{
-                var strMessageReference: String = ""
-                var strTransactionReference: String = ""
-                val strAccountNumber: String = ""
-                val strBankCode: String = ""
-                val strAccountname: String = ""
+                //var strMessageReference: String = ""
+                //var strTransactionReference: String = ""
+                //val strAccountNumber: String = ""
+                var strPhoneNo: String = ""
+                //val strBankCode: String = ""
+                //val strAccountname: String = ""
                 val responseCode: Int = 1
-                val responseMessage: String = "Timeout at the Beneficary Bank"
+                val responseMessage: String = "msisdn number is invalid or does not exist"
 
                 if (myChannelType.value.isEmpty != true) {
                   if (myChannelType.value.get != None) {
@@ -17699,6 +17699,15 @@ class CbsEngine @Inject()
                   }
                 }
 
+                if (myPhoneNo.value.isEmpty != true) {
+                  if (myPhoneNo.value.get != None) {
+                    val myVal = myPhoneNo.value.get
+                    if (myVal.get != None) {
+                      strPhoneNo = myVal.get
+                    }
+                  }
+                }
+                /*
                 if (myMsgRef.value.isEmpty != true) {
                   if (myMsgRef.value.get != None) {
                     val myVal = myMsgRef.value.get
@@ -17716,19 +17725,17 @@ class CbsEngine @Inject()
                     }
                   }
                 }
-
-                val myAccountVerificationDetailsResponse_Batch = AccountVerificationDetailsResponse_Batch(strTransactionReference, strAccountNumber, strAccountname, strBankCode, responseCode, responseMessage)
-                val myAccountVerificationResponse = AccountVerificationDetailsResponse_BatchData(strMessageReference, myAccountVerificationDetailsResponse_Batch)
-                      
-                //val f = Future {sendAccountVerificationResponseEchannel(myID, myAccountVerificationResponse, strChannelType, strCallBackApiURL)}
+                */ 
+                val myCustomerBankListResponse_BatchData = Seq[CustomerBankListResponse_Batch]()   
+                val myCustomerBankListResponse = CustomerBankListResponse_BatchData(strPhoneNo, responseCode, responseMessage, myCustomerBankListResponse_BatchData)
                 try{
                   val f = Future {
                     val responseType: String = "accountverification"
                     
-                    implicit val AccountVerificationDetailsResponse_BatchWrites = Json.writes[AccountVerificationDetailsResponse_Batch]
-                    implicit val AccountVerificationDetailsResponse_BatchDataWrites = Json.writes[AccountVerificationDetailsResponse_BatchData]
+                    implicit val CustomerBankListResponse_BatchWrites = Json.writes[CustomerBankListResponse_Batch]
+                    implicit val CustomerBankListResponse_BatchDataWrites = Json.writes[CustomerBankListResponse_BatchData]
 
-                    val myJsonAccountVerificationData = Json.toJson(myAccountVerificationResponse)
+                    val myJsonAccountVerificationData = Json.toJson(myCustomerBankListResponse)
                     val myAccountVerificationData: String = myJsonAccountVerificationData.toString()
 
                     val responseMessage: String = new String(Base64.getEncoder().encode(myAccountVerificationData.getBytes(StandardCharsets.UTF_8)))
@@ -17794,11 +17801,12 @@ class CbsEngine @Inject()
               try{
                 var strChannelType: String = ""
                 var strCallBackApiURL: String = ""
-                var strMessageReference: String = ""
-                var strTransactionReference: String = ""
-                val strAccountNumber: String = ""
-                val strBankCode: String = ""
-                val strAccountname: String = ""
+                //var strMessageReference: String = ""
+                //var strTransactionReference: String = ""
+                //val strAccountNumber: String = ""
+                var strPhoneNo: String = ""
+                //val strBankCode: String = ""
+                //val strAccountname: String = ""
                 val responseCode: Int = 1
                 val responseMessage: String = "Timeout at IPSL"
 
@@ -17820,6 +17828,15 @@ class CbsEngine @Inject()
                   }
                 }
 
+                if (myPhoneNo.value.isEmpty != true) {
+                  if (myPhoneNo.value.get != None) {
+                    val myVal = myPhoneNo.value.get
+                    if (myVal.get != None) {
+                      strPhoneNo = myVal.get
+                    }
+                  }
+                }
+                /*
                 if (myMsgRef.value.isEmpty != true) {
                   if (myMsgRef.value.get != None) {
                     val myVal = myMsgRef.value.get
@@ -17837,19 +17854,18 @@ class CbsEngine @Inject()
                     }
                   }
                 }
+                */
+                val myCustomerBankListResponse_BatchData = Seq[CustomerBankListResponse_Batch]()
+                val myCustomerBankListResponse = CustomerBankListResponse_BatchData(strPhoneNo, responseCode, responseMessage, myCustomerBankListResponse_BatchData)
 
-                val myAccountVerificationDetailsResponse_Batch = AccountVerificationDetailsResponse_Batch(strTransactionReference, strAccountNumber, strAccountname, strBankCode, responseCode, responseMessage)
-                val myAccountVerificationResponse = AccountVerificationDetailsResponse_BatchData(strMessageReference, myAccountVerificationDetailsResponse_Batch)
-                
-                //val f = Future {sendAccountVerificationResponseEchannel(myID, myAccountVerificationResponse, strChannelType, strCallBackApiURL)}
                 try{
                   val f = Future {
                     val responseType: String = "accountverification"
                     
-                    implicit val AccountVerificationDetailsResponse_BatchWrites = Json.writes[AccountVerificationDetailsResponse_Batch]
-                    implicit val AccountVerificationDetailsResponse_BatchDataWrites = Json.writes[AccountVerificationDetailsResponse_BatchData]
+                    implicit val CustomerBankListResponse_BatchWrites = Json.writes[CustomerBankListResponse_Batch]
+                    implicit val CustomerBankListResponse_BatchDataWrites = Json.writes[CustomerBankListResponse_BatchData]
 
-                    val myJsonAccountVerificationData = Json.toJson(myAccountVerificationResponse)
+                    val myJsonAccountVerificationData = Json.toJson(myCustomerBankListResponse)
                     val myAccountVerificationData: String = myJsonAccountVerificationData.toString()
 
                     val responseMessage: String = new String(Base64.getEncoder().encode(myAccountVerificationData.getBytes(StandardCharsets.UTF_8)))
@@ -21353,6 +21369,31 @@ class CbsEngine @Inject()
 
           val context = SSLContext.getInstance("TLS")//TLSv1.2, TLSv1.3
           context.init(keyManagerFactory.getKeyManagers, certManagerFactory.getTrustManagers, new SecureRandom)
+          ConnectionContext.httpsClient(context)
+        }
+
+      return clientContext
+    }catch {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured.")
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured.")
+    }
+
+    return null
+  }
+  def getClientConnectionContext_noCert() : akka.http.scaladsl.HttpsConnectionContext = {
+    val strApifunction: String = "getClientConnectionContext"
+    
+    try {
+        val clientContext = {
+          val permissiveTrustManager: TrustManager = new X509TrustManager() {
+            override def checkClientTrusted(chain: Array[X509Certificate], authType: String): Unit = {}
+            override def checkServerTrusted(chain: Array[X509Certificate], authType: String): Unit = {}
+            override def getAcceptedIssuers(): Array[X509Certificate] = Array.empty
+          }
+          val context = SSLContext.getInstance("TLS")
+          context.init(Array.empty, Array(permissiveTrustManager), new SecureRandom())
           ConnectionContext.httpsClient(context)
         }
 
