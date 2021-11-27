@@ -2993,6 +2993,13 @@ class CbsEngine @Inject()
   val account_to_wallet: String = getSettings("accountToWalletTxntype")//"A2P"
   val reversalTxnType: String = getSettings("reversalTxntype")//"KITSREV"
   val localCurrencyCode: String = getSettings("localcurrencycode")//"404"
+  //mgwLookup settings
+  val mgwLookupBankSortCode: String = getSettings("mgwLookupBankSortCode")
+  val strOutgoingMgwLookupUrl: String = getSettings("outgoingMgwLookupUrl")
+  val mgwLookupUid: String = getSettings("mgwLookupUid")
+  val encodedMgwLookupPwd: String = getSettings("mgwLookupPwd")
+  val mgwLookupPwd: String = aesObj.decrypt(encodedMgwLookupPwd)
+  val mgwLookupLang: String = "EN"
   //
   val publicKey: PublicKey = getPublicKey()
   val strOutgoingAccountVerificationUrlIpsl: String = getSettings("outgoingAccountVerificationUrlIpsl")
@@ -11429,9 +11436,9 @@ class CbsEngine @Inject()
 
       if (isSendRequest){        
         val f = Future {
-          val login: String = "FCB"
-          val password: String = "123456"
-          val sortcode: String = "40474000"
+          val login: String = mgwLookupUid//"FCB"
+          val password: String = mgwLookupPwd//"123456"
+          val sortcode: String = mgwLookupBankSortCode//"40474000"
           val account: String = strAccountNumber
           val defaultrecord: String = strDefaultRecord 
           val document: String = strDocument
@@ -11439,9 +11446,9 @@ class CbsEngine @Inject()
           val email: String = strEmail
           val msisdn: String = strMsisdn 
           val name: String = strName 
-          val lang: String = "EN"
+          val lang: String = mgwLookupLang//"EN"
           val myRespData: String = getCustomerRegisterDetails(login, password, account, defaultrecord, document, documentnumber, email, msisdn, name, lang, sortcode)
-          sendRegisterCustomerRequestsIpsl(myID, account, msisdn, myRespData, strMessageReference, strTransactionReference, strOutgoingAccountVerificationUrlIpsl, strChannelType, strChannelCallBackUrl)
+          sendRegisterCustomerRequestsIpsl(myID, account, msisdn, myRespData, strMessageReference, strTransactionReference, strOutgoingMgwLookupUrl, strChannelType, strChannelCallBackUrl)
         }(myExecutionContext)
         
         val dateToCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
@@ -12351,9 +12358,9 @@ class CbsEngine @Inject()
 
       if (isSendRequest){        
         val f = Future {
-          val login: String = "FCB"
-          val password: String = "123456"
-          val sortcode: String = "40474000"
+          val login: String = mgwLookupUid//"FCB"
+          val password: String = mgwLookupPwd//"123456"
+          val sortcode: String = mgwLookupBankSortCode//"40474000"
           val account: String = strAccountNumber
           val defaultrecord: String = strDefaultRecord 
           val document: String = strDocument
@@ -12361,9 +12368,9 @@ class CbsEngine @Inject()
           val email: String = strEmail
           val msisdn: String = strMsisdn 
           val name: String = strName 
-          val lang: String = "EN"
+          val lang: String = mgwLookupLang//"EN"
           val myRespData: String = getCustomerUpdateDetails(login, password, account, defaultrecord, document, documentnumber, email, msisdn, name, lang, sortcode)
-          sendUpdateCustomerRequestsIpsl(myID, account, msisdn, myRespData, strMessageReference, strTransactionReference, strOutgoingAccountVerificationUrlIpsl, strChannelType, strChannelCallBackUrl)
+          sendUpdateCustomerRequestsIpsl(myID, account, msisdn, myRespData, strMessageReference, strTransactionReference, strOutgoingMgwLookupUrl, strChannelType, strChannelCallBackUrl)
         }(myExecutionContext)
         
         val dateToCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
@@ -13064,12 +13071,12 @@ class CbsEngine @Inject()
 
       if (isSendRequest){        
         val f = Future {
-          val login: String = "FCB"
-          val password: String = "123456" 
+          val login: String = mgwLookupUid//"FCB"
+          val password: String = mgwLookupPwd//"123456"
           val msisdn: String = strMsisdn
           val myRespData: String = getCustomerBankListInfoDetails(login, password, msisdn)
           
-          sendGetCustomerBankListRequestsIpsl(myID, msisdn, myRespData, strMessageReference, strTransactionReference, strOutgoingAccountVerificationUrlIpsl, strChannelType, strChannelCallBackUrl)
+          sendGetCustomerBankListRequestsIpsl(myID, msisdn, myRespData, strMessageReference, strTransactionReference, strOutgoingMgwLookupUrl, strChannelType, strChannelCallBackUrl)
         }(myExecutionContext)
         
         val dateToCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
@@ -13781,13 +13788,13 @@ class CbsEngine @Inject()
 
       if (isSendRequest){        
         val f = Future {
-          val login: String = "FCB"
-          val password: String = "123456" 
-          val sortcode: String = "40474000"
+          val login: String = mgwLookupUid//"FCB"
+          val password: String = mgwLookupPwd//"123456"
+          val sortcode: String = mgwLookupBankSortCode//"40474000"
           val msisdn: String = strMsisdn
           val account: String = strAccountNumber
           val myRespData: String = getCustomerDeleteDetails(login, password, msisdn, account, sortcode)
-          sendDeleteCustomerRequestsIpsl(myID, account, msisdn, myRespData, strMessageReference, strTransactionReference, strOutgoingAccountVerificationUrlIpsl, strChannelType, strChannelCallBackUrl)
+          sendDeleteCustomerRequestsIpsl(myID, account, msisdn, myRespData, strMessageReference, strTransactionReference, strOutgoingMgwLookupUrl, strChannelType, strChannelCallBackUrl)
         }(myExecutionContext)
         
         val dateToCbsApi: String  =  new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date)
@@ -18361,8 +18368,7 @@ class CbsEngine @Inject()
 
     val isValidData: Boolean = true
     var isSuccessful: Boolean = false
-    //val myuri: Uri = strApiURL
-    val myuri: Uri = "https://MGW.stage.pesalink.co.ke:8443/kba/webservices/v2/LookupDbWS"
+    val myuri: Uri = strApiURL
     var myXmlData: String = ""
   
     try {
@@ -18375,7 +18381,12 @@ class CbsEngine @Inject()
           val strSQL: String = "update [dbo].[OutgoingRegisterCustomerDetails] set [Posted_to_IpslApi] = 1, [Post_picked_IpslApi] = 1, [RequestMessage_IpslApi] = '" + strRequestData + "', [Date_to_IpslApi] = '" + dateToIpslApi + "' where [ID] = " + myID + ";"
           insertUpdateRecord(strSQL)
 
-          log_data(strApifunction + " : " + " channeltype - IPSL"  + " , >> outgoing request >> - " + myRequestData + " , ID - " + myID)
+          //Lets maskout the credentials in the request before saving in a textfile
+          strRequestData = myRequestData.replace("<login>" + mgwLookupUid + "</login>","<login>*****</login>")
+          strRequestData = strRequestData.replace("<password>" + mgwLookupPwd + "</password>","<password>*****</password>")
+
+          //log_data(strApifunction + " : " + " channeltype - IPSL"  + " , >> outgoing request >> - " + myRequestData + " , ID - " + myID)
+          log_data(strApifunction + " : " + " channeltype - IPSL"  + " , >> outgoing request >> - " + strRequestData + " , ID - " + myID)
         }
         catch{
           case ex: Exception =>
@@ -19035,8 +19046,7 @@ class CbsEngine @Inject()
 
     val isValidData: Boolean = true
     var isSuccessful: Boolean = false
-    //val myuri: Uri = strApiURL
-    val myuri: Uri = "https://MGW.stage.pesalink.co.ke:8443/kba/webservices/v2/LookupDbWS"
+    val myuri: Uri = strApiURL
     var myXmlData: String = ""
   
     try {
@@ -19049,7 +19059,11 @@ class CbsEngine @Inject()
           val strSQL: String = "update [dbo].[OutgoingUpdateCustomerDetails] set [Posted_to_IpslApi] = 1, [Post_picked_IpslApi] = 1, [RequestMessage_IpslApi] = '" + strRequestData + "', [Date_to_IpslApi] = '" + dateToIpslApi + "' where [ID] = " + myID + ";"
           insertUpdateRecord(strSQL)
 
-          log_data(strApifunction + " : " + " channeltype - IPSL"  + " , >> outgoing request >> - " + myRequestData + " , ID - " + myID)
+          //Lets maskout the credentials in the request before saving in a textfile
+          strRequestData = myRequestData.replace("<login>" + mgwLookupUid + "</login>","<login>*****</login>")
+          strRequestData = strRequestData.replace("<password>" + mgwLookupPwd + "</password>","<password>*****</password>")
+
+          log_data(strApifunction + " : " + " channeltype - IPSL"  + " , >> outgoing request >> - " + strRequestData + " , ID - " + myID)
         }
         catch{
           case ex: Exception =>
@@ -19698,8 +19712,7 @@ class CbsEngine @Inject()
 
     val isValidData: Boolean = true
     var isSuccessful: Boolean = false
-    //val myuri: Uri = strApiURL
-    val myuri: Uri = "https://MGW.stage.pesalink.co.ke:8443/kba/webservices/v2/LookupDbWS"
+    val myuri: Uri = strApiURL
     var myXmlData: String = ""
   
     try {
@@ -19712,7 +19725,11 @@ class CbsEngine @Inject()
           val strSQL: String = "update [dbo].[OutgoingGetCustomerBankListDetails] set [Posted_to_IpslApi] = 1, [Post_picked_IpslApi] = 1, [RequestMessage_IpslApi] = '" + strRequestData + "', [Date_to_IpslApi] = '" + dateToIpslApi + "' where [ID] = " + myID + ";"
           insertUpdateRecord(strSQL)
 
-          log_data(strApifunction + " : " + " channeltype - IPSL"  + " , >> outgoing request >> - " + myRequestData + " , ID - " + myID)
+          //Lets maskout the credentials in the request before saving in a textfile
+          strRequestData = myRequestData.replace("<login>" + mgwLookupUid + "</login>","<login>*****</login>")
+          strRequestData = strRequestData.replace("<password>" + mgwLookupPwd + "</password>","<password>*****</password>")
+
+          log_data(strApifunction + " : " + " channeltype - IPSL"  + " , >> outgoing request >> - " + strRequestData + " , ID - " + myID)
         }
         catch{
           case ex: Exception =>
@@ -20382,8 +20399,7 @@ class CbsEngine @Inject()
 
     val isValidData: Boolean = true
     var isSuccessful: Boolean = false
-    //val myuri: Uri = strApiURL
-    val myuri: Uri = "https://MGW.stage.pesalink.co.ke:8443/kba/webservices/v2/LookupDbWS"
+    val myuri: Uri = strApiURL
     var myXmlData: String = ""
   
     try {
@@ -20396,7 +20412,11 @@ class CbsEngine @Inject()
           val strSQL: String = "update [dbo].[OutgoingDeleteCustomerDetails] set [Posted_to_IpslApi] = 1, [Post_picked_IpslApi] = 1, [RequestMessage_IpslApi] = '" + strRequestData + "', [Date_to_IpslApi] = '" + dateToIpslApi + "' where [ID] = " + myID + ";"
           insertUpdateRecord(strSQL)
 
-          log_data(strApifunction + " : " + " channeltype - IPSL"  + " , >> outgoing request >> - " + myRequestData + " , ID - " + myID)
+          //Lets maskout the credentials in the request before saving in a textfile
+          strRequestData = myRequestData.replace("<login>" + mgwLookupUid + "</login>","<login>*****</login>")
+          strRequestData = strRequestData.replace("<password>" + mgwLookupPwd + "</password>","<password>*****</password>")
+
+          log_data(strApifunction + " : " + " channeltype - IPSL"  + " , >> outgoing request >> - " + strRequestData + " , ID - " + myID)
         }
         catch{
           case ex: Exception =>
