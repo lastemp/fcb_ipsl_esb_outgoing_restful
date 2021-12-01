@@ -15,8 +15,12 @@ GET         /v1/generatetoken                              controllers.CbsEngine
 POST        /v1/addaccountverificationdetails              controllers.CbsEngine.addAccountVerificationDetails
 POST        /v1/addsinglecredittransferpaymentdetails      controllers.CbsEngine.addSingleCreditTransferPaymentDetails
 POST        /v1/addbulkcredittransferpaymentdetails        controllers.CbsEngine.addBulkCreditTransferPaymentDetails
-POST        /v1/addpaymentcancellationdetails              controllers.CbsEngine.addPaymentCancellationDetails
+# POST      /v1/addpaymentcancellationdetails              controllers.CbsEngine.addPaymentCancellationDetails
 POST        /v1/addpaymentstatusdetails                    controllers.CbsEngine.addPaymentStatusDetails
+POST        /v2/registercustomer                           controllers.CbsEngine.registerCustomerDetails
+POST        /v2/updatecustomer                             controllers.CbsEngine.updateCustomerDetails
+POST        /v2/getcustomerbanklist                        controllers.CbsEngine.getCustomerBankListDetails
+POST        /v2/deletecustomer                             controllers.CbsEngine.deleteCustomerDetails
 # Test ESB-CBS APIs. Responses for IPSL are are posted to esb-cbs.
 # POST        /addaccountverificationreesponsebcbs              controllers.IpslEngine.addAccountVerificationResponseEsbCbs
 # ESB-CBS APIs. Was meant for callback processing for esb-cbs.

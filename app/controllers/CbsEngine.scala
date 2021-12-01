@@ -18425,7 +18425,7 @@ class CbsEngine @Inject()
         val entityFut: Future[String] =
           responseFuture.flatMap(
           resp => 
-            if (resp.entity != null && resp.status.intValue() == 200){
+              if (resp.entity != null && resp.status.intValue() == 200){
                 Unmarshal(resp.entity).to[String]
               }
               else {
@@ -19091,7 +19091,7 @@ class CbsEngine @Inject()
         val entityFut: Future[String] =
           responseFuture.flatMap(
           resp => 
-            if (resp.entity != null && resp.status.intValue() == 200){
+              if (resp.entity != null && resp.status.intValue() == 200){
                 Unmarshal(resp.entity).to[String]
               }
               else {
@@ -19756,7 +19756,7 @@ class CbsEngine @Inject()
         val entityFut: Future[String] =
           responseFuture.flatMap(
           resp => 
-            if (resp.entity != null && resp.status.intValue() == 200){
+              if (resp.entity != null && resp.status.intValue() == 200){
                 Unmarshal(resp.entity).to[String]
               }
               else {
@@ -20442,7 +20442,7 @@ class CbsEngine @Inject()
         val entityFut: Future[String] =
           responseFuture.flatMap(
           resp => 
-            if (resp.entity != null && resp.status.intValue() == 200){
+              if (resp.entity != null && resp.status.intValue() == 200){
                 Unmarshal(resp.entity).to[String]
               }
               else {
