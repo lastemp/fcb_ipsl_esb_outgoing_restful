@@ -483,10 +483,10 @@ class CbsEngine @Inject()
 
   }
   //RegisterCustomerResponse
-  class RegisterCustomerResponse(val rrn: String) {
+  class RegisterCustomerResponse(val rrn: String, val faultdescription: String) {
         
     override def toString =
-      s"rrn: $rrn"
+      s"rrn: $rrn, faultdescription: $faultdescription"
   }
 
   object RegisterCustomerResponse {
@@ -496,6 +496,7 @@ class CbsEngine @Inject()
       
       val strApifunction: String = "RegisterCustomerResponse: fromXml"
       var rrn: String = ""
+      var faultdescription: String = ""
 
       try {
           rrn = (node \ "Body" \ "registerCustomerResponse" \ "return" \ "rrn").text
@@ -507,7 +508,18 @@ class CbsEngine @Inject()
           log_errors(strApifunction + " b : " + tr.getMessage())
       }
 
+      try {
+          faultdescription = (node \ "Body" \ "Fault" \ "detail" \ "LookupDbFault" \ "faultString").text
+      }
+      catch{
+        case ex: Exception =>
+          log_errors(strApifunction + " a : " + ex.getMessage())
+        case tr: Throwable =>
+          log_errors(strApifunction + " b : " + tr.getMessage())
+      }
+
       if (rrn == null){rrn = ""}
+      if (faultdescription == null){faultdescription = ""}
       
       if (rrn.length > 0){
         rrn = rrn.replace("'","")//Remove apostrophe
@@ -515,8 +527,15 @@ class CbsEngine @Inject()
         rrn = rrn.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
         rrn = rrn.trim
       }
+
+      if (faultdescription.length > 0){
+        faultdescription = faultdescription.replace("'","")//Remove apostrophe
+        faultdescription = faultdescription.replace("  "," ")//Remove double spaces
+        faultdescription = faultdescription.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+        faultdescription = faultdescription.trim
+      }
       
-      new RegisterCustomerResponse(rrn)
+      new RegisterCustomerResponse(rrn, faultdescription)
     }
 
   }
@@ -589,10 +608,10 @@ class CbsEngine @Inject()
 
   }
   //UpdateCustomerResponse
-  class UpdateCustomerResponse(val rrn: String) {
+  class UpdateCustomerResponse(val rrn: String, val faultdescription: String) {
         
     override def toString =
-      s"rrn: $rrn"
+      s"rrn: $rrn, faultdescription: $faultdescription"
   }
 
   object UpdateCustomerResponse {
@@ -602,6 +621,7 @@ class CbsEngine @Inject()
       
       val strApifunction: String = "UpdateCustomerResponse: fromXml"
       var rrn: String = ""
+      var faultdescription: String = ""
 
       try {
           rrn = (node \ "Body" \ "updateCustomerResponse" \ "return" \ "rrn").text
@@ -613,7 +633,18 @@ class CbsEngine @Inject()
           log_errors(strApifunction + " b : " + tr.getMessage())
       }
 
+      try {
+          faultdescription = (node \ "Body" \ "Fault" \ "detail" \ "LookupDbFault" \ "faultString").text
+      }
+      catch{
+        case ex: Exception =>
+          log_errors(strApifunction + " a : " + ex.getMessage())
+        case tr: Throwable =>
+          log_errors(strApifunction + " b : " + tr.getMessage())
+      }
+
       if (rrn == null){rrn = ""}
+      if (faultdescription == null){faultdescription = ""}
       
       if (rrn.length > 0){
         rrn = rrn.replace("'","")//Remove apostrophe
@@ -621,8 +652,15 @@ class CbsEngine @Inject()
         rrn = rrn.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
         rrn = rrn.trim
       }
+
+      if (faultdescription.length > 0){
+        faultdescription = faultdescription.replace("'","")//Remove apostrophe
+        faultdescription = faultdescription.replace("  "," ")//Remove double spaces
+        faultdescription = faultdescription.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+        faultdescription = faultdescription.trim
+      }
       
-      new UpdateCustomerResponse(rrn)
+      new UpdateCustomerResponse(rrn, faultdescription)
     }
 
   }
@@ -825,10 +863,10 @@ class CbsEngine @Inject()
 
   }
   //DeleteCustomerResponse
-  class DeleteCustomerResponse(val rrn: String) {
+  class DeleteCustomerResponse(val rrn: String, val faultdescription: String) {
         
     override def toString =
-      s"rrn: $rrn"
+      s"rrn: $rrn, faultdescription: $faultdescription"
   }
 
   object DeleteCustomerResponse {
@@ -838,6 +876,7 @@ class CbsEngine @Inject()
       
       val strApifunction: String = "DeleteCustomerResponse: fromXml"
       var rrn: String = ""
+      var faultdescription: String = ""
 
       try {
           rrn = (node \ "Body" \ "deleteCustomerResponse" \ "return" \ "rrn").text
@@ -849,7 +888,18 @@ class CbsEngine @Inject()
           log_errors(strApifunction + " b : " + tr.getMessage())
       }
 
+      try {
+          faultdescription = (node \ "Body" \ "Fault" \ "detail" \ "LookupDbFault" \ "faultString").text
+      }
+      catch{
+        case ex: Exception =>
+          log_errors(strApifunction + " a : " + ex.getMessage())
+        case tr: Throwable =>
+          log_errors(strApifunction + " b : " + tr.getMessage())
+      }
+
       if (rrn == null){rrn = ""}
+      if (faultdescription == null){faultdescription = ""}
       
       if (rrn.length > 0){
         rrn = rrn.replace("'","")//Remove apostrophe
@@ -857,8 +907,15 @@ class CbsEngine @Inject()
         rrn = rrn.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
         rrn = rrn.trim
       }
+
+      if (faultdescription.length > 0){
+        faultdescription = faultdescription.replace("'","")//Remove apostrophe
+        faultdescription = faultdescription.replace("  "," ")//Remove double spaces
+        faultdescription = faultdescription.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+        faultdescription = faultdescription.trim
+      }
       
-      new DeleteCustomerResponse(rrn)
+      new DeleteCustomerResponse(rrn, faultdescription)
     }
 
   }
@@ -13158,6 +13215,11 @@ class CbsEngine @Inject()
           if (resp.entity != null && resp.status.intValue() == 200){
             Unmarshal(resp.entity).to[String]
           }
+          else if (resp.entity != null && resp.status.intValue() == 500){ //Added on 21-01-2022: Emmanuel
+            responseCode = 1
+            myHttpStatusCode = HttpStatusCode.InternalServerError
+            Unmarshal(resp.entity).to[String]
+          }
           else {
             Future {
               log_errors(strApifunction + " : " + " resp.entity " + resp.entity.toString + " , resp.status.intValue() " + resp.status.intValue().toString  + " , request - " + strRequest)
@@ -14945,6 +15007,11 @@ class CbsEngine @Inject()
           if (resp.entity != null && resp.status.intValue() == 200){
             Unmarshal(resp.entity).to[String]
           }
+          else if (resp.entity != null && resp.status.intValue() == 500){ //Added on 21-01-2022: Emmanuel
+            responseCode = 1
+            myHttpStatusCode = HttpStatusCode.InternalServerError
+            Unmarshal(resp.entity).to[String]
+          }
           else {
             Future {
               log_errors(strApifunction + " : " + " resp.entity " + resp.entity.toString + " , resp.status.intValue() " + resp.status.intValue().toString  + " , request - " + strRequest)
@@ -16320,6 +16387,11 @@ class CbsEngine @Inject()
       responseFuture.flatMap(
         resp => 
           if (resp.entity != null && resp.status.intValue() == 200){
+            Unmarshal(resp.entity).to[String]
+          }
+          else if (resp.entity != null && resp.status.intValue() == 500){ //Added on 21-01-2022: Emmanuel
+            responseCode = 1
+            myHttpStatusCode = HttpStatusCode.InternalServerError
             Unmarshal(resp.entity).to[String]
           }
           else {
@@ -17758,6 +17830,11 @@ class CbsEngine @Inject()
       responseFuture.flatMap(
         resp => 
           if (resp.entity != null && resp.status.intValue() == 200){
+            Unmarshal(resp.entity).to[String]
+          }
+          else if (resp.entity != null && resp.status.intValue() == 500){ //Added on 21-01-2022: Emmanuel
+            responseCode = 1
+            myHttpStatusCode = HttpStatusCode.InternalServerError
             Unmarshal(resp.entity).to[String]
           }
           else {
@@ -22780,6 +22857,7 @@ class CbsEngine @Inject()
         var strPhoneNo: String = ""
         var strAccountNumber: String = ""
         var rrn: String = ""
+        var faultdescription: String = ""
         var isRegistered: Boolean = false
         var responseCode: Int = 1
         var responseMessage: String = "Error occured during processing, please try again."
@@ -22814,6 +22892,16 @@ class CbsEngine @Inject()
               rrn = rrn.trim
             }
           }
+
+          if (myRegisterCustomer.faultdescription != null){
+            faultdescription = myRegisterCustomer.faultdescription
+            if (faultdescription.length > 0){
+              faultdescription = faultdescription.replace("'","")//Remove apostrophe
+              faultdescription = faultdescription.replace("  "," ")//Remove double spaces
+              faultdescription = faultdescription.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+              faultdescription = faultdescription.trim
+            }
+          }
           
           if (rrn.length > 0){
             isRegistered = true
@@ -22827,7 +22915,13 @@ class CbsEngine @Inject()
             rrn = "" 
             responseCode = 1
 
-            responseMessage = "register customer failed"
+            if (faultdescription.length > 0){
+              responseMessage = faultdescription.toLowerCase
+            }
+            else
+            {
+              responseMessage = "register customer failed"
+            }
            
           }
 
@@ -22927,6 +23021,9 @@ class CbsEngine @Inject()
           responseFuture.flatMap(
           resp => 
               if (resp.entity != null && resp.status.intValue() == 200){
+                Unmarshal(resp.entity).to[String]
+              }
+              else if (resp.entity != null && resp.status.intValue() == 500){ //Added on 21-01-2022: Emmanuel
                 Unmarshal(resp.entity).to[String]
               }
               else {
@@ -23030,6 +23127,7 @@ class CbsEngine @Inject()
                   //var strBankCode: String = ""
                   //var strAccountname: String = ""
                   var rrn: String = ""
+                  var faultdescription: String = ""
                   var verificationStatus: String = ""
                   var verificationReasonCode: String = ""
                   var isVerified: Boolean = false
@@ -23081,6 +23179,16 @@ class CbsEngine @Inject()
                         rrn = rrn.replace(" ","")//Remove spaces
                         rrn = rrn.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                         rrn = rrn.trim
+                      }
+                    }
+
+                    if (myRegisterCustomer.faultdescription != null){
+                      faultdescription = myRegisterCustomer.faultdescription
+                      if (faultdescription.length > 0){
+                        faultdescription = faultdescription.replace("'","")//Remove apostrophe
+                        faultdescription = faultdescription.replace("  "," ")//Remove double spaces
+                        faultdescription = faultdescription.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                        faultdescription = faultdescription.trim
                       }
                     }
                     /*
@@ -23146,7 +23254,13 @@ class CbsEngine @Inject()
                       responseCode = 1
 
                       //verificationReasonCode = "AC01"
-                      responseMessage = "register customer failed"
+                      if (faultdescription.length > 0){
+                        responseMessage = faultdescription.toLowerCase
+                      }
+                      else
+                      {
+                        responseMessage = "register customer failed"
+                      }
                       /*
                       if (verificationReasonCode != null){
                         if (verificationReasonCode.length > 0){
@@ -23592,6 +23706,7 @@ class CbsEngine @Inject()
         var strPhoneNo: String = ""
         var strAccountNumber: String = ""
         var rrn: String = ""
+        var faultdescription: String = ""
         var isUpdated: Boolean = false
         var responseCode: Int = 1
         var responseMessage: String = "Error occured during processing, please try again."
@@ -23626,6 +23741,16 @@ class CbsEngine @Inject()
                 rrn = rrn.trim
               }
             }
+
+            if (myUpdateCustomer.faultdescription != null){
+              faultdescription = myUpdateCustomer.faultdescription
+              if (faultdescription.length > 0){
+                faultdescription = faultdescription.replace("'","")//Remove apostrophe
+                faultdescription = faultdescription.replace("  "," ")//Remove double spaces
+                faultdescription = faultdescription.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                faultdescription = faultdescription.trim
+              }
+            }
             
             if (rrn.length > 0){
               isUpdated = true
@@ -23639,7 +23764,13 @@ class CbsEngine @Inject()
               rrn = "" 
               responseCode = 1
 
-              responseMessage = "update customer failed"
+              if (faultdescription.length > 0){
+                responseMessage = faultdescription.toLowerCase
+              }
+              else
+              {
+                responseMessage = "update customer failed"
+              }
             }
           }
           catch{
@@ -23725,6 +23856,9 @@ class CbsEngine @Inject()
           responseFuture.flatMap(
           resp => 
               if (resp.entity != null && resp.status.intValue() == 200){
+                Unmarshal(resp.entity).to[String]
+              }
+              else if (resp.entity != null && resp.status.intValue() == 500){ //Added on 21-01-2022: Emmanuel
                 Unmarshal(resp.entity).to[String]
               }
               else {
@@ -23827,6 +23961,7 @@ class CbsEngine @Inject()
                   //var strBankCode: String = ""
                   //var strAccountname: String = ""
                   var rrn: String = ""
+                  var faultdescription: String = ""
                   var verificationStatus: String = ""
                   var verificationReasonCode: String = ""
                   var isVerified: Boolean = false
@@ -23878,6 +24013,16 @@ class CbsEngine @Inject()
                         rrn = rrn.replace(" ","")//Remove spaces
                         rrn = rrn.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                         rrn = rrn.trim
+                      }
+                    }
+
+                    if (myUpdateCustomer.faultdescription != null){
+                      faultdescription = myUpdateCustomer.faultdescription
+                      if (faultdescription.length > 0){
+                        faultdescription = faultdescription.replace("'","")//Remove apostrophe
+                        faultdescription = faultdescription.replace("  "," ")//Remove double spaces
+                        faultdescription = faultdescription.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                        faultdescription = faultdescription.trim
                       }
                     }
                     /*
@@ -23943,7 +24088,13 @@ class CbsEngine @Inject()
                       responseCode = 1
 
                       //verificationReasonCode = "AC01"
-                      responseMessage = "update customer failed"
+                      if (faultdescription.length > 0){
+                        responseMessage = faultdescription.toLowerCase
+                      }
+                      else
+                      {
+                        responseMessage = "update customer failed"
+                      }
                       /*
                       if (verificationReasonCode != null){
                         if (verificationReasonCode.length > 0){
@@ -24557,6 +24708,9 @@ class CbsEngine @Inject()
           responseFuture.flatMap(
           resp => 
               if (resp.entity != null && resp.status.intValue() == 200){
+                Unmarshal(resp.entity).to[String]
+              }
+              else if (resp.entity != null && resp.status.intValue() == 500){ //Added on 21-01-2022: Emmanuel
                 Unmarshal(resp.entity).to[String]
               }
               else {
@@ -25243,6 +25397,7 @@ class CbsEngine @Inject()
         var strPhoneNo: String = ""
         var strAccountNumber: String = ""
         var rrn: String = ""
+        var faultdescription: String = ""
         var isDeleted: Boolean = false
         var responseCode: Int = 1
         var responseMessage: String = "Error occured during processing, please try again."
@@ -25277,6 +25432,16 @@ class CbsEngine @Inject()
               rrn = rrn.trim
             }
           }
+
+          if (myDeleteCustomer.faultdescription != null){
+            faultdescription = myDeleteCustomer.faultdescription
+            if (faultdescription.length > 0){
+              faultdescription = faultdescription.replace("'","")//Remove apostrophe
+              faultdescription = faultdescription.replace("  "," ")//Remove double spaces
+              faultdescription = faultdescription.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+              faultdescription = faultdescription.trim
+            }
+          }
           
           if (rrn.length > 0){
             isDeleted = true
@@ -25290,7 +25455,13 @@ class CbsEngine @Inject()
             rrn = "" 
             responseCode = 1
 
-            responseMessage = "delete customer failed"
+            if (faultdescription.length > 0){
+              responseMessage = faultdescription.toLowerCase
+            }
+            else
+            {
+              responseMessage = "delete customer failed"
+            }
           }
 
         }
@@ -25375,6 +25546,9 @@ class CbsEngine @Inject()
           responseFuture.flatMap(
           resp => 
               if (resp.entity != null && resp.status.intValue() == 200){
+                Unmarshal(resp.entity).to[String]
+              }
+              else if (resp.entity != null && resp.status.intValue() == 500){ //Added on 21-01-2022: Emmanuel
                 Unmarshal(resp.entity).to[String]
               }
               else {
@@ -25477,6 +25651,7 @@ class CbsEngine @Inject()
                   //var strBankCode: String = ""
                   //var strAccountname: String = ""
                   var rrn: String = ""
+                  var faultdescription: String = ""
                   var verificationStatus: String = ""
                   var verificationReasonCode: String = ""
                   var isVerified: Boolean = false
@@ -25528,6 +25703,16 @@ class CbsEngine @Inject()
                         rrn = rrn.replace(" ","")//Remove spaces
                         rrn = rrn.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                         rrn = rrn.trim
+                      }
+                    }
+
+                    if (myDeleteCustomer.faultdescription != null){
+                      faultdescription = myDeleteCustomer.faultdescription
+                      if (faultdescription.length > 0){
+                        faultdescription = faultdescription.replace("'","")//Remove apostrophe
+                        faultdescription = faultdescription.replace("  "," ")//Remove double spaces
+                        faultdescription = faultdescription.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                        faultdescription = faultdescription.trim
                       }
                     }
                     /*
@@ -25593,7 +25778,13 @@ class CbsEngine @Inject()
                       responseCode = 1
 
                       //verificationReasonCode = "AC01"
-                      responseMessage = "delete customer failed"
+                      if (faultdescription.length > 0){
+                        responseMessage = faultdescription.toLowerCase
+                      }
+                      else
+                      {
+                        responseMessage = "delete customer failed"
+                      }
                       /*
                       if (verificationReasonCode != null){
                         if (verificationReasonCode.length > 0){
@@ -30517,11 +30708,12 @@ class CbsEngine @Inject()
 	try{
 		if (myID > 0 && responseCode == 0 && strPlainPassword.trim.length > 0 && strEncryptedPassword.trim.length > 0){
 		  val isMatching = aesObj.isMatch(strPlainPassword, strEncryptedPassword)
-		  log_errors("myID - " + myID + " , isMatching - " + isMatching + " , strPlainPassword - " + strPlainPassword.length)
+		  //log_errors("myID - " + myID + " , isMatching - " + isMatching + " , strPlainPassword - " + strPlainPassword.length)
 		  if (!isMatching){
 			myID = 0  
 			responseCode = 1
 			responseMessage = "Unauthorised Access"
+      log_errors("myID - " + myID + " , isMatching - " + isMatching + " , responseMessage - " + responseMessage + " , strPlainPassword - " + strPlainPassword.length)
 		  }
 		}
 		else{
