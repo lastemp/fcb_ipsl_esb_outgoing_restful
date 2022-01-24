@@ -483,10 +483,10 @@ class CbsEngine @Inject()
 
   }
   //RegisterCustomerResponse
-  class RegisterCustomerResponse(val rrn: String, val faultdescription: String) {
+  class RegisterCustomerResponse(val rrn: String, val faultcode: String, val faultdescription: String) {
         
     override def toString =
-      s"rrn: $rrn, faultdescription: $faultdescription"
+      s"rrn: $rrn, faultcode: $faultcode, faultdescription: $faultdescription"
   }
 
   object RegisterCustomerResponse {
@@ -496,6 +496,7 @@ class CbsEngine @Inject()
       
       val strApifunction: String = "RegisterCustomerResponse: fromXml"
       var rrn: String = ""
+      var faultcode: String = ""
       var faultdescription: String = ""
 
       try {
@@ -509,6 +510,7 @@ class CbsEngine @Inject()
       }
 
       try {
+          faultcode = (node \ "Body" \ "Fault" \ "detail" \ "LookupDbFault" \ "faultCode").text
           faultdescription = (node \ "Body" \ "Fault" \ "detail" \ "LookupDbFault" \ "faultString").text
       }
       catch{
@@ -519,6 +521,7 @@ class CbsEngine @Inject()
       }
 
       if (rrn == null){rrn = ""}
+      if (faultcode == null){faultcode = ""}
       if (faultdescription == null){faultdescription = ""}
       
       if (rrn.length > 0){
@@ -528,6 +531,13 @@ class CbsEngine @Inject()
         rrn = rrn.trim
       }
 
+      if (faultcode.length > 0){
+        faultcode = faultcode.replace("'","")//Remove apostrophe
+        faultcode = faultcode.replace(" ","")//Remove spaces
+        faultcode = faultcode.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+        faultcode = faultcode.trim
+      }
+
       if (faultdescription.length > 0){
         faultdescription = faultdescription.replace("'","")//Remove apostrophe
         faultdescription = faultdescription.replace("  "," ")//Remove double spaces
@@ -535,7 +545,7 @@ class CbsEngine @Inject()
         faultdescription = faultdescription.trim
       }
       
-      new RegisterCustomerResponse(rrn, faultdescription)
+      new RegisterCustomerResponse(rrn, faultcode, faultdescription)
     }
 
   }
@@ -608,10 +618,10 @@ class CbsEngine @Inject()
 
   }
   //UpdateCustomerResponse
-  class UpdateCustomerResponse(val rrn: String, val faultdescription: String) {
+  class UpdateCustomerResponse(val rrn: String, val faultcode: String, val faultdescription: String) {
         
     override def toString =
-      s"rrn: $rrn, faultdescription: $faultdescription"
+      s"rrn: $rrn, faultcode: $faultcode, faultdescription: $faultdescription"
   }
 
   object UpdateCustomerResponse {
@@ -621,6 +631,7 @@ class CbsEngine @Inject()
       
       val strApifunction: String = "UpdateCustomerResponse: fromXml"
       var rrn: String = ""
+      var faultcode: String = ""
       var faultdescription: String = ""
 
       try {
@@ -634,6 +645,7 @@ class CbsEngine @Inject()
       }
 
       try {
+          faultcode = (node \ "Body" \ "Fault" \ "detail" \ "LookupDbFault" \ "faultCode").text
           faultdescription = (node \ "Body" \ "Fault" \ "detail" \ "LookupDbFault" \ "faultString").text
       }
       catch{
@@ -644,6 +656,7 @@ class CbsEngine @Inject()
       }
 
       if (rrn == null){rrn = ""}
+      if (faultcode == null){faultcode = ""}
       if (faultdescription == null){faultdescription = ""}
       
       if (rrn.length > 0){
@@ -653,6 +666,13 @@ class CbsEngine @Inject()
         rrn = rrn.trim
       }
 
+      if (faultcode.length > 0){
+        faultcode = faultcode.replace("'","")//Remove apostrophe
+        faultcode = faultcode.replace(" ","")//Remove spaces
+        faultcode = faultcode.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+        faultcode = faultcode.trim
+      }
+
       if (faultdescription.length > 0){
         faultdescription = faultdescription.replace("'","")//Remove apostrophe
         faultdescription = faultdescription.replace("  "," ")//Remove double spaces
@@ -660,7 +680,7 @@ class CbsEngine @Inject()
         faultdescription = faultdescription.trim
       }
       
-      new UpdateCustomerResponse(rrn, faultdescription)
+      new UpdateCustomerResponse(rrn, faultcode, faultdescription)
     }
 
   }
@@ -863,10 +883,10 @@ class CbsEngine @Inject()
 
   }
   //DeleteCustomerResponse
-  class DeleteCustomerResponse(val rrn: String, val faultdescription: String) {
+  class DeleteCustomerResponse(val rrn: String, val faultcode: String, val faultdescription: String) {
         
     override def toString =
-      s"rrn: $rrn, faultdescription: $faultdescription"
+      s"rrn: $rrn, faultcode: $faultcode, faultdescription: $faultdescription"
   }
 
   object DeleteCustomerResponse {
@@ -876,6 +896,7 @@ class CbsEngine @Inject()
       
       val strApifunction: String = "DeleteCustomerResponse: fromXml"
       var rrn: String = ""
+      var faultcode: String = ""
       var faultdescription: String = ""
 
       try {
@@ -889,6 +910,7 @@ class CbsEngine @Inject()
       }
 
       try {
+          faultcode = (node \ "Body" \ "Fault" \ "detail" \ "LookupDbFault" \ "faultCode").text
           faultdescription = (node \ "Body" \ "Fault" \ "detail" \ "LookupDbFault" \ "faultString").text
       }
       catch{
@@ -899,6 +921,7 @@ class CbsEngine @Inject()
       }
 
       if (rrn == null){rrn = ""}
+      if (faultcode == null){faultcode = ""}
       if (faultdescription == null){faultdescription = ""}
       
       if (rrn.length > 0){
@@ -908,6 +931,13 @@ class CbsEngine @Inject()
         rrn = rrn.trim
       }
 
+      if (faultcode.length > 0){
+        faultcode = faultcode.replace("'","")//Remove apostrophe
+        faultcode = faultcode.replace(" ","")//Remove spaces
+        faultcode = faultcode.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+        faultcode = faultcode.trim
+      }
+
       if (faultdescription.length > 0){
         faultdescription = faultdescription.replace("'","")//Remove apostrophe
         faultdescription = faultdescription.replace("  "," ")//Remove double spaces
@@ -915,7 +945,7 @@ class CbsEngine @Inject()
         faultdescription = faultdescription.trim
       }
       
-      new DeleteCustomerResponse(rrn, faultdescription)
+      new DeleteCustomerResponse(rrn, faultcode, faultdescription)
     }
 
   }
@@ -22857,6 +22887,7 @@ class CbsEngine @Inject()
         var strPhoneNo: String = ""
         var strAccountNumber: String = ""
         var rrn: String = ""
+        var faultcode: String = ""
         var faultdescription: String = ""
         var isRegistered: Boolean = false
         var responseCode: Int = 1
@@ -22893,6 +22924,16 @@ class CbsEngine @Inject()
             }
           }
 
+          if (myRegisterCustomer.faultcode != null){
+            faultcode = myRegisterCustomer.faultcode
+            if (faultcode.length > 0){
+              faultcode = faultcode.replace("'","")//Remove apostrophe
+              faultcode = faultcode.replace(" ","")//Remove spaces
+              faultcode = faultcode.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+              faultcode = faultcode.trim
+            }
+          }
+
           if (myRegisterCustomer.faultdescription != null){
             faultdescription = myRegisterCustomer.faultdescription
             if (faultdescription.length > 0){
@@ -22909,18 +22950,20 @@ class CbsEngine @Inject()
 
           if (isRegistered){
             responseCode = 0
-            responseMessage = "successful"
+            responseMessage = "link phone successful"
           }
           else{
             rrn = "" 
             responseCode = 1
 
+            faultdescription = getFaultDescription_MgwPhoneLookup(faultcode)
+
             if (faultdescription.length > 0){
-              responseMessage = faultdescription.toLowerCase
+              responseMessage = "link phone failed. " + faultdescription.toLowerCase
             }
             else
             {
-              responseMessage = "register customer failed"
+              responseMessage = "link phone failed"
             }
            
           }
@@ -23259,7 +23302,7 @@ class CbsEngine @Inject()
                       }
                       else
                       {
-                        responseMessage = "register customer failed"
+                        responseMessage = "link phone failed"
                       }
                       /*
                       if (verificationReasonCode != null){
@@ -23706,6 +23749,7 @@ class CbsEngine @Inject()
         var strPhoneNo: String = ""
         var strAccountNumber: String = ""
         var rrn: String = ""
+        var faultcode: String = ""
         var faultdescription: String = ""
         var isUpdated: Boolean = false
         var responseCode: Int = 1
@@ -23742,6 +23786,16 @@ class CbsEngine @Inject()
               }
             }
 
+            if (myUpdateCustomer.faultcode != null){
+              faultcode = myUpdateCustomer.faultcode
+              if (faultcode.length > 0){
+                faultcode = faultcode.replace("'","")//Remove apostrophe
+                faultcode = faultcode.replace(" ","")//Remove spaces
+                faultcode = faultcode.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                faultcode = faultcode.trim
+              }
+            }
+
             if (myUpdateCustomer.faultdescription != null){
               faultdescription = myUpdateCustomer.faultdescription
               if (faultdescription.length > 0){
@@ -23758,19 +23812,22 @@ class CbsEngine @Inject()
 
             if (isUpdated){
               responseCode = 0
-              responseMessage = "successful"
+              responseMessage = "update customer details successful"
             }
             else{
               rrn = "" 
               responseCode = 1
 
+              faultdescription = getFaultDescription_MgwPhoneLookup(faultcode)
+
               if (faultdescription.length > 0){
-                responseMessage = faultdescription.toLowerCase
+                responseMessage = "update customer details failed. " + faultdescription.toLowerCase
               }
               else
               {
-                responseMessage = "update customer failed"
+                responseMessage = "update customer details failed"
               }
+
             }
           }
           catch{
@@ -24093,7 +24150,7 @@ class CbsEngine @Inject()
                       }
                       else
                       {
-                        responseMessage = "update customer failed"
+                        responseMessage = "update customer details failed"
                       }
                       /*
                       if (verificationReasonCode != null){
@@ -25397,6 +25454,7 @@ class CbsEngine @Inject()
         var strPhoneNo: String = ""
         var strAccountNumber: String = ""
         var rrn: String = ""
+        var faultcode: String = ""
         var faultdescription: String = ""
         var isDeleted: Boolean = false
         var responseCode: Int = 1
@@ -25433,6 +25491,16 @@ class CbsEngine @Inject()
             }
           }
 
+          if (myDeleteCustomer.faultcode != null){
+            faultcode = myDeleteCustomer.faultcode
+            if (faultcode.length > 0){
+              faultcode = faultcode.replace("'","")//Remove apostrophe
+              faultcode = faultcode.replace(" ","")//Remove spaces
+              faultcode = faultcode.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+              faultcode = faultcode.trim
+            }
+          }
+
           if (myDeleteCustomer.faultdescription != null){
             faultdescription = myDeleteCustomer.faultdescription
             if (faultdescription.length > 0){
@@ -25449,19 +25517,22 @@ class CbsEngine @Inject()
 
           if (isDeleted){
             responseCode = 0
-            responseMessage = "successful"
+            responseMessage = "delink phone successful"
           }
           else{
             rrn = "" 
             responseCode = 1
 
+            faultdescription = getFaultDescription_MgwPhoneLookup(faultcode)
+
             if (faultdescription.length > 0){
-              responseMessage = faultdescription.toLowerCase
+              responseMessage = "delink phone failed. " + faultdescription.toLowerCase
             }
             else
             {
-              responseMessage = "delete customer failed"
+              responseMessage = "delink phone failed"
             }
+
           }
 
         }
@@ -25783,7 +25854,7 @@ class CbsEngine @Inject()
                       }
                       else
                       {
-                        responseMessage = "delete customer failed"
+                        responseMessage = "delink phone failed"
                       }
                       /*
                       if (verificationReasonCode != null){
@@ -29327,6 +29398,47 @@ class CbsEngine @Inject()
     }
 
     strOutput
+  }
+  def getFaultDescription_MgwPhoneLookup(strFaultCode: String) : String = {
+    val strApifunction: String = "getFaultDescription_MgwPhoneLookup"
+    var strFaultDescription = ""
+    try {
+      strFaultDescription = {
+        strFaultCode.replace(" ","").trim match {
+          case "0" => "Succsessful" //"Succsessfull"
+          //case "405" => "Authorisation fail"
+          //case "406" => "Restriction"
+          case "407" => "Record not found" //"Object not found"
+          case "408" => "Record already exist" //"Object already exist"
+          case "409" => "Record could not be updated" //"Nothing to update"
+          //case "410" => "Param error"
+          case "411" => "Invalid phone number" //"Params error: msisdn is null"
+          //case "412" => "Params error: login is null"
+          //case "413" => "Params error: password is null"
+          //case "414" => "Params error: expiration must contains only numeric symbols"
+          case "415" => "Invalid document details" //"Params error: wrong document info"
+          case "416" => "Invalid pan number" //"Params error: pan must contains only numeric symbols"
+          case "417" => "Invalid account number" //"Params error: account must contains only numeric symbols"
+          case "418" => "Invalid bank" //"Params error: sortCode is null"
+          case "419" => "Customer already have account in this bank" //"User already have account in this bank"
+          case "420" => "Record does not exist" //"Database error"
+          case "421" => "Record already exist and linked" //"Object already exist and linked with other user"
+          case "422" => "Invalid phone number format" //"Wrong msisdn format"
+          case "423" => "Invalid name" //"Params error: name is mandatory"
+          //case "424" => "Records limit is reached"
+          //case "425" => "Bank is not properly configured"
+          case "426" => "Invalid bank" //"Wrong sort code attempt"
+          case _ => ""
+        }
+      }
+    }catch {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured.")
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured.")
+    }
+
+    strFaultDescription
   }
   def getSignatureId(requestType: String) : String = {
     var signatureId: String = ""
