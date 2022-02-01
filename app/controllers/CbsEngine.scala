@@ -2945,6 +2945,7 @@ class CbsEngine @Inject()
   case class DeleteCustomerTableResponseDetails(id: BigDecimal, responsecode: Int, responsemessage: String)
   case class GetCustomerBankListTableDetails(batchreference: java.math.BigDecimal, account: String, defaultrecord: String, documenttype: String, documentnumber: String, email: String, expirydate: String, msisdn: String, customername: String, pan: String, batchsize: Integer, requestmessagecbsapi: String, datefromcbsapi: String, remoteaddresscbsapi: String)
   case class GetCustomerBankListTableResponseDetails(id: BigDecimal, responsecode: Int, responsemessage: String)
+  case class ConvertorStatusDetails(isConvertor: Boolean, bankName: String)
 
   case class SingleCreditTransferPaymentTableDetails(batchreference: java.math.BigDecimal, 
   debtoraccountnumber: String, debtoraccountname: String, debtorbankcode: String, 
@@ -8915,6 +8916,8 @@ class CbsEngine @Inject()
     //val jsonResponse = Json.toJson(myAccountVerificationResponse)
     var isAccSchemeName: Boolean = false
     var successfulEntry: Boolean = false
+    var isISO8583Bank: Boolean = false
+    var strBankName_iSO8583: String = ""
 
     /*
     try{
@@ -9050,7 +9053,47 @@ class CbsEngine @Inject()
         log_errors(strApifunction + " : " + tr.getMessage())
     }
 
-    if (successfulEntry){
+    try{
+
+      if (successfulEntry){
+        /*
+        isISO8583Bank = {
+          strBankCode match {
+            case "0066" | "0097" =>
+              true
+            case _ =>
+              false
+          }
+        }
+        */
+
+        //For Banks that are still on converter(ISO8583), we will not send acc verification to IPSL
+        //Its only Banks that are on ISO20022 that we will send acc verification to IPSL
+        val myOutput = validateBankCodeConvertorStatus(strBankCode)
+        if (myOutput.isConvertor != null){
+          isISO8583Bank = myOutput.isConvertor
+        }
+
+        if (myOutput.bankName != null){
+          strBankName_iSO8583 = myOutput.bankName
+        }
+        else{
+          strBankName_iSO8583 = "Bank"
+        }
+        
+      }
+
+    }
+    catch{
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage())
+      case io: IOException =>
+        log_errors(strApifunction + " : " + io.getMessage())
+      case tr: Throwable =>
+        log_errors(strApifunction + " : " + tr.getMessage())
+    }
+
+    if (successfulEntry && !isISO8583Bank){ //ISO20022 Bank
       val t1: String =  new SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date)
       val t2: String =  new SimpleDateFormat("HH:mm:ss.SSS").format(new java.util.Date)
       val creationDateTime: String = t1 + "T" + t2+ "Z"
@@ -9081,7 +9124,7 @@ class CbsEngine @Inject()
 
                 if (resp.status.intValue() == 408){
                   myHttpStatusCode = HttpStatusCode.RequestTimeout
-                  responseMessage = "Timeout at the Beneficary Bank"
+                  responseMessage = "Timeout at the Beneficary Bank/Institution"
                 }
                 else{
                   myHttpStatusCode = HttpStatusCode.InternalServerError
@@ -9229,6 +9272,53 @@ class CbsEngine @Inject()
 
             InternalServerError("exception error")
         }
+      }
+      else if (successfulEntry && isISO8583Bank){ //ISO8583 Bank
+        responseCode = 0
+        responseMessage = "successful"
+        /*
+        val strAccountname: String = {
+          strBankCode match {
+            case "0066" =>
+              "Sidian Bank"
+            case "0097" =>
+              "Telkom Kenya"  
+            case _ =>
+              "Bank"
+          }
+        }
+        */
+        val strAccountname: String = strBankName_iSO8583
+
+        val myAccountVerificationDetailsResponse_Batch = AccountVerificationDetailsResponse_Batch(strTransactionReference, strAccountNumber, strAccountname, strBankCode, responseCode, responseMessage)
+        val myAccountVerificationResponse = AccountVerificationDetailsResponse_BatchData(strMessageReference, myAccountVerificationDetailsResponse_Batch)
+        val jsonResponse = Json.toJson(myAccountVerificationResponse)
+
+        val f = Future {
+          val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
+                
+          addOutgoingAccountVerificationDetailsArchive(responseCode, responseMessage, "timeout", myAccountVerificationTableDetails, strChannelType, strChannelCallBackUrl)
+        }(myExecutionContext)
+
+        Future {
+          
+          log_data(strApifunction + " : " + "request - " + strRequest  + " , response - " + jsonResponse.toString() + " , remoteAddress - " + strClientIP)
+
+          val r: Result = {
+            myHttpStatusCode match {
+              case HttpStatusCode.Accepted =>
+                Ok(jsonResponse)//Being a sychronous request, lets return "Ok" i.e 200
+              case HttpStatusCode.BadRequest =>
+                BadRequest(jsonResponse)
+              case HttpStatusCode.Unauthorized =>
+                Unauthorized(jsonResponse)
+              case _ =>
+                BadRequest(jsonResponse)
+            }
+          }
+
+          r
+        }(myExecutionContext)
       }  
       else{
         val myAccountVerificationDetailsResponse_Batch = AccountVerificationDetailsResponse_Batch(strTransactionReference, strAccountNumber, strAccountname, strBankCode, responseCode, responseMessage)
@@ -22222,10 +22312,10 @@ class CbsEngine @Inject()
                 var msg: String = "Error occured during processing, try again later"
                 if (verificationReasonCode.length > 0){
                   if (verificationReasonCode.equalsIgnoreCase("AB05")){
-                    msg = "Timeout at the Beneficary Bank"
+                    msg = "Timeout at the Beneficary Bank/Institution"
                   }
                   else if (verificationReasonCode.equalsIgnoreCase("AB06")){
-                    msg = "Timeout at the Beneficary Bank"
+                    msg = "Timeout at the Beneficary Bank/Institution"
                   }
                   else if (verificationReasonCode.equalsIgnoreCase("AC01")){
                     msg = "Account number is invalid or does not exist"
@@ -22489,10 +22579,10 @@ class CbsEngine @Inject()
                             var msg: String = "Error occured during processing, try again later"
                             if (verificationReasonCode.length > 0){
                               if (verificationReasonCode.equalsIgnoreCase("AB05")){
-                                msg = "Timeout at the Beneficary Bank"
+                                msg = "Timeout at the Beneficary Bank/Institution"
                               }
                               else if (verificationReasonCode.equalsIgnoreCase("AB06")){
-                                msg = "Timeout at the Beneficary Bank"
+                                msg = "Timeout at the Beneficary Bank/Institution"
                               }
                               else if (verificationReasonCode.equalsIgnoreCase("AC01")){
                                 msg = "Account number is invalid or does not exist"
@@ -22621,7 +22711,7 @@ class CbsEngine @Inject()
                 val strBankCode: String = ""
                 val strAccountname: String = ""
                 val responseCode: Int = 1
-                val responseMessage: String = "Timeout at the Beneficary Bank"
+                val responseMessage: String = "Timeout at the Beneficary Bank/Institution"
 
                 if (myChannelType.value.isEmpty != true) {
                   if (myChannelType.value.get != None) {
@@ -24650,6 +24740,13 @@ class CbsEngine @Inject()
                     if (bankname == null){bankname = ""}
                     if (lookupbankname == null){lookupbankname = ""}
 
+                    if (lookupbankname.length > 0){
+                      lookupbankname = lookupbankname.replace("'","")//Remove apostrophe
+                      lookupbankname = lookupbankname.replace("  "," ")//Remove double spaces
+                      lookupbankname = lookupbankname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
+                      lookupbankname = lookupbankname.trim
+                    }
+
                     if (sortcode.length > 0 && bankname.length > 0 && lookupbankname.length > 0){
                       myCount = myCount + 1
                       val myCustomerBankListResponse_Batch = CustomerBankListResponse_Batch(bankname, defaultaccount, lookupbankname, sortcode)
@@ -25039,10 +25136,10 @@ class CbsEngine @Inject()
                         var msg: String = "Error occured during processing, try again later"
                         if (verificationReasonCode.length > 0){
                           if (verificationReasonCode.equalsIgnoreCase("AB05")){
-                            msg = "Timeout at the Beneficary Bank"
+                            msg = "Timeout at the Beneficary Bank/Institution"
                           }
                           else if (verificationReasonCode.equalsIgnoreCase("AB06")){
-                            msg = "Timeout at the Beneficary Bank"
+                            msg = "Timeout at the Beneficary Bank/Institution"
                           }
                           else if (verificationReasonCode.equalsIgnoreCase("AC01")){
                             //msg = "Account number is invalid or does not exist"
@@ -25525,7 +25622,10 @@ class CbsEngine @Inject()
 
             faultdescription = getFaultDescription_MgwPhoneLookup(faultcode)
 
-            if (faultdescription.length > 0){
+            if (faultcode.length > 0 && faultcode.equalsIgnoreCase("420")){
+              responseMessage = "delink phone failed. " + "Record does not exist"
+            }
+            else if (faultdescription.length > 0){
               responseMessage = "delink phone failed. " + faultdescription.toLowerCase
             }
             else
@@ -26402,7 +26502,7 @@ class CbsEngine @Inject()
 					log_data(strApifunction + " : " + " channeltype - IPSL"  + " , << incoming response << - " + strResponseData + " , ID - " + myID + " , httpstatuscode - " + myHttpStatusCode)
 				  }
 				  else{
-					  strStatusMessage = "Timeout at the Beneficary Bank"
+					  strStatusMessage = "Timeout at the Beneficary Bank/Institution"
 				  }
 			  
 			  }
@@ -26787,7 +26887,7 @@ class CbsEngine @Inject()
 					
 				  }
 				  else{
-					  strStatusMessage = "Timeout at the Beneficary Bank"
+					  strStatusMessage = "Timeout at the Beneficary Bank/Institution"
 				  }
 			  
 		      }
@@ -27447,7 +27547,7 @@ class CbsEngine @Inject()
             }
 				  }
 				  else{
-					  strStatusMessage = "Timeout at the Beneficary Bank"
+					  strStatusMessage = "Timeout at the Beneficary Bank/Institution"
 				  }
 		    }
 			  catch{
@@ -29405,7 +29505,7 @@ class CbsEngine @Inject()
     try {
       strFaultDescription = {
         strFaultCode.replace(" ","").trim match {
-          case "0" => "Succsessful" //"Succsessfull"
+          case "0" => "Successful" //"Successfull"
           //case "405" => "Authorisation fail"
           //case "406" => "Restriction"
           case "407" => "Record not found" //"Object not found"
@@ -29421,7 +29521,7 @@ class CbsEngine @Inject()
           case "417" => "Invalid account number" //"Params error: account must contains only numeric symbols"
           case "418" => "Invalid bank" //"Params error: sortCode is null"
           case "419" => "Customer already have account in this bank" //"User already have account in this bank"
-          case "420" => "Record does not exist" //"Database error"
+          //case "420" => "Database error"
           case "421" => "Record already exist and linked" //"Object already exist and linked with other user"
           case "422" => "Invalid phone number format" //"Wrong msisdn format"
           case "423" => "Invalid name" //"Params error: name is mandatory"
@@ -30940,6 +31040,62 @@ class CbsEngine @Inject()
 
     val myClientApiResponseDetails = ClientApiResponseDetails(responseCode, responseMessage, myID)
     myClientApiResponseDetails
+  }
+  def validateBankCodeConvertorStatus(strBankCode: String): ConvertorStatusDetails = {
+    val strApifunction: String = "ValidateBankCodeConvertorStatus"
+    var isConvertor: Boolean = false
+    var strBankName: String = ""
+
+    val strSQL: String = "{ call dbo.ValidateBankCodeConvertorStatus(?,?,?) }"
+
+    try{
+      if (strBankCode.trim.length == 0){
+      val myConvertorStatusDetails = ConvertorStatusDetails(isConvertor, strBankName)
+      return myConvertorStatusDetails
+    }
+    }
+    catch{
+      case ex : Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured." + " BankCode - " + strBankCode)
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " BankCode - " + strBankCode)
+    }
+    try {
+      myDB.withConnection { implicit myconn =>
+        try{
+          val mystmt: CallableStatement = myconn.prepareCall(strSQL)
+          mystmt.setString(1,strBankCode)
+
+          mystmt.registerOutParameter("isConvertor", java.sql.Types.BOOLEAN)
+          mystmt.registerOutParameter("myBankName", java.sql.Types.VARCHAR)
+          mystmt.execute()
+          isConvertor = mystmt.getBoolean("isConvertor")
+          strBankName = mystmt.getString("myBankName")
+
+          if (isConvertor == null){
+            isConvertor = false
+          }
+
+          if (strBankName == null){
+            strBankName = "Bank"
+          }
+        }
+        catch{
+          case ex : Exception =>
+            log_errors(strApifunction + " : " + ex.getMessage + " - ex exception error occured." + " BankCode - " + strBankCode)
+          case t: Throwable =>
+            log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " BankCode - " + strBankCode)
+        }
+      }
+    }catch {
+      case ex: Exception =>
+        log_errors(strApifunction + " : " + ex.getMessage + " exception error occured." + " BankCode - " + strBankCode)
+      case t: Throwable =>
+        log_errors(strApifunction + " : " + t.getMessage + " exception error occured." + " BankCode - " + strBankCode)
+    }
+
+    val myConvertorStatusDetails = ConvertorStatusDetails(isConvertor, strBankName)
+    myConvertorStatusDetails
   }
   def validateUrl(url: String): Boolean = {
     val strApifunction: String = "validateUrl"
