@@ -808,8 +808,26 @@ class CbsEngine @Inject()
             if (sortCode == null){sortCode = ""}
             
             if (sortCode.length > 0 && bankName.length > 0 && lookupBankName.length > 0){
+              var bankCode: String = sortCode
+
+              //Lets decode sortCode to bankCode i.e convert "40472000" to "0072"
+              try{
+                if (sortCode.length >= 5){
+                  val a: String = sortCode.substring(3,5) //value "40472000", will be "72"
+                  //value "72", will be "0072"
+                  val b: String = ("0000" + a).substring(a.length) //Lets pad the string with leading zeroes. String should have 4 xcters
+                  bankCode = b
+                }
+              }
+              catch{
+                case ex: Exception =>
+                  log_errors(strApifunction + " a : " + ex.getMessage())
+                case tr: Throwable =>
+                  log_errors(strApifunction + " b : " + tr.getMessage())
+              }
+
               val customerBankInformation: CustomerBankInformation = CustomerBankInformation(bankName, isDefaultAccount,
-              lookupBankName, sortCode)
+              lookupBankName, bankCode)
 
               customerBankInformationBatch = customerBankInformationBatch :+ customerBankInformation
             }
