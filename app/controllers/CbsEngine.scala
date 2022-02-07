@@ -290,6 +290,7 @@ class CbsEngine @Inject()
   case class SinglePaymentCancellationInfo(messagereference: String, creationdatetime: String, numberoftransactions: Int, totalinterbanksettlementamount: BigDecimal, paymentdata: PaymentCancellationInfo)
   case class BulkPaymentInfo(transactionreference: String, amount: BigDecimal, debitaccountinformation: DebitAccountInfo, creditaccountinformation: CreditAccountInfo, mandateinformation: TransferMandateInfo, remittanceinformation: TransferRemittanceInfo, purposeinformation: TransferPurposeInfo)
   case class BulkCreditTransferPaymentInfo(messagereference: String, creationdatetime: String, numberoftransactions: Int, totalinterbanksettlementamount: BigDecimal, transferdefaultinformation: TransferDefaultInfo, paymentdata: Seq[BulkPaymentInfo])
+  case class CustBulkPaymentInfo(paymentdata: Seq[BulkPaymentInfo])
 
   /*** Xml data ***/
   //val prettyPrinter = new scala.xml.PrettyPrinter(80, 2)
@@ -3118,6 +3119,7 @@ class CbsEngine @Inject()
   val strOutgoingDebitTransactionUrlEsbCbs: String = getSettings("outgoingDebitTransactionUrlEsbCbs")
   val fac: XMLSignatureFactory = XMLSignatureFactory.getInstance("DOM")//private static final
   val C14N: String = "http://www.w3.org/TR/2001/REC-xml-c14n-20010315"
+  val strInternalServerError: String = "Please note that the request could not be completed. Kindly try again later"
   
   val kafkaProducer = createKafkaProducer()
 
@@ -4992,6 +4994,18 @@ class CbsEngine @Inject()
 
             myjson.validate[BulkCreditTransferPaymentDetails_Request] match {
               case JsSuccess(myPaymentDetails_BatchRequest, _) => {
+                /*
+                implicit val ContactInfo_Writes = Json.writes[ContactInfo]
+                implicit val DebitAccountInfo_Writes = Json.writes[DebitAccountInfo]
+                implicit val CreditAccountInfo_Writes = Json.writes[CreditAccountInfo]
+                implicit val TransferMandateInfo_Writes = Json.writes[TransferMandateInfo]
+                implicit val TransferRemittanceInfo_Writes = Json.writes[TransferRemittanceInfo]
+                implicit val TransferPurposeInfo_Writes = Json.writes[TransferPurposeInfo]
+                implicit val TransferDefaultInfo_Writes = Json.writes[TransferDefaultInfo]
+                implicit val BulkPaymentInfo_Writes = Json.writes[BulkPaymentInfo]
+                //implicit val BulkPaymentInfo_2_Writes = Json.writes[Seq[BulkPaymentInfo]]
+                implicit val BulkCreditTransferPaymentInfo_Writes = Json.writes[BulkCreditTransferPaymentInfo]
+                */
 
                 var isValidInputData: Boolean = false
                 var myBatchSize: Integer = 0
@@ -6208,15 +6222,32 @@ class CbsEngine @Inject()
                             var strRequestType: String = "accountbulktransfer"
                             var strMessageReference: String = "" 
                             var strDebitTransactionRequest: String = ""//myDebitTransactionRequest.toString() 
-                            var strBulkPaymentInfo: String = bulkCreditTransferPaymentInfo.paymentdata.toString() 
+                            var strBulkPaymentInfo: String = ""//bulkCreditTransferPaymentInfo.paymentdata.toString() 
                             var strCreditTransfer: String = myRequestData
                             var strDebitReversalTransactionRequest: String = ""//myDebitReversalTransactionRequest.toString()
                             
                             implicit val DebitTransactionRequest_EsbCbs_Writes = Json.writes[DebitTransactionRequest_EsbCbs]
 
-                                          //convert case class to json
+                            //convert case class to json
                             val myJsonDebitTransactionData = Json.toJson(myDebitTransactionRequest)
                             strDebitTransactionRequest = myJsonDebitTransactionData.toString()
+
+                            //CustBulkPaymentInfo
+                            implicit val ContactInfo_Writes = Json.writes[ContactInfo]
+                            implicit val DebitAccountInfo_Writes = Json.writes[DebitAccountInfo]
+                            implicit val CreditAccountInfo_Writes = Json.writes[CreditAccountInfo]
+                            implicit val TransferMandateInfo_Writes = Json.writes[TransferMandateInfo]
+                            implicit val TransferRemittanceInfo_Writes = Json.writes[TransferRemittanceInfo]
+                            implicit val TransferPurposeInfo_Writes = Json.writes[TransferPurposeInfo]
+                            implicit val TransferDefaultInfo_Writes = Json.writes[TransferDefaultInfo]
+                            implicit val BulkPaymentInfo_Writes = Json.writes[BulkPaymentInfo]
+                            implicit val BulkCreditTransferPaymentInfo_Writes = Json.writes[BulkCreditTransferPaymentInfo]
+                            implicit val CustBulkPaymentInfo_Writes = Json.writes[CustBulkPaymentInfo]  
+                            //convert case class to json
+                            val myCustBulkPaymentInfo = CustBulkPaymentInfo(bulkCreditTransferPaymentInfo.paymentdata)
+                            val myJsonCustBulkPaymentData = Json.toJson(myCustBulkPaymentInfo)
+                            strBulkPaymentInfo = myJsonCustBulkPaymentData.toString()
+                            //CustBulkPaymentInfo
                             
                             implicit val DebitReversalTransactionRequest_EsbCbs_Writes = Json.writes[DebitReversalTransactionRequest_EsbCbs]
 
@@ -9146,7 +9177,8 @@ class CbsEngine @Inject()
                 }
                 else{
                   myHttpStatusCode = HttpStatusCode.InternalServerError
-                  responseMessage = "InternalServerError (exception error occured)"
+                  //responseMessage = "InternalServerError (exception error occured)"
+                  responseMessage = strInternalServerError
                 }
                 
                 responseCode = 1
@@ -9162,7 +9194,8 @@ class CbsEngine @Inject()
           case ex: Exception =>  
 
             responseCode = 1
-            responseMessage = "InternalServerError (exception error occured)"
+            //responseMessage = "InternalServerError (exception error occured)"
+            responseMessage = strInternalServerError
 
             //log_errors(strApifunction + " : " + "request - " + strRequest + " , InternalServerError (exception error occured)")
             log_errors(strApifunction + " : " + "request - " + strRequest + " , InternalServerError (exception error occured), " + ex.getMessage())
@@ -9194,7 +9227,8 @@ class CbsEngine @Inject()
           else {
             myHttpStatusCode = HttpStatusCode.BadRequest
             responseCode = 1
-            responseMessage = "InternalServerError (exception error occured)"
+            //responseMessage = "InternalServerError (exception error occured)"
+            responseMessage = strInternalServerError
             
             val myAccountVerificationDetailsResponse_Batch = AccountVerificationDetailsResponse_Batch(strTransactionReference, strAccountNumber, strAccountname, strBankCode, responseCode, responseMessage)
             val myAccountVerificationResponse = AccountVerificationDetailsResponse_BatchData(strMessageReference, myAccountVerificationDetailsResponse_Batch)
@@ -9263,7 +9297,8 @@ class CbsEngine @Inject()
           case e: scala.concurrent.TimeoutException =>
 
             responseCode = 1
-            responseMessage = "InternalServerError (timeout)"
+            //responseMessage = "InternalServerError (timeout)"
+            responseMessage = strInternalServerError
 
             val f = Future {
               val myAccountVerificationTableDetails = AccountVerificationTableDetails(myBatchReference, strAccountNumber, strBankCode, strMessageReference, strTransactionReference, strSchemeName, myBatchSize, strRequestData, dateFromCbsApi, strClientIP)
@@ -13368,7 +13403,8 @@ class CbsEngine @Inject()
               }
               else{
                 myHttpStatusCode = HttpStatusCode.InternalServerError
-                responseMessage = "InternalServerError (exception error occured)"
+                //responseMessage = "InternalServerError (exception error occured)"
+                responseMessage = strInternalServerError
               }
               
               responseCode = 1
@@ -13382,7 +13418,8 @@ class CbsEngine @Inject()
         case ex: Exception =>  
 
           responseCode = 1
-          responseMessage = "InternalServerError (exception error occured)"
+          //responseMessage = "InternalServerError (exception error occured)"
+          responseMessage = strInternalServerError
 
           log_errors(strApifunction + " : " + "request - " + strRequest + " , InternalServerError (exception error occured), " + ex.getMessage())
 
@@ -13412,7 +13449,8 @@ class CbsEngine @Inject()
           else {
             myHttpStatusCode = HttpStatusCode.BadRequest
             responseCode = 1
-            responseMessage = "InternalServerError (exception error occured)"
+            //responseMessage = "InternalServerError (exception error occured)"
+            responseMessage = strInternalServerError
             
             val rrn: String = ""
             val myRegisterCustomerResponse = RegisterCustomerResponse_Batch(strAccountNumber, strMsisdn, rrn, responseCode, responseMessage)
@@ -13500,7 +13538,8 @@ class CbsEngine @Inject()
         case e: scala.concurrent.TimeoutException =>
 
           responseCode = 1
-          responseMessage = "InternalServerError (timeout)"
+          //responseMessage = "InternalServerError (timeout)"
+          responseMessage = strInternalServerError
 
           try{
             val myBatchSize: Integer = 1
@@ -15160,7 +15199,8 @@ class CbsEngine @Inject()
               }
               else{
                 myHttpStatusCode = HttpStatusCode.InternalServerError
-                responseMessage = "InternalServerError (exception error occured)"
+                //responseMessage = "InternalServerError (exception error occured)"
+                responseMessage = strInternalServerError
               }
               
               responseCode = 1
@@ -15174,7 +15214,8 @@ class CbsEngine @Inject()
         case ex: Exception =>  
 
           responseCode = 1
-          responseMessage = "InternalServerError (exception error occured)"
+          //responseMessage = "InternalServerError (exception error occured)"
+          responseMessage = strInternalServerError
 
           log_errors(strApifunction + " : " + "request - " + strRequest + " , InternalServerError (exception error occured), " + ex.getMessage())
 
@@ -15204,7 +15245,8 @@ class CbsEngine @Inject()
           else {
             myHttpStatusCode = HttpStatusCode.BadRequest
             responseCode = 1
-            responseMessage = "InternalServerError (exception error occured)"
+            //responseMessage = "InternalServerError (exception error occured)"
+            responseMessage = strInternalServerError
             
             val rrn: String = ""
             val myUpdateCustomerResponse = UpdateCustomerResponse_Batch(strAccountNumber, strMsisdn, rrn, responseCode, responseMessage)
@@ -15292,7 +15334,8 @@ class CbsEngine @Inject()
         case e: scala.concurrent.TimeoutException =>
 
           responseCode = 1
-          responseMessage = "InternalServerError (timeout)"
+          //responseMessage = "InternalServerError (timeout)"
+          responseMessage = strInternalServerError
 
           try{
             val myBatchSize: Integer = 1
@@ -16542,7 +16585,8 @@ class CbsEngine @Inject()
               }
               else{
                 myHttpStatusCode = HttpStatusCode.InternalServerError
-                responseMessage = "InternalServerError (exception error occured)"
+                //responseMessage = "InternalServerError (exception error occured)"
+                responseMessage = strInternalServerError
               }
               
               responseCode = 1
@@ -16556,7 +16600,8 @@ class CbsEngine @Inject()
         case ex: Exception =>  
 
           responseCode = 1
-          responseMessage = "InternalServerError (exception error occured)"
+          //responseMessage = "InternalServerError (exception error occured)"
+          responseMessage = strInternalServerError
 
           log_errors(strApifunction + " : " + "request - " + strRequest + " , InternalServerError (exception error occured), " + ex.getMessage())
 
@@ -16586,7 +16631,8 @@ class CbsEngine @Inject()
           else {
             myHttpStatusCode = HttpStatusCode.BadRequest
             responseCode = 1
-            responseMessage = "InternalServerError (exception error occured)"
+            //responseMessage = "InternalServerError (exception error occured)"
+            responseMessage = strInternalServerError
             
             val myCustomerBankListResponse_BatchData = Seq[CustomerBankListResponse_Batch]()
             val myCustomerBankListResponse = CustomerBankListResponse_BatchData(strMsisdn, responseCode, responseMessage, myCustomerBankListResponse_BatchData)
@@ -16681,7 +16727,8 @@ class CbsEngine @Inject()
         case e: scala.concurrent.TimeoutException =>
 
           responseCode = 1
-          responseMessage = "InternalServerError (timeout)"
+          //responseMessage = "InternalServerError (timeout)"
+          responseMessage = strInternalServerError
 
           try{
             val myBatchSize: Integer = 1
@@ -17985,7 +18032,8 @@ class CbsEngine @Inject()
               }
               else{
                 myHttpStatusCode = HttpStatusCode.InternalServerError
-                responseMessage = "InternalServerError (exception error occured)"
+                //responseMessage = "InternalServerError (exception error occured)"
+                responseMessage = strInternalServerError
               }
               
               responseCode = 1
@@ -17999,7 +18047,8 @@ class CbsEngine @Inject()
         case ex: Exception =>  
 
           responseCode = 1
-          responseMessage = "InternalServerError (exception error occured)"
+          //responseMessage = "InternalServerError (exception error occured)"
+          responseMessage = strInternalServerError
 
           log_errors(strApifunction + " : " + "request - " + strRequest + " , InternalServerError (exception error occured), " + ex.getMessage())
 
@@ -18029,7 +18078,8 @@ class CbsEngine @Inject()
           else {
             myHttpStatusCode = HttpStatusCode.BadRequest
             responseCode = 1
-            responseMessage = "InternalServerError (exception error occured)"
+            //responseMessage = "InternalServerError (exception error occured)"
+            responseMessage = strInternalServerError
             
             val rrn: String = ""
             val myDeleteCustomerResponse = DeleteCustomerResponse_Batch(strAccountNumber, strMsisdn, rrn, responseCode, responseMessage)
@@ -18124,7 +18174,8 @@ class CbsEngine @Inject()
         case e: scala.concurrent.TimeoutException =>
 
           responseCode = 1
-          responseMessage = "InternalServerError (timeout)"
+          //responseMessage = "InternalServerError (timeout)"
+          responseMessage = strInternalServerError
 
           try{
             val myBatchSize: Integer = 1
