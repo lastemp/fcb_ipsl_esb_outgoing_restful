@@ -1250,7 +1250,9 @@ class CbsEngine @Inject()
 
     // (a) convert SingleCreditTransfer fields to XML
     def toXml = {
-      val prettyPrinter = new scala.xml.PrettyPrinter(80, 4)//value 80 represents max length of "<Document>" header
+      //val prettyPrinter = new scala.xml.PrettyPrinter(80, 4)//value 80 represents max length of "<Document>" header
+      //Modified on 04-03-2022: Emmanuel
+      val prettyPrinter = new scala.xml.PrettyPrinter(170, 4)//value (140 + 30 tags length) represents "140" max length of "<Dbtr><Nm>"
       //val prettyPrinter = new scala.xml.PrettyPrinter(2850, 4)//value 80 represents max length of "<Document>" header
       val currencyCode = "KES"
       val a = toXmlGroupHeaderInformation
@@ -1685,7 +1687,9 @@ class CbsEngine @Inject()
 
     // (a) convert BulkCreditTransfer fields to XML
     def toXml = {
-      val prettyPrinter = new scala.xml.PrettyPrinter(80, 4)
+      //val prettyPrinter = new scala.xml.PrettyPrinter(80, 4)
+      //Modified on 04-03-2022: Emmanuel
+      val prettyPrinter = new scala.xml.PrettyPrinter(170, 4)//value (140 + 30 tags length) represents "140" max length of "<Dbtr><Nm>"
       val currencyCode = "KES"
       val a = toXmlGroupHeaderInformation
       val groupHeaderInfo: String = a.toString
@@ -2503,7 +2507,9 @@ class CbsEngine @Inject()
 
     // (a) convert SingleCreditTransfer fields to XML
     def toXml = {
-      val prettyPrinter = new scala.xml.PrettyPrinter(80, 4)//value 80 represents max length of "<Document>" header
+      //val prettyPrinter = new scala.xml.PrettyPrinter(80, 4)//value 80 represents max length of "<Document>" header
+      //Modified on 04-03-2022: Emmanuel
+      val prettyPrinter = new scala.xml.PrettyPrinter(170, 4)//value (140 + 30 tags length) represents "140" max length of "<Dbtr><Nm>"
       val a = toXmlGroupHeaderInformation
       val groupHeaderInfo: String = a.toString
       val b = toXmlOriginalGroupInformationAndStatus
@@ -3713,14 +3719,16 @@ class CbsEngine @Inject()
                               debtorinformationdebtorname = debtorinformationdebtorname.replace("\\"," ")//Remove backward slash
                               debtorinformationdebtorname = debtorinformationdebtorname.replace("<"," ")//Remove "<" (less-than)
                               debtorinformationdebtorname = debtorinformationdebtorname.replace(">"," ")//Remove ">" (greater-than)
+                              debtorinformationdebtorname = debtorinformationdebtorname.replace("\n", "")//replacing line breaks from string
                               //
                               debtorinformationdebtorname = debtorinformationdebtorname.replace("  "," ")//Remove double spaces
                               debtorinformationdebtorname = debtorinformationdebtorname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                               debtorinformationdebtorname = debtorinformationdebtorname.trim
-                              /* Added on 04-03-2022: Emmanuel */
-                              /* Lets ensure that var debtorinformationdebtorname has a max length of 140 */
-                              if (debtorinformationdebtorname.length > 140) {
-                                debtorinformationdebtorname = debtorinformationdebtorname.substring(0,140)
+                              /* Added on 04-03-2022: Emmanuel */ 
+                              /* IPSL doc states 140, we will use 35 since thats whats Banks can handle */
+                              /* Lets ensure that var debtorinformationdebtorname has a max length of 35 */
+                              if (debtorinformationdebtorname.length > 35) {
+                                debtorinformationdebtorname = debtorinformationdebtorname.substring(0,35)
                                 debtorinformationdebtorname = debtorinformationdebtorname.trim
                               }
                             }
@@ -3809,14 +3817,16 @@ class CbsEngine @Inject()
                               debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("\\"," ")//Remove backward slash
                               debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("<"," ")//Remove "<" (less-than)
                               debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace(">"," ")//Remove ">" (greater-than)
+                              debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("\n", "")//replacing line breaks from string
                               //
                               debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("  "," ")//Remove double spaces
                               debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                               debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.trim
                               /* Added on 04-03-2022: Emmanuel */
-                              /* Lets ensure that var debtoraccountinformationdebtoraccountname has a max length of 70 */
-                              if (debtoraccountinformationdebtoraccountname.length > 70) {
-                                debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.substring(0,70)
+                              /* IPSL doc states 70, we will use 35 since thats whats Banks can handle */
+                              /* Lets ensure that var debtoraccountinformationdebtoraccountname has a max length of 35 */
+                              if (debtoraccountinformationdebtoraccountname.length > 35) {
+                                debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.substring(0,35)
                                 debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.trim
                               }
                             }
@@ -3900,14 +3910,16 @@ class CbsEngine @Inject()
                               creditorinformationcreditorname = creditorinformationcreditorname.replace("\\"," ")//Remove backward slash
                               creditorinformationcreditorname = creditorinformationcreditorname.replace("<"," ")//Remove "<" (less-than)
                               creditorinformationcreditorname = creditorinformationcreditorname.replace(">"," ")//Remove ">" (greater-than)
+                              creditorinformationcreditorname = creditorinformationcreditorname.replace("\n", "")//replacing line breaks from string
                               //
                               creditorinformationcreditorname = creditorinformationcreditorname.replace("  "," ")//Remove double spaces
                               creditorinformationcreditorname = creditorinformationcreditorname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                               creditorinformationcreditorname = creditorinformationcreditorname.trim
                               /* Added on 04-03-2022: Emmanuel */
-                              /* Lets ensure that var creditorinformationcreditorname has a max length of 140 */
-                              if (creditorinformationcreditorname.length > 140) {
-                                creditorinformationcreditorname = creditorinformationcreditorname.substring(0,140)
+                              /* IPSL doc states 140, we will use 35 since thats whats Banks can handle */
+                              /* Lets ensure that var creditorinformationcreditorname has a max length of 35 */
+                              if (creditorinformationcreditorname.length > 35) {
+                                creditorinformationcreditorname = creditorinformationcreditorname.substring(0,35)
                                 creditorinformationcreditorname = creditorinformationcreditorname.trim
                               }
                             }
@@ -4003,14 +4015,16 @@ class CbsEngine @Inject()
                               creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace("\\"," ")//Remove backward slash
                               creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace("<"," ")//Remove "<" (less-than)
                               creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace(">"," ")//Remove ">" (greater-than)
+                              creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace("\n", "")//replacing line breaks from string
                               //
                               creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace("  "," ")//Remove double spaces
                               creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                               creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.trim
                               /* Added on 04-03-2022: Emmanuel */
-                              /* Lets ensure that var creditoraccountinformationcreditoraccountname has a max length of 70 */
-                              if (creditoraccountinformationcreditoraccountname.length > 70) {
-                                creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.substring(0,70)
+                              /* IPSL doc states 70, we will use 35 since thats whats Banks can handle */
+                              /* Lets ensure that var creditoraccountinformationcreditoraccountname has a max length of 35 */
+                              if (creditoraccountinformationcreditoraccountname.length > 35) {
+                                creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.substring(0,35)
                                 creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.trim
                               }
                             }
@@ -5158,14 +5172,16 @@ class CbsEngine @Inject()
                             debtorinformationdebtorname = debtorinformationdebtorname.replace("\\"," ")//Remove backward slash
                             debtorinformationdebtorname = debtorinformationdebtorname.replace("<"," ")//Remove "<" (less-than)
                             debtorinformationdebtorname = debtorinformationdebtorname.replace(">"," ")//Remove ">" (greater-than)
+                            debtorinformationdebtorname = debtorinformationdebtorname.replace("\n", "")//replacing line breaks from string
                             //
                             debtorinformationdebtorname = debtorinformationdebtorname.replace("  "," ")//Remove double spaces
                             debtorinformationdebtorname = debtorinformationdebtorname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                             debtorinformationdebtorname = debtorinformationdebtorname.trim
                             /* Added on 04-03-2022: Emmanuel */
-                            /* Lets ensure that var debtorinformationdebtorname has a max length of 140 */
-                            if (debtorinformationdebtorname.length > 140) {
-                              debtorinformationdebtorname = debtorinformationdebtorname.substring(0,140)
+                            /* IPSL doc states 140, we will use 35 since thats whats Banks can handle */
+                            /* Lets ensure that var debtorinformationdebtorname has a max length of 35 */
+                            if (debtorinformationdebtorname.length > 35) {
+                              debtorinformationdebtorname = debtorinformationdebtorname.substring(0,35)
                               debtorinformationdebtorname = debtorinformationdebtorname.trim
                             }
                           }
@@ -5251,14 +5267,16 @@ class CbsEngine @Inject()
                             debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("\\"," ")//Remove backward slash
                             debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("<"," ")//Remove "<" (less-than)
                             debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace(">"," ")//Remove ">" (greater-than)
+                            debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("\n", "")//replacing line breaks from string
                             //
                             debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("  "," ")//Remove double spaces
                             debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                             debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.trim
                             /* Added on 04-03-2022: Emmanuel */
-                            /* Lets ensure that var debtoraccountinformationdebtoraccountname has a max length of 70 */
-                            if (debtoraccountinformationdebtoraccountname.length > 70) {
-                              debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.substring(0,70)
+                            /* IPSL doc states 70, we will use 35 since thats whats Banks can handle */
+                            /* Lets ensure that var debtoraccountinformationdebtoraccountname has a max length of 35 */
+                            if (debtoraccountinformationdebtoraccountname.length > 35) {
+                              debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.substring(0,35)
                               debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.trim
                             }
                           }
@@ -5670,14 +5688,16 @@ class CbsEngine @Inject()
                                 creditorinformationcreditorname = creditorinformationcreditorname.replace("\\"," ")//Remove backward slash
                                 creditorinformationcreditorname = creditorinformationcreditorname.replace("<"," ")//Remove "<" (less-than)
                                 creditorinformationcreditorname = creditorinformationcreditorname.replace(">"," ")//Remove ">" (greater-than)
+                                creditorinformationcreditorname = creditorinformationcreditorname.replace("\n", "")//replacing line breaks from string
                                 //
                                 creditorinformationcreditorname = creditorinformationcreditorname.replace("  "," ")//Remove double spaces
                                 creditorinformationcreditorname = creditorinformationcreditorname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                                 creditorinformationcreditorname = creditorinformationcreditorname.trim
                                 /* Added on 04-03-2022: Emmanuel */
-                                /* Lets ensure that var creditorinformationcreditorname has a max length of 140 */
-                                if (creditorinformationcreditorname.length > 140) {
-                                  creditorinformationcreditorname = creditorinformationcreditorname.substring(0,140)
+                                /* IPSL doc states 140, we will use 35 since thats whats Banks can handle */
+                                /* Lets ensure that var creditorinformationcreditorname has a max length of 35 */
+                                if (creditorinformationcreditorname.length > 35) {
+                                  creditorinformationcreditorname = creditorinformationcreditorname.substring(0,35)
                                   creditorinformationcreditorname = creditorinformationcreditorname.trim
                                 }
                               }
@@ -5773,14 +5793,16 @@ class CbsEngine @Inject()
                                 creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace("\\"," ")//Remove backward slash
                                 creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace("<"," ")//Remove "<" (less-than)
                                 creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace(">"," ")//Remove ">" (greater-than)
+                                creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace("\n", "")//replacing line breaks from string
                                 //
                                 creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace("  "," ")//Remove double spaces
                                 creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                                 creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.trim
                                 /* Added on 04-03-2022: Emmanuel */
-                                /* Lets ensure that var creditoraccountinformationcreditoraccountname has a max length of 70 */
-                                if (creditoraccountinformationcreditoraccountname.length > 70) {
-                                  creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.substring(0,70)
+                                /* IPSL doc states 70, we will use 35 since thats whats Banks can handle */
+                                /* Lets ensure that var creditoraccountinformationcreditoraccountname has a max length of 35 */
+                                if (creditoraccountinformationcreditoraccountname.length > 35) {
+                                  creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.substring(0,35)
                                   creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.trim
                                 }
                               }
