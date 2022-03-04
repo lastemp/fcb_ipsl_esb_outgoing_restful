@@ -3139,11 +3139,11 @@ class CbsEngine @Inject()
       var isValidSchemeName: Boolean = false
       var isValidAmount: Boolean = false
       var isValidDebitAccount: Boolean = false
-      var isValidDebitAccountName: Boolean = false
+      //var isValidDebitAccountName: Boolean = false
       var isValidDebtorName: Boolean = false
       var isValidDebitPhoneNumber: Boolean = false
       var isValidCreditAccount: Boolean = false
-      var isValidCreditAccountName: Boolean = false
+      //var isValidCreditAccountName: Boolean = false
       var isValidCreditBankCode: Boolean = false
       //var isValidCreditPhoneNumber: Boolean = false
       var isValidRemittanceinfoUnstructured: Boolean = false
@@ -3556,11 +3556,11 @@ class CbsEngine @Inject()
                     isValidSchemeName = false
                     isValidAmount = false
                     isValidDebitAccount = false
-                    isValidDebitAccountName = false
+                    //isValidDebitAccountName = false
                     isValidDebtorName = false
                     isValidDebitPhoneNumber = false
                     isValidCreditAccount = false
-                    isValidCreditAccountName = false
+                    //isValidCreditAccountName = false
                     isValidCreditBankCode = false
                     //isValidCreditPhoneNumber = false
                     isValidRemittanceinfoUnstructured = false
@@ -3707,9 +3707,22 @@ class CbsEngine @Inject()
                             debtorinformationdebtorname = debtorinformationdebtorname.trim
                             if (debtorinformationdebtorname.length > 0){
                               debtorinformationdebtorname = debtorinformationdebtorname.replace("'","")//Remove apostrophe
+                              /* Added on 04-03-2022: Emmanuel */
+                              debtorinformationdebtorname = debtorinformationdebtorname.replace("&"," and ")//Replace Ampersand
+                              debtorinformationdebtorname = debtorinformationdebtorname.replace("/"," ")//Remove forward slash
+                              debtorinformationdebtorname = debtorinformationdebtorname.replace("\\"," ")//Remove backward slash
+                              debtorinformationdebtorname = debtorinformationdebtorname.replace("<"," ")//Remove "<" (less-than)
+                              debtorinformationdebtorname = debtorinformationdebtorname.replace(">"," ")//Remove ">" (greater-than)
+                              //
                               debtorinformationdebtorname = debtorinformationdebtorname.replace("  "," ")//Remove double spaces
                               debtorinformationdebtorname = debtorinformationdebtorname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                               debtorinformationdebtorname = debtorinformationdebtorname.trim
+                              /* Added on 04-03-2022: Emmanuel */
+                              /* Lets ensure that var debtorinformationdebtorname has a max length of 140 */
+                              if (debtorinformationdebtorname.length > 140) {
+                                debtorinformationdebtorname = debtorinformationdebtorname.substring(0,140)
+                                debtorinformationdebtorname = debtorinformationdebtorname.trim
+                              }
                             }
                           }
                         }
@@ -3790,9 +3803,22 @@ class CbsEngine @Inject()
                             debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.trim
                             if (debtoraccountinformationdebtoraccountname.length > 0){
                               debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("'","")//Remove apostrophe
+                              /* Added on 04-03-2022: Emmanuel */
+                              debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("&"," and ")//Replace Ampersand
+                              debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("/"," ")//Remove forward slash
+                              debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("\\"," ")//Remove backward slash
+                              debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("<"," ")//Remove "<" (less-than)
+                              debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace(">"," ")//Remove ">" (greater-than)
+                              //
                               debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("  "," ")//Remove double spaces
                               debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                               debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.trim
+                              /* Added on 04-03-2022: Emmanuel */
+                              /* Lets ensure that var debtoraccountinformationdebtoraccountname has a max length of 70 */
+                              if (debtoraccountinformationdebtoraccountname.length > 70) {
+                                debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.substring(0,70)
+                                debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.trim
+                              }
                             }
                           }
                         }
@@ -3868,9 +3894,22 @@ class CbsEngine @Inject()
                             creditorinformationcreditorname = creditorinformationcreditorname.trim
                             if (creditorinformationcreditorname.length > 0){
                               creditorinformationcreditorname = creditorinformationcreditorname.replace("'","")//Remove apostrophe
+                              /* Added on 04-03-2022: Emmanuel */
+                              creditorinformationcreditorname = creditorinformationcreditorname.replace("&"," and ")//Replace Ampersand
+                              creditorinformationcreditorname = creditorinformationcreditorname.replace("/"," ")//Remove forward slash
+                              creditorinformationcreditorname = creditorinformationcreditorname.replace("\\"," ")//Remove backward slash
+                              creditorinformationcreditorname = creditorinformationcreditorname.replace("<"," ")//Remove "<" (less-than)
+                              creditorinformationcreditorname = creditorinformationcreditorname.replace(">"," ")//Remove ">" (greater-than)
+                              //
                               creditorinformationcreditorname = creditorinformationcreditorname.replace("  "," ")//Remove double spaces
                               creditorinformationcreditorname = creditorinformationcreditorname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                               creditorinformationcreditorname = creditorinformationcreditorname.trim
+                              /* Added on 04-03-2022: Emmanuel */
+                              /* Lets ensure that var creditorinformationcreditorname has a max length of 140 */
+                              if (creditorinformationcreditorname.length > 140) {
+                                creditorinformationcreditorname = creditorinformationcreditorname.substring(0,140)
+                                creditorinformationcreditorname = creditorinformationcreditorname.trim
+                              }
                             }
                           }
 
@@ -3958,9 +3997,22 @@ class CbsEngine @Inject()
                             creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.trim
                             if (creditoraccountinformationcreditoraccountname.length > 0){
                               creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace("'","")//Remove apostrophe
+                              /* Added on 04-03-2022: Emmanuel */
+                              creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace("&"," and ")//Replace Ampersand
+                              creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace("/"," ")//Remove forward slash
+                              creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace("\\"," ")//Remove backward slash
+                              creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace("<"," ")//Remove "<" (less-than)
+                              creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace(">"," ")//Remove ">" (greater-than)
+                              //
                               creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace("  "," ")//Remove double spaces
                               creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                               creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.trim
+                              /* Added on 04-03-2022: Emmanuel */
+                              /* Lets ensure that var creditoraccountinformationcreditoraccountname has a max length of 70 */
+                              if (creditoraccountinformationcreditoraccountname.length > 70) {
+                                creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.substring(0,70)
+                                creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.trim
+                              }
                             }
                           }
                         }
@@ -4178,7 +4230,7 @@ class CbsEngine @Inject()
                       }
                       isValid
                     }
-
+                    /*
                     isValidDebitAccountName = {
                       var isValid: Boolean = false
                       if (debtoraccountinformationdebtoraccountname.replace("  ","").length > 0 && debtoraccountinformationdebtoraccountname.replace("  ","").length <= 70){
@@ -4186,10 +4238,10 @@ class CbsEngine @Inject()
                       }
                       isValid
                     }
-
+                    */
                     isValidDebtorName  = {
                       var isValid: Boolean = false
-                      if (debtorinformationdebtorname.replace("  ","").length > 0 && debtorinformationdebtorname.replace("  ","").length <= 140){
+                      if (debtorinformationdebtorname.length > 0 && debtorinformationdebtorname.length <= 140){
                         isValid = true
                       }
                       isValid
@@ -4225,15 +4277,15 @@ class CbsEngine @Inject()
                       }
                       isValid
                     }
-
+                    /*
                     isValidCreditAccountName = {
                       var isValid: Boolean = false
-                      if (creditoraccountinformationcreditoraccountname.replace("  ","").length > 0 && creditoraccountinformationcreditoraccountname.replace("  ","").length <= 140){
+                      if (creditoraccountinformationcreditoraccountname.length > 0 && creditoraccountinformationcreditoraccountname.length <= 70){
                         isValid = true
                       }
                       isValid
                     }
-
+                    */
                     isValidCreditBankCode = {
                       var isValid: Boolean = false
                       if (creditoragentinformationfinancialInstitutionIdentification.length > 0 && creditoragentinformationfinancialInstitutionIdentification.length <= 35){
@@ -4702,11 +4754,11 @@ class CbsEngine @Inject()
       var isValidSchemeName: Boolean = false
       var isValidAmount: Boolean = false
       var isValidDebitAccount: Boolean = false
-      var isValidDebitAccountName: Boolean = false
+      //var isValidDebitAccountName: Boolean = false
       var isValidDebtorName: Boolean = false
       var isValidDebitPhoneNumber: Boolean = false
       var isValidCreditAccount: Boolean = false
-      var isValidCreditAccountName: Boolean = false
+      //var isValidCreditAccountName: Boolean = false
       var isValidCreditBankCode: Boolean = false
       //var isValidCreditPhoneNumber: Boolean = false
       var isValidRemittanceinfoUnstructured: Boolean = false
@@ -5055,7 +5107,7 @@ class CbsEngine @Inject()
                     debtoraccountinformationdebtoraccountname = ""
 
                     isValidDebitAccount = false
-                    isValidDebitAccountName = false
+                    //isValidDebitAccountName = false
                     isValidDebtorName = false
                     isValidDebitPhoneNumber = false
 
@@ -5100,9 +5152,22 @@ class CbsEngine @Inject()
                           debtorinformationdebtorname = debtorinformationdebtorname.trim
                           if (debtorinformationdebtorname.length > 0){
                             debtorinformationdebtorname = debtorinformationdebtorname.replace("'","")//Remove apostrophe
+                            /* Added on 04-03-2022: Emmanuel */
+                            debtorinformationdebtorname = debtorinformationdebtorname.replace("&"," and ")//Replace Ampersand
+                            debtorinformationdebtorname = debtorinformationdebtorname.replace("/"," ")//Remove forward slash
+                            debtorinformationdebtorname = debtorinformationdebtorname.replace("\\"," ")//Remove backward slash
+                            debtorinformationdebtorname = debtorinformationdebtorname.replace("<"," ")//Remove "<" (less-than)
+                            debtorinformationdebtorname = debtorinformationdebtorname.replace(">"," ")//Remove ">" (greater-than)
+                            //
                             debtorinformationdebtorname = debtorinformationdebtorname.replace("  "," ")//Remove double spaces
                             debtorinformationdebtorname = debtorinformationdebtorname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                             debtorinformationdebtorname = debtorinformationdebtorname.trim
+                            /* Added on 04-03-2022: Emmanuel */
+                            /* Lets ensure that var debtorinformationdebtorname has a max length of 140 */
+                            if (debtorinformationdebtorname.length > 140) {
+                              debtorinformationdebtorname = debtorinformationdebtorname.substring(0,140)
+                              debtorinformationdebtorname = debtorinformationdebtorname.trim
+                            }
                           }
                         }
                       }
@@ -5180,9 +5245,22 @@ class CbsEngine @Inject()
                           debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.trim
                           if (debtoraccountinformationdebtoraccountname.length > 0){
                             debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("'","")//Remove apostrophe
+                            /* Added on 04-03-2022: Emmanuel */
+                            debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("&"," and ")//Replace Ampersand
+                            debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("/"," ")//Remove forward slash
+                            debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("\\"," ")//Remove backward slash
+                            debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("<"," ")//Remove "<" (less-than)
+                            debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace(">"," ")//Remove ">" (greater-than)
+                            //
                             debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replace("  "," ")//Remove double spaces
                             debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                             debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.trim
+                            /* Added on 04-03-2022: Emmanuel */
+                            /* Lets ensure that var debtoraccountinformationdebtoraccountname has a max length of 70 */
+                            if (debtoraccountinformationdebtoraccountname.length > 70) {
+                              debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.substring(0,70)
+                              debtoraccountinformationdebtoraccountname = debtoraccountinformationdebtoraccountname.trim
+                            }
                           }
                         }
                       }
@@ -5275,7 +5353,7 @@ class CbsEngine @Inject()
                       isValidDebitPhoneNumber = false
                       */
                       isValidCreditAccount = false
-                      isValidCreditAccountName = false
+                      //isValidCreditAccountName = false
                       isValidCreditBankCode = false
                       //isValidCreditPhoneNumber = false
                       isValidRemittanceinfoUnstructured = false
@@ -5586,9 +5664,22 @@ class CbsEngine @Inject()
                               creditorinformationcreditorname = creditorinformationcreditorname.trim
                               if (creditorinformationcreditorname.length > 0){
                                 creditorinformationcreditorname = creditorinformationcreditorname.replace("'","")//Remove apostrophe
+                                /* Added on 04-03-2022: Emmanuel */
+                                creditorinformationcreditorname = creditorinformationcreditorname.replace("&"," and ")//Replace Ampersand
+                                creditorinformationcreditorname = creditorinformationcreditorname.replace("/"," ")//Remove forward slash
+                                creditorinformationcreditorname = creditorinformationcreditorname.replace("\\"," ")//Remove backward slash
+                                creditorinformationcreditorname = creditorinformationcreditorname.replace("<"," ")//Remove "<" (less-than)
+                                creditorinformationcreditorname = creditorinformationcreditorname.replace(">"," ")//Remove ">" (greater-than)
+                                //
                                 creditorinformationcreditorname = creditorinformationcreditorname.replace("  "," ")//Remove double spaces
                                 creditorinformationcreditorname = creditorinformationcreditorname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                                 creditorinformationcreditorname = creditorinformationcreditorname.trim
+                                /* Added on 04-03-2022: Emmanuel */
+                                /* Lets ensure that var creditorinformationcreditorname has a max length of 140 */
+                                if (creditorinformationcreditorname.length > 140) {
+                                  creditorinformationcreditorname = creditorinformationcreditorname.substring(0,140)
+                                  creditorinformationcreditorname = creditorinformationcreditorname.trim
+                                }
                               }
                             }
 
@@ -5676,9 +5767,22 @@ class CbsEngine @Inject()
                               creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.trim
                               if (creditoraccountinformationcreditoraccountname.length > 0){
                                 creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace("'","")//Remove apostrophe
+                                /* Added on 04-03-2022: Emmanuel */
+                                creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace("&"," and ")//Replace Ampersand
+                                creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace("/"," ")//Remove forward slash
+                                creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace("\\"," ")//Remove backward slash
+                                creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace("<"," ")//Remove "<" (less-than)
+                                creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace(">"," ")//Remove ">" (greater-than)
+                                //
                                 creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replace("  "," ")//Remove double spaces
                                 creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.replaceAll("^\"|\"$", "") //Remove beginning and ending double quote (") from a string.
                                 creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.trim
+                                /* Added on 04-03-2022: Emmanuel */
+                                /* Lets ensure that var creditoraccountinformationcreditoraccountname has a max length of 70 */
+                                if (creditoraccountinformationcreditoraccountname.length > 70) {
+                                  creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.substring(0,70)
+                                  creditoraccountinformationcreditoraccountname = creditoraccountinformationcreditoraccountname.trim
+                                }
                               }
                             }
                           }
@@ -5880,7 +5984,7 @@ class CbsEngine @Inject()
                         }
                         isValid
                       }
-
+                      /*
                       isValidDebitAccountName = {
                         var isValid: Boolean = false
                         if (debtoraccountinformationdebtoraccountname.replace("  ","").length > 0 && debtoraccountinformationdebtoraccountname.replace("  ","").length <= 70){
@@ -5888,10 +5992,10 @@ class CbsEngine @Inject()
                         }
                         isValid
                       }
-
+                      */
                       isValidDebtorName  = {
                         var isValid: Boolean = false
-                        if (debtorinformationdebtorname.replace("  ","").length > 0 && debtorinformationdebtorname.replace("  ","").length <= 140){
+                        if (debtorinformationdebtorname.length > 0 && debtorinformationdebtorname.length <= 140){
                           isValid = true
                         }
                         isValid
@@ -5927,7 +6031,7 @@ class CbsEngine @Inject()
                         }
                         isValid
                       }
-
+                      /*
                       isValidCreditAccountName = {
                         var isValid: Boolean = false
                         if (creditoraccountinformationcreditoraccountname.replace("  ","").length > 0 && creditoraccountinformationcreditoraccountname.replace("  ","").length <= 140){
@@ -5935,7 +6039,7 @@ class CbsEngine @Inject()
                         }
                         isValid
                       }
-
+                      */
                       isValidCreditBankCode = {
                         var isValid: Boolean = false
                         if (creditoragentinformationfinancialInstitutionIdentification.length > 0 && creditoragentinformationfinancialInstitutionIdentification.length <= 35){
@@ -6053,7 +6157,7 @@ class CbsEngine @Inject()
                           val remittanceInfo = TransferRemittanceInfo(remittanceinformationunstructured, remittanceinformationtaxremittancereferencenumber)
                           val mandateInfo = TransferMandateInfo(mandateidentification)
                           val bulkPaymentInfo = BulkPaymentInfo(paymentendtoendidentification, interbanksettlementamount, debitAccountInfo, creditAccountInfo, mandateInfo, remittanceInfo, purposeInfo)
-                          paymentdata = paymentdata :+ bulkPaymentInfo 
+                          paymentdata = paymentdata :+ bulkPaymentInfo
 
                           val amount: java.math.BigDecimal =  new java.math.BigDecimal(myAmount.toString())
                           /*
